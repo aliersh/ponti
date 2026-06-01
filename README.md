@@ -3,7 +3,7 @@
 > Settle up, on-chain.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/aliersh/mend/test.yml?branch=main&label=CI)](https://github.com/aliersh/mend/actions/workflows/test.yml)
-[![Solidity](https://img.shields.io/badge/solidity-0.8.34-363636)](foundry.toml)
+[![Solidity](https://img.shields.io/badge/solidity-0.8.34-363636)](contracts/foundry.toml)
 [![Built with Foundry](https://img.shields.io/badge/built%20with-Foundry-black)](https://getfoundry.sh)
 [![Network](https://img.shields.io/badge/network-Base%20Sepolia-0052FF)](https://sepolia.basescan.org)
 [![MendFactory](https://img.shields.io/badge/MendFactory-0x7C6c…091Da-0052FF)](https://sepolia.basescan.org/address/0x7C6c933B036fCe0d6663ab4F3866ACdC2A5091Da)
@@ -38,13 +38,13 @@ Mend is built with [Foundry](https://getfoundry.sh).
 
 ```bash
 git clone https://github.com/aliersh/mend.git
-cd mend
+cd mend/contracts
 forge install   # fetches the forge-std and openzeppelin-contracts submodules
 forge build
 forge test
 ```
 
-Most of the suite (unit, fuzz, and invariant tests) runs with no configuration. The fork tests run against Base Sepolia and read the `BASE_SEPOLIA_RPC_URL` environment variable — set it in a `.env` file (Foundry loads it automatically) to run them.
+Most of the suite (unit, fuzz, and invariant tests) runs with no configuration. The fork tests run against Base Sepolia and read the `BASE_SEPOLIA_RPC_URL` environment variable — set it in a `contracts/.env` file (Foundry loads it automatically) to run them.
 
 ## Documentation
 

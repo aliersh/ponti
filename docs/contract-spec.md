@@ -596,7 +596,7 @@ error InvalidMemberAddress();
 
 ### 15.4 Dependencies
 
-- Solidity: latest stable at implementation time, pinned in `foundry.toml`.
+- Solidity: latest stable at implementation time, pinned in `contracts/foundry.toml`.
 - OpenZeppelin Contracts: `SafeERC20` and `ReentrancyGuard` only. No other OZ modules are to be pulled in for M1.
 - forge-std: for test utilities.
 
@@ -604,8 +604,8 @@ No other dependencies. Resist the temptation to pull in additional libraries; M1
 
 ### 15.5 Deployment
 
-- `script/Deploy.s.sol`: deploys `MendFactory` to Base Sepolia using the canonical USDC address hardcoded per chain ID (`84532` → `0x036CbD53842c5426634e7929541eC2318f3dCF7e`; other chains fall back to `USDC_ADDRESS` env var). Verifies the factory on Basescan. The deployed factory address is recorded in `README.md`.
-- `script/DemoFlow.s.sol`: end-to-end demonstration script. Deploys the factory, creates a group, performs USDC approvals, adds expenses, edits one, deletes one, and settles. Used as the canonical executable proof that the system works.
+- `contracts/script/Deploy.s.sol`: deploys `MendFactory` to Base Sepolia using the canonical USDC address hardcoded per chain ID (`84532` → `0x036CbD53842c5426634e7929541eC2318f3dCF7e`; other chains fall back to `USDC_ADDRESS` env var). Verifies the factory on Basescan. The deployed factory address is recorded in `README.md`.
+- `contracts/script/DemoFlow.s.sol`: end-to-end demonstration script. Deploys the factory, creates a group, performs USDC approvals, adds expenses, edits one, deletes one, and settles. Used as the canonical executable proof that the system works.
 
 ---
 
