@@ -1,6 +1,10 @@
-import { formatUnits, getAddress, type Address } from 'viem'
+import { formatUnits, getAbiItem, getAddress, type Address } from 'viem'
 import { groupAbi } from '../config'
 import { publicClient, collectInWindows } from './client'
+
+const abiExpenseAdded   = getAbiItem({ abi: groupAbi, name: 'ExpenseAdded' })
+const abiExpenseEdited  = getAbiItem({ abi: groupAbi, name: 'ExpenseEdited' })
+const abiExpenseDeleted = getAbiItem({ abi: groupAbi, name: 'ExpenseDeleted' })
 
 export type ExpenseEntry = {
   id: bigint
@@ -18,13 +22,13 @@ export type BalanceDisplay = {
 
 // Single-window fetchers — also the source of the log types below.
 function addedWindow(address: Address, from: bigint, to: bigint) {
-  return publicClient.getLogs({ address, event: groupAbi[1], fromBlock: from, toBlock: to })
+  return publicClient.getLogs({ address, event: abiExpenseAdded, fromBlock: from, toBlock: to })
 }
 function editedWindow(address: Address, from: bigint, to: bigint) {
-  return publicClient.getLogs({ address, event: groupAbi[2], fromBlock: from, toBlock: to })
+  return publicClient.getLogs({ address, event: abiExpenseEdited, fromBlock: from, toBlock: to })
 }
 function deletedWindow(address: Address, from: bigint, to: bigint) {
-  return publicClient.getLogs({ address, event: groupAbi[3], fromBlock: from, toBlock: to })
+  return publicClient.getLogs({ address, event: abiExpenseDeleted, fromBlock: from, toBlock: to })
 }
 
 type ExpenseHistoryLogs = {
