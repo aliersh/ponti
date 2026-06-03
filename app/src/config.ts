@@ -16,7 +16,7 @@ export const SPONSORSHIP_POLICY_ID = import.meta.env.VITE_PIMLICO_SPONSORSHIP_PO
 // that handles ~10k-block windows (verified). Override with VITE_RPC_URL.
 export const RPC_URL = import.meta.env.VITE_RPC_URL ?? 'https://base-sepolia.drpc.org'
 
-// Minimal factory interface: the one write this phase makes, the event we read
+// Minimal factory interface: the one write call (createGroup), the event we read
 // back from the receipt, and the constructor-validation errors so viem can
 // decode a sponsored revert into a named error instead of a raw selector.
 export const factoryAbi = [
