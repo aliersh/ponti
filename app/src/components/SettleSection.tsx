@@ -3,35 +3,33 @@ import { formatUnits } from 'viem'
 import type { Address, Hex } from 'viem'
 import { USDC_ADDRESS } from '../config'
 import { publicClient } from '../lib/client'
-import { submitApprove, submitSettle } from '../lib/settle'
+import { buildSettleCalls } from '../lib/settle'
 import type { BalanceDisplay } from '../lib/fetchGroup'
 
-type SendUserOperation = (req: { to: Address; data: Hex }) => Promise<Hex>
+type SendBatch = (calls: { to: Address; data: Hex }[]) => Promise<Hex>
 
 type Props = {
   balance: bigint
   usdcBalance: bigint | null
   display: BalanceDisplay
-  send: SendUserOperation | undefined
+  sendBatch: SendBatch | undefined
   groupAddress: Address
   onSettled: () => Promise<void>
 }
 
-export function SettleSection({ balance, usdcBalance, display, send, groupAddress, onSettled }: Props) {
+export function SettleSection({ balance, usdcBalance, display, sendBatch, groupAddress, onSettled }: Props) {
   const [settleSubmitting, setSettleSubmitting] = useState(false)
   const [settleError, setSettleError] = useState<string | null>(null)
 
   const debt = balance < 0n ? -balance : balance
 
   async function onSettle() {
-    if (!send) return
+    if (!sendBatch) return
     setSettleSubmitting(true)
     setSettleError(null)
     try {
-      const approveHash = await submitApprove(send, USDC_ADDRESS, groupAddress, debt)
-      await publicClient.waitForTransactionReceipt({ hash: approveHash })
-      const settleHash = await submitSettle(send, groupAddress)
-      await publicClient.waitForTransactionReceipt({ hash: settleHash })
+      const hash = await sendBatch(buildSettleCalls(USDC_ADDRESS, groupAddress, debt, groupAddress))
+      await publicClient.waitForTransactionReceipt({ hash })
       await onSettled()
     } catch (e) {
       setSettleError(e instanceof Error ? e.message : String(e))
@@ -54,7 +52,7 @@ export function SettleSection({ balance, usdcBalance, display, send, groupAddres
         </p>
       ) : (
         <div>
-          <button onClick={onSettle} disabled={settleSubmitting || !send}>
+          <button onClick={onSettle} disabled={settleSubmitting || !sendBatch}>
             {settleSubmitting ? 'Settling…' : `Settle ${display.amount} USDC`}
           </button>
           {settleError && <p style={{ color: 'crimson' }}>{settleError}</p>}

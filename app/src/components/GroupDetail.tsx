@@ -15,11 +15,13 @@ import { AddExpenseForm } from './AddExpenseForm'
 import { ExpenseList } from './ExpenseList'
 
 type SendUserOperation = (req: { to: Address; data: Hex }) => Promise<Hex>
+type SendBatch = (calls: { to: Address; data: Hex }[]) => Promise<Hex>
 
 type Props = {
   address: string
   smartAccount: Address
   send: SendUserOperation | undefined
+  sendBatch: SendBatch | undefined
 }
 
 // Returns raw fetched values without committing state -- used by both loadDetail
@@ -36,7 +38,7 @@ async function fetchDetail(
   return { bal, expenses, usdc }
 }
 
-export function GroupDetail({ address, smartAccount, send }: Props) {
+export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -167,7 +169,7 @@ export function GroupDetail({ address, smartAccount, send }: Props) {
           balance={balance}
           usdcBalance={usdcBalance}
           display={display}
-          send={send}
+          sendBatch={sendBatch}
           groupAddress={resolvedGroup.address}
           onSettled={reload}
         />

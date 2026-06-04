@@ -14,6 +14,7 @@ import { publicClient } from './lib/client'
 import { waitForSubgraphBlock } from './lib/subgraph'
 
 type SendUserOperation = (req: { to: Address; data: Hex }) => Promise<Hex>
+type SendBatch = (calls: { to: Address; data: Hex }[]) => Promise<Hex>
 
 // The smart account's address is the user's identity in Mend (the member that
 // gets registered). Privy exposes it as a linked account of type smart_wallet.
@@ -28,15 +29,17 @@ function useSmartAccountAddress(): Address | undefined {
 function GroupDetailWrapper({
   smartAccount,
   send,
+  sendBatch,
 }: {
   smartAccount: Address | undefined
   send: SendUserOperation | undefined
+  sendBatch: SendBatch | undefined
 }) {
   const { address } = useParams<{ address: string }>()
   if (!address || !isAddress(address)) return <Navigate to="/" replace />
   if (!smartAccount) return <main style={page}><p>Loading…</p></main>
   // key forces remount on address change, preserving the mount-only useEffect invariant
-  return <GroupDetail key={address} address={address} smartAccount={smartAccount} send={send} />
+  return <GroupDetail key={address} address={address} smartAccount={smartAccount} send={send} sendBatch={sendBatch} />
 }
 
 export function App() {
@@ -61,6 +64,10 @@ export function App() {
 
   const send: SendUserOperation | undefined = client
     ? async (req) => (await client.sendTransaction(req)) as Hex
+    : undefined
+
+  const sendBatch: SendBatch | undefined = client
+    ? async (calls) => (await client.sendTransaction({ calls })) as Hex
     : undefined
 
   async function loadGroups(account: Address) {
@@ -169,7 +176,7 @@ export function App() {
       />
       <Route
         path="/group/:address"
-        element={<GroupDetailWrapper smartAccount={smartAccount} send={send} />}
+        element={<GroupDetailWrapper smartAccount={smartAccount} send={send} sendBatch={sendBatch} />}
       />
     </Routes>
   )
