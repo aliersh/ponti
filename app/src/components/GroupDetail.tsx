@@ -209,6 +209,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
           display={display}
           sendBatch={sendBatch}
           groupAddress={resolvedGroup.address}
+          smartAccount={smartAccount}
           onSettled={reload}
         />
       )}

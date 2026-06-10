@@ -1,6 +1,10 @@
+import { useEffect, useState } from 'react'
+import { formatUnits } from 'viem'
 import type { Address, Hex } from 'viem'
 import type { CSSProperties } from 'react'
 import type { GroupItem } from '../lib/fetchGroups'
+import { fetchUsdcBalance } from '../lib/settle'
+import { AddFunds } from './AddFunds'
 
 type SendUserOperation = (req: { to: Address; data: Hex }) => Promise<Hex>
 
@@ -44,6 +48,12 @@ export function HomeView({
 }: Props) {
   const canSubmit = !!send && !!counterparty && !validationError && !submitting
 
+  const [usdcBalance, setUsdcBalance] = useState<bigint | null>(null)
+  useEffect(() => {
+    if (!smartAccount) return
+    fetchUsdcBalance(smartAccount).then(setUsdcBalance).catch(() => {})
+  }, [smartAccount])
+
   return (
     <main style={page}>
       <h1>Ponti</h1>
@@ -51,6 +61,23 @@ export function HomeView({
         Smart account: <code>{smartAccount ?? 'provisioning…'}</code>{' '}
         <button onClick={logout}>Log out</button>
       </p>
+      {smartAccount && (
+        <>
+          {usdcBalance !== null && (
+            <p>
+              Wallet:{' '}
+              <a
+                href={`https://sepolia.basescan.org/address/${smartAccount}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {formatUnits(usdcBalance, 6)} USDC
+              </a>
+            </p>
+          )}
+          <AddFunds smartAccount={smartAccount} onRefreshed={setUsdcBalance} />
+        </>
+      )}
 
       <h2>Your groups</h2>
       {loadingGroups && <p>Loading…</p>}
