@@ -1,8 +1,16 @@
+// AddExpenseForm.tsx — Inline add-expense form (interim styling).
+//
+// Light UI-kit pass over the raw-input version: Field/Input primitives, Button
+// for the submit action, muted error note. All logic and the name="payer" radio
+// group are unchanged. The form will be replaced by a FlowWidget sheet in a
+// later phase; this is just enough polish to not clash with the restyled screen.
+
 import { useState } from 'react'
 import { parseUnits } from 'viem'
 import type { Address, Hex } from 'viem'
 import { publicClient } from '../lib/client'
 import { submitAddExpense } from '../lib/addExpense'
+import { Button, Field, Input } from '../ui'
 
 type SendUserOperation = (req: { to: Address; data: Hex }) => Promise<Hex>
 
@@ -55,41 +63,79 @@ export function AddExpenseForm({ send, groupAddress, smartAccount, counterparty,
   }
 
   return (
-    <>
-      <h3>Add expense</h3>
-      <div>
-        <label>
+    <div
+      className="bg-surface border border-border"
+      style={{ borderRadius: 'var(--radius)', padding: '18px 18px 20px', marginTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}
+    >
+      <span
+        className="font-ui"
+        style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}
+      >
+        Add expense
+      </span>
+
+      {/* Payer radios — name="payer" intentionally distinct from edit form's name="edit-payer" */}
+      <div style={{ display: 'flex', gap: 18 }}>
+        <label
+          className="font-ui"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5, color: 'var(--ink)', cursor: 'pointer' }}
+        >
           <input
-            type="radio" name="payer" value="me"
+            type="radio"
+            name="payer"
+            value="me"
             checked={addPayer === 'me'}
             onChange={() => setAddPayer('me')}
-          /> I paid
+          />
+          I paid
         </label>
-        {' '}
-        <label>
+        <label
+          className="font-ui"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5, color: 'var(--ink)', cursor: 'pointer' }}
+        >
           <input
-            type="radio" name="payer" value="counterparty"
+            type="radio"
+            name="payer"
+            value="counterparty"
             checked={addPayer === 'counterparty'}
             onChange={() => setAddPayer('counterparty')}
-          /> Counterparty paid
+          />
+          Counterparty paid
         </label>
       </div>
-      <input
-        placeholder="Amount (USDC, e.g. 12.50)"
-        value={addAmount}
-        onChange={(e) => setAddAmount(e.target.value)}
-      />
-      <input
-        placeholder="Description"
-        value={addDescription}
-        onChange={(e) => setAddDescription(e.target.value)}
-      />
-      <div>
-        <button onClick={onAddExpense} disabled={addSubmitting || !send}>
-          {addSubmitting ? 'Sending (sponsored)…' : 'Add expense'}
-        </button>
-      </div>
-      {addError && <p style={{ color: 'crimson' }}>{addError}</p>}
-    </>
+
+      <Field label="Amount">
+        <Input
+          placeholder="e.g. 12.50"
+          value={addAmount}
+          onChange={(e) => setAddAmount(e.target.value)}
+          inputMode="decimal"
+        />
+      </Field>
+
+      <Field label="Description">
+        <Input
+          placeholder="What was this for?"
+          value={addDescription}
+          onChange={(e) => setAddDescription(e.target.value)}
+        />
+      </Field>
+
+      <Button
+        variant="primary"
+        full
+        onClick={onAddExpense}
+        disabled={addSubmitting || !send}
+      >
+        {addSubmitting ? 'Sending…' : 'Add expense'}
+      </Button>
+
+      {/* Add error — muted note, never crimson */}
+      {addError && (
+        <p className="font-ui" style={{ fontSize: 12.5, color: 'var(--muted)', margin: 0 }}>
+          {addError}
+        </p>
+      )}
+    </div>
   )
 }

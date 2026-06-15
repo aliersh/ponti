@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@privy-io/react-auth": "^3.12.0",
+    "@radix-ui/react-dialog": "^1.1.16",
     "permissionless": "^0.2.57",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

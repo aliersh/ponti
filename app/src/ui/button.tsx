@@ -10,7 +10,7 @@
 // Extra beyond prototype: focus-visible accent ring for keyboard a11y.
 // onMouseDown preventDefault prevents focus-flash on click (per prototype).
 
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 
 interface ButtonProps {
   children: ReactNode
@@ -19,6 +19,8 @@ interface ButtonProps {
   disabled?: boolean
   onClick?: () => void
   className?: string
+  /** Inline style — wins over equal-specificity padding utilities for tight-padding overrides. */
+  style?: CSSProperties
 }
 
 // Variant-specific Tailwind classes (background + text + optional ring).
@@ -48,6 +50,7 @@ export function Button({
   disabled = false,
   onClick,
   className = '',
+  style,
 }: ButtonProps) {
   return (
     <button
@@ -55,6 +58,7 @@ export function Button({
       onClick={disabled ? undefined : onClick}
       onMouseDown={(e) => e.preventDefault()}
       disabled={disabled}
+      style={style}
       className={[
         // Base
         'font-ui font-semibold text-base rounded-sm',

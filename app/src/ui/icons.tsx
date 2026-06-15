@@ -295,6 +295,38 @@ export function Logout({ color = 'currentColor', size = 15 }: IconProps) {
   )
 }
 
+// ── ArrowIn ────────────────────────────────────────────────────────────────────
+// Downward arrow — "owes you" (money flowing in to viewer). 18×18 viewBox.
+export function ArrowIn({ color = 'currentColor', size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+      <path
+        d="M9 3.2V12.6M4.6 8.1L9 12.8 13.4 8.1"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+// ── ArrowOut ───────────────────────────────────────────────────────────────────
+// Upward arrow — "you owe" (money flowing out from viewer). 18×18 viewBox.
+export function ArrowOut({ color = 'currentColor', size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+      <path
+        d="M9 14.8V5.4M4.6 9.9L9 5.2 13.4 9.9"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 // ── Icons record (convenience map) ────────────────────────────────────────────
 export const Icons = {
   Plus,
@@ -315,4 +347,6 @@ export const Icons = {
   Pencil,
   Trash,
   Logout,
+  ArrowIn,
+  ArrowOut,
 } as const

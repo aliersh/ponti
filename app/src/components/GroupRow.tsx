@@ -2,11 +2,11 @@
 // Reusable. Calls onSelectGroup when tapped.
 //
 // Money rule (§5.3): per-pair balance is tabular (<Num> default), always --ink.
-// Settled state: Pill tone="ok" with check icon.
+// Direction is conveyed by <DirChip>; amounts are unsigned (no +/− prefix).
 
 import type { GroupItem } from '../lib/fetchGroups'
 import { getIdentity } from '../lib/identity'
-import { Avatar, Num, money, Pill, Skeleton, Check } from '../ui'
+import { Avatar, Num, money, DirChip, Skeleton } from '../ui'
 
 interface GroupRowProps {
   group: GroupItem
@@ -41,29 +41,16 @@ export function GroupRow({ group, balance, onClick }: GroupRowProps) {
         </span>
       </div>
 
-      {/* Balance */}
-      <div className="flex flex-col items-end gap-[3px] shrink-0">
+      {/* Balance column — amount (unsigned) above direction chip, or chip alone when settled */}
+      <div className="flex flex-col items-end gap-[4px] shrink-0">
         {balance === undefined ? (
           <Skeleton w={56} h={16} />
         ) : balance === 0n ? (
-          <Pill tone="ok">
-            <Check color="currentColor" size={12} />
-            settled
-          </Pill>
-        ) : balance > 0n ? (
-          <>
-            <Num size={15}>{'+' + money(balance)}</Num>
-            <span className="font-ui text-muted" style={{ fontSize: 12 }}>
-              owes you
-            </span>
-          </>
+          <DirChip dir="settled" size="sm" />
         ) : (
           <>
-            {/* U+2212 minus for negative */}
-            <Num size={15}>{'−' + money(balance)}</Num>
-            <span className="font-ui text-muted" style={{ fontSize: 12 }}>
-              you owe
-            </span>
+            <Num size={16}>{money(balance)}</Num>
+            <DirChip dir={balance > 0n ? 'in' : 'out'} size="sm" />
           </>
         )}
       </div>

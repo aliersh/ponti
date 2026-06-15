@@ -6,7 +6,7 @@
 // State precedence for list area: error → loading → empty → normal.
 //
 // Money rule (§5.3):
-//   net hero → <Num display> proportional, --ink
+//   net hero → <Num display> proportional, --ink; no +/− sign (DirChip carries direction)
 //   WalletStrip amount + group row amounts → <Num> tabular (default), --ink
 //
 // Stubs (wired in later phases):
@@ -16,6 +16,7 @@
 //   WalletStrip "Add funds" → AddFundsPanel (F3)
 
 import { useEffect, useState, useCallback } from 'react'
+import { AddFundsPanel } from './AddFundsPanel'
 import type { Address } from 'viem'
 import type { GroupItem } from '../lib/fetchGroups'
 import { fetchHomeBalances } from '../lib/homeBalances'
@@ -23,7 +24,7 @@ import type { HomeBalances } from '../lib/homeBalances'
 import { fetchUsdcBalance } from '../lib/settle'
 import { getIdentity } from '../lib/identity'
 import {
-  Mark, Wordmark, Avatar, Num, money,
+  Mark, Wordmark, Avatar, Num, money, DirChip,
   Skeleton, SectionLabel, Plus, Globe, Logout,
 } from '../ui'
 import { WalletStrip } from './WalletStrip'
@@ -103,6 +104,7 @@ export function HomeView({
 
   const [usdc, setUsdc] = useState<bigint | null>(null)
   const [usdcError, setUsdcError] = useState(false)
+  const [fundsOpen, setFundsOpen] = useState(false)
 
   // fetchBalances: callable from the mount effect AND retry handler.
   const fetchBalances = useCallback(async (account: Address, groupList: GroupItem[]) => {
@@ -138,18 +140,6 @@ export function HomeView({
   // ── Derived display values ─────────────────────────────────────────────────
   const net = balances?.net ?? 0n
 
-  function netCaption(): string {
-    if (net > 0n) return "You're owed, net"
-    if (net < 0n) return 'You owe, net'
-    return "You're all square"
-  }
-
-  function netDisplay(): string {
-    if (net > 0n) return '+' + money(net)
-    if (net < 0n) return '−' + money(net) // U+2212 minus
-    return money(0n) // "0.00", no sign
-  }
-
   // ── List-area state precedence ─────────────────────────────────────────────
   // error → loading → empty → normal
   const hasError = groupsError || balancesError
@@ -164,22 +154,30 @@ export function HomeView({
       {/* 1. AppHeader */}
       {smartAccount && <AppHeader smartAccount={smartAccount} onLogout={onLogout} />}
 
-      {/* 2. Net summary */}
+      {/* 2. Net summary — chip row (direction + "net" label) above the hero amount */}
       <div style={{ padding: '2px 2px 20px' }}> {/* prototype screens.jsx */}
-        <span
-          className="font-ui font-semibold text-muted"
-          style={{ fontSize: 13 }} /* prototype screens.jsx */
-        >
-          {netCaption()}
-        </span>
-        <div className="flex items-baseline" style={{ marginTop: 2, gap: 4 }}>
+        <div className="flex items-center" style={{ gap: 8, marginBottom: 9 }}>
+          <DirChip
+            dir={net > 0n ? 'in' : net < 0n ? 'out' : 'settled'}
+            label={net > 0n ? "You're owed" : net < 0n ? 'You owe' : 'Settled up'}
+          />
+          {/* "net" mini-label — uppercase, tight tracking, muted; prototype screens.jsx */}
+          <span
+            className="font-ui text-muted"
+            style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}
+          >
+            net
+          </span>
+        </div>
+        {/* Hero amount: unsigned (direction is in chip above); loading/error branches preserved */}
+        <div className="flex items-baseline" style={{ gap: 4 }}>
           {balancesLoading ? (
             <Skeleton w={120} h={38} r={6} />
           ) : balancesError ? (
             <span className="font-ui text-muted" style={{ fontSize: 38 }}>—</span>
           ) : (
             <>
-              <Num display size={38}>{netDisplay()}</Num>
+              <Num display size={38}>{money(net)}</Num>
               <span
                 className="font-ui font-semibold text-muted"
                 style={{ fontSize: 16, letterSpacing: '0.02em', marginLeft: 1 }} /* prototype screens.jsx */
@@ -193,7 +191,7 @@ export function HomeView({
 
       {/* 3. WalletStrip */}
       <div style={{ marginBottom: 22 }}> {/* prototype screens.jsx */}
-        <WalletStrip usdc={usdcError ? null : usdc} />
+        <WalletStrip usdc={usdcError ? null : usdc} onAddFunds={() => setFundsOpen(true)} />
       </div>
 
       {/* 4. SectionLabel */}
@@ -274,6 +272,16 @@ export function HomeView({
           ))
         )}
       </div>
+
+      {/* AddFundsPanel — guarded: only rendered when smartAccount is defined */}
+      {smartAccount && (
+        <AddFundsPanel
+          open={fundsOpen}
+          onOpenChange={setFundsOpen}
+          smartAccount={smartAccount}
+          onBalance={(b) => setUsdc(b)}
+        />
+      )}
     </div>
   )
 }

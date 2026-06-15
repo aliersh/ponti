@@ -64,7 +64,7 @@ export function WalletStrip({ usdc, onAddFunds }: WalletStripProps) {
       <Button
         variant="soft"
         onClick={onAddFunds}
-        className="px-[9px] py-[13px]" /* tighter strip padding — prototype wallet.jsx */
+        className="px-[13px] py-[9px]" /* tighter strip padding — prototype wallet.jsx */
       >
         <Plus color="var(--accent)" size={14} />
         Add funds
