@@ -10,10 +10,11 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import type { Address, Hex } from 'viem'
 import { USDC_ADDRESS } from '../config'
-import { publicClient } from '../lib/client'
 import { buildSettleCalls } from '../lib/settle'
+import { getIdentity } from '../lib/identity'
 import { money } from '../ui'
 import type { BalanceDisplay } from '../lib/fetchGroup'
+import { useFlow } from '../flow/FlowContext'
 
 type SendBatch = (calls: { to: Address; data: Hex }[]) => Promise<Hex>
 
@@ -24,6 +25,8 @@ type Props = {
   sendBatch: SendBatch | undefined
   groupAddress: Address
   smartAccount: Address
+  /** Counterparty address — used for the consent-row "To" label. */
+  counterparty: Address
   onSettled: () => Promise<void>
   onAddFunds?: () => void
   renderLayout: (button: ReactNode, callout: ReactNode | null) => ReactNode
@@ -35,12 +38,12 @@ export function SettleSection({
   display,
   sendBatch,
   groupAddress,
+  counterparty,
   onSettled,
   onAddFunds,
   renderLayout,
 }: Props) {
-  const [settleSubmitting, setSettleSubmitting] = useState(false)
-  const [settleError, setSettleError] = useState<string | null>(null)
+  const flow = useFlow()
 
   // Mirrors the parent prop so we can update on manual refresh without a full
   // GroupDetail reload. useEffect syncs back when the parent resets (e.g. post-settle).
@@ -49,19 +52,21 @@ export function SettleSection({
 
   const debt = balance < 0n ? -balance : balance
 
-  async function onSettle() {
+  function onSettle() {
     if (!sendBatch) return
-    setSettleSubmitting(true)
-    setSettleError(null)
-    try {
-      const hash = await sendBatch(buildSettleCalls(USDC_ADDRESS, groupAddress, debt, groupAddress))
-      await publicClient.waitForTransactionReceipt({ hash })
-      await onSettled()
-    } catch (e) {
-      setSettleError(e instanceof Error ? e.message : String(e))
-    } finally {
-      setSettleSubmitting(false)
-    }
+    const counterpartyLabel = getIdentity(counterparty).label
+    flow.start({
+      kind: 'settle',
+      title: 'Settle up',
+      confirmLabel: `Settle ${money(debt)} USDC`,
+      rows: [
+        { label: "You're paying", value: `${money(debt)} USDC`, strong: true },
+        { label: 'To', value: counterpartyLabel },
+      ],
+      who: counterpartyLabel,
+      submit: () => sendBatch(buildSettleCalls(USDC_ADDRESS, groupAddress, debt, groupAddress)),
+      onComplete: onSettled,
+    })
   }
 
   // Not the debtor: pass empty slots so GroupDetail still renders Add expense.
@@ -76,8 +81,8 @@ export function SettleSection({
   const settleButton = (
     <button
       type="button"
-      onClick={isShort || settleSubmitting || !sendBatch ? undefined : onSettle}
-      disabled={isShort || settleSubmitting || !sendBatch}
+      onClick={isShort || !sendBatch ? undefined : onSettle}
+      disabled={isShort || !sendBatch}
       className={[
         'font-ui font-semibold text-base rounded-sm w-full',
         'inline-flex items-center justify-center gap-2 whitespace-nowrap',
@@ -89,7 +94,7 @@ export function SettleSection({
           : 'bg-transparent text-ink shadow-[inset_0_0_0_1.5px_var(--accent)] cursor-pointer hover:brightness-95',
       ].filter(Boolean).join(' ')}
     >
-      {settleSubmitting ? 'Settling…' : `Settle ${money(debt)} USDC`}
+      {`Settle ${money(debt)} USDC`}
     </button>
   )
 
@@ -117,20 +122,9 @@ export function SettleSection({
     </div>
   ) : null
 
-  // Settle error — muted inline note, never alarm-red (§5.7).
-  const errorNote = settleError ? (
-    <p
-      className="font-ui"
-      style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 8 }}
-    >
-      {settleError}
-    </p>
-  ) : null
-
   return (
     <>
       {renderLayout(settleButton, callout)}
-      {errorNote}
     </>
   )
 }

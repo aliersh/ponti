@@ -20,7 +20,13 @@ export function Providers({ children }: { children: ReactNode }) {
         supportedChains: [CHAIN],
         // Provision the embedded signer (which the Kernel smart account is built
         // on) for users who log in without an existing wallet.
-        embeddedWallets: { ethereum: { createOnLogin: 'users-without-wallets' } },
+        // showWalletUIs:false suppresses Privy's own confirm + success modals so
+        // the app renders its own write-flow consent + progress surface; writes
+        // still route through the SmartWallets client and stay sponsored.
+        embeddedWallets: {
+          ethereum: { createOnLogin: 'users-without-wallets' },
+          showWalletUIs: false,
+        },
       }}
     >
       <SmartWalletsProvider config={smartWalletsConfig}>

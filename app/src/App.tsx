@@ -10,6 +10,7 @@ import { GroupDetail } from './components/GroupDetail'
 import { SignIn } from './components/SignIn'
 import { fetchMyGroups } from './lib/fetchGroups'
 import type { GroupItem } from './lib/fetchGroups'
+import { FlowProvider } from './flow/FlowContext'
 
 type SendUserOperation = (req: { to: Address; data: Hex }) => Promise<Hex>
 type SendBatch = (calls: { to: Address; data: Hex }[]) => Promise<Hex>
@@ -87,29 +88,31 @@ export function App() {
   }
 
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={
-          <HomeView
-            smartAccount={smartAccount}
-            groups={groups}
-            loadingGroups={loadingGroups}
-            groupsInitialized={groupsInitialized}
-            groupsError={groupsError}
-            onSelectGroup={(group) =>
-              navigate('/group/' + group.address, { state: { group } })
-            }
-            onRetry={() => smartAccount && void loadGroups(smartAccount)}
-            onLogout={logout}
-          />
-        }
-      />
-      <Route
-        path="/group/:address"
-        element={<GroupDetailWrapper smartAccount={smartAccount} send={send} sendBatch={sendBatch} />}
-      />
-    </Routes>
+    <FlowProvider>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <HomeView
+              smartAccount={smartAccount}
+              groups={groups}
+              loadingGroups={loadingGroups}
+              groupsInitialized={groupsInitialized}
+              groupsError={groupsError}
+              onSelectGroup={(group) =>
+                navigate('/group/' + group.address, { state: { group } })
+              }
+              onRetry={() => smartAccount && void loadGroups(smartAccount)}
+              onLogout={logout}
+            />
+          }
+        />
+        <Route
+          path="/group/:address"
+          element={<GroupDetailWrapper smartAccount={smartAccount} send={send} sendBatch={sendBatch} />}
+        />
+      </Routes>
+    </FlowProvider>
   )
 }
 

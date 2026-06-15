@@ -10,7 +10,6 @@
 import { useState, useMemo } from 'react'
 import { formatUnits, getAddress, parseUnits } from 'viem'
 import type { Address, Hex } from 'viem'
-import { publicClient } from '../lib/client'
 import { submitEditExpense } from '../lib/editExpense'
 import { submitDeleteExpense } from '../lib/deleteExpense'
 import { buildTimeline } from '../lib/fetchGroup'
@@ -20,6 +19,7 @@ import {
   Button, Num, money, Field, Input, Pill, Skeleton,
   Pencil, Trash, Check, Right,
 } from '../ui'
+import { useFlow } from '../flow/FlowContext'
 
 type SendUserOperation = (req: { to: Address; data: Hex }) => Promise<Hex>
 
@@ -33,7 +33,6 @@ type EditProps = {
   editPayer: 'me' | 'counterparty'
   editAmount: string
   editDescription: string
-  editSubmitting: boolean
   editError: string | null
   setEditPayer: (v: 'me' | 'counterparty') => void
   setEditAmount: (v: string) => void
@@ -41,8 +40,7 @@ type EditProps = {
   onStartEdit: (e: ExpenseEntry) => void
   onCancelEdit: () => void
   onSaveEdit: () => void
-  deleteSubmitting: boolean
-  onDeleteExpense: (id: bigint) => void
+  onDeleteExpense: (expense: ExpenseEntry) => void
 }
 
 type Props = {
@@ -137,11 +135,11 @@ function InlineEditForm({
       <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
         <Button
           onClick={ep.onSaveEdit}
-          disabled={ep.editSubmitting || !send}
+          disabled={!send}
         >
-          {ep.editSubmitting ? 'Saving…' : 'Save'}
+          Save
         </Button>
-        <Button variant="quiet" onClick={ep.onCancelEdit} disabled={ep.editSubmitting}>
+        <Button variant="quiet" onClick={ep.onCancelEdit}>
           Cancel
         </Button>
       </div>
@@ -277,8 +275,7 @@ function ExpenseRowWrap({
           </Button>
           <Button
             variant="ghost"
-            onClick={() => ep.onDeleteExpense(e.id)}
-            disabled={ep.deleteSubmitting}
+            onClick={() => ep.onDeleteExpense(e)}
             style={{ padding: '8px 12px', fontSize: 13 }}
           >
             <Trash color="var(--muted)" size={14} /> Delete
@@ -374,15 +371,15 @@ export function ExpenseList({
   counterparty,
   onMutated,
 }: Props) {
+  const flow = useFlow()
+
   // ── Edit state ──────────────────────────────────────────────────────────────
   const [editingId, setEditingId] = useState<bigint | null>(null)
   const [editPayer, setEditPayer] = useState<'me' | 'counterparty'>('me')
   const [editAmount, setEditAmount] = useState('')
   const [editDescription, setEditDescription] = useState('')
-  const [editSubmitting, setEditSubmitting] = useState(false)
+  // Validation-only error — write errors are owned by the flow controller.
   const [editError, setEditError] = useState<string | null>(null)
-  const [deleteSubmitting, setDeleteSubmitting] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   function onStartEdit(expense: ExpenseEntry) {
     setEditingId(expense.id)
@@ -397,7 +394,7 @@ export function ExpenseList({
     setEditError(null)
   }
 
-  async function onSaveEdit() {
+  function onSaveEdit() {
     if (!send || editingId === null) return
     let parsedAmount: bigint
     try {
@@ -410,42 +407,43 @@ export function ExpenseList({
       setEditError('Amount must be greater than 0.')
       return
     }
-    if (!editDescription.trim()) {
+    const trimmed = editDescription.trim()
+    if (!trimmed) {
       setEditError('Description is required.')
       return
     }
-    const payer = editPayer === 'me' ? smartAccount : counterparty
-    setEditSubmitting(true)
     setEditError(null)
-    try {
-      const hash = await submitEditExpense(
-        send, groupAddress, editingId, payer, parsedAmount, editDescription.trim(),
-      )
-      await publicClient.waitForTransactionReceipt({ hash })
-      await onMutated()
-      setEditingId(null)
-    } catch (e) {
-      setEditError(e instanceof Error ? e.message : String(e))
-    } finally {
-      setEditSubmitting(false)
-    }
+    const payer = editPayer === 'me' ? smartAccount : counterparty
+    const payerLabel = editPayer === 'me' ? 'You' : getIdentity(counterparty).label
+    const id = editingId
+    flow.start({
+      kind: 'edit',
+      title: 'Edit expense',
+      confirmLabel: 'Save changes',
+      rows: [
+        { label: 'Who paid', value: payerLabel },
+        { label: 'Amount', value: `${money(parsedAmount)} USDC`, strong: true },
+        { label: 'For', value: trimmed },
+      ],
+      submit: () => submitEditExpense(send, groupAddress, id, payer, parsedAmount, trimmed),
+      onComplete: async () => { await onMutated(); setEditingId(null) },
+    })
   }
 
-  async function onDeleteExpense(expenseId: bigint) {
+  function onDeleteExpense(expense: ExpenseEntry) {
     if (!send) return
-    // window.confirm is the interim delete gate; TODO: replace with a modal confirmation.
-    if (!window.confirm('Delete this expense?')) return
-    setDeleteSubmitting(true)
-    setDeleteError(null)
-    try {
-      const hash = await submitDeleteExpense(send, groupAddress, expenseId)
-      await publicClient.waitForTransactionReceipt({ hash })
-      await onMutated()
-    } catch (e) {
-      setDeleteError(e instanceof Error ? e.message : String(e))
-    } finally {
-      setDeleteSubmitting(false)
-    }
+    // FlowWidget confirm screen is the consent gate — no window.confirm needed.
+    flow.start({
+      kind: 'delete',
+      title: 'Remove this expense?',
+      confirmLabel: 'Remove expense',
+      rows: [
+        { label: 'Removing', value: expense.description },
+        { label: 'Amount', value: `${money(expense.amount)} USDC` },
+      ],
+      submit: () => submitDeleteExpense(send, groupAddress, expense.id),
+      onComplete: onMutated,
+    })
   }
 
   // ── Timeline build ──────────────────────────────────────────────────────────
@@ -463,23 +461,16 @@ export function ExpenseList({
   // Prop bag threaded into module-scope sub-components so they can reach edit state.
   const ep: EditProps = {
     editingId, editPayer, editAmount, editDescription,
-    editSubmitting, editError,
+    editError,
     setEditPayer, setEditAmount, setEditDescription,
     onStartEdit, onCancelEdit, onSaveEdit,
-    deleteSubmitting, onDeleteExpense,
+    onDeleteExpense,
   }
 
   const isEmpty = open.length === 0 && segments.length === 0
 
   return (
     <div style={{ marginTop: 6 }}>
-      {/* Delete error — muted note, not crimson */}
-      {deleteError && (
-        <p className="font-ui" style={{ fontSize: 12.5, color: 'var(--muted)', padding: '4px 2px' }}>
-          {deleteError}
-        </p>
-      )}
-
       {/* Loading skeletons — two rows while initial fetch is in flight */}
       {loadingDetail && isEmpty && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '8px 0' }}>

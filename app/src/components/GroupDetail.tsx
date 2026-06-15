@@ -346,6 +346,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
             sendBatch={sendBatch}
             groupAddress={resolvedGroup.address}
             smartAccount={smartAccount}
+            counterparty={resolvedGroup.counterparty}
             onSettled={reload}
             onAddFunds={() => setFundsOpen(true)}
             renderLayout={(settleBtn, callout) => (

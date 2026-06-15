@@ -1,16 +1,14 @@
-// AddExpenseForm.tsx — Inline add-expense form (interim styling).
-//
-// Light UI-kit pass over the raw-input version: Field/Input primitives, Button
-// for the submit action, muted error note. All logic and the name="payer" radio
-// group are unchanged. The form will be replaced by a FlowWidget sheet in a
-// later phase; this is just enough polish to not clash with the restyled screen.
+// AddExpenseForm.tsx — Inline add-expense form.
+// Validates fields then hands the write to the flow controller via useFlow().start();
+// the controller owns the confirm overlay, receipt wait, and error recovery.
 
 import { useState } from 'react'
 import { parseUnits } from 'viem'
 import type { Address, Hex } from 'viem'
-import { publicClient } from '../lib/client'
 import { submitAddExpense } from '../lib/addExpense'
-import { Button, Field, Input } from '../ui'
+import { getIdentity } from '../lib/identity'
+import { Button, Field, Input, money } from '../ui'
+import { useFlow } from '../flow/FlowContext'
 
 type SendUserOperation = (req: { to: Address; data: Hex }) => Promise<Hex>
 
@@ -23,43 +21,47 @@ type Props = {
 }
 
 export function AddExpenseForm({ send, groupAddress, smartAccount, counterparty, onAdded }: Props) {
+  const flow = useFlow()
   const [addPayer, setAddPayer] = useState<'me' | 'counterparty'>('me')
   const [addAmount, setAddAmount] = useState('')
   const [addDescription, setAddDescription] = useState('')
-  const [addSubmitting, setAddSubmitting] = useState(false)
-  const [addError, setAddError] = useState<string | null>(null)
+  // Validation-only error — write errors are owned by the flow controller.
+  const [formError, setFormError] = useState<string | null>(null)
 
-  async function onAddExpense() {
+  function onAddExpense() {
     if (!send) return
     let parsedAmount: bigint
     try {
       parsedAmount = parseUnits(addAmount, 6)
     } catch {
-      setAddError('Invalid amount.')
+      setFormError('Invalid amount.')
       return
     }
     if (parsedAmount <= 0n) {
-      setAddError('Amount must be greater than 0.')
+      setFormError('Amount must be greater than 0.')
       return
     }
-    if (!addDescription.trim()) {
-      setAddError('Description is required.')
+    const trimmed = addDescription.trim()
+    if (!trimmed) {
+      setFormError('Description is required.')
       return
     }
+    setFormError(null)
     const payer = addPayer === 'me' ? smartAccount : counterparty
-    setAddSubmitting(true)
-    setAddError(null)
-    try {
-      const hash = await submitAddExpense(send, groupAddress, payer, parsedAmount, addDescription.trim())
-      await publicClient.waitForTransactionReceipt({ hash })
-      await onAdded()
-      setAddAmount('')
-      setAddDescription('')
-    } catch (e) {
-      setAddError(e instanceof Error ? e.message : String(e))
-    } finally {
-      setAddSubmitting(false)
-    }
+    const payerLabel = addPayer === 'me' ? 'You' : getIdentity(counterparty).label
+    flow.start({
+      kind: 'add',
+      title: 'Add expense',
+      confirmLabel: 'Add expense',
+      rows: [
+        { label: 'Who paid', value: payerLabel },
+        { label: 'Amount', value: `${money(parsedAmount)} USDC`, strong: true },
+        { label: 'For', value: trimmed },
+      ],
+      submit: () => submitAddExpense(send, groupAddress, payer, parsedAmount, trimmed),
+      // Form fields reset only on completion — cancelled flow preserves the user's input.
+      onComplete: async () => { await onAdded(); setAddAmount(''); setAddDescription('') },
+    })
   }
 
   return (
@@ -125,15 +127,15 @@ export function AddExpenseForm({ send, groupAddress, smartAccount, counterparty,
         variant="primary"
         full
         onClick={onAddExpense}
-        disabled={addSubmitting || !send}
+        disabled={!send}
       >
-        {addSubmitting ? 'Sending…' : 'Add expense'}
+        Add expense
       </Button>
 
-      {/* Add error — muted note, never crimson */}
-      {addError && (
+      {/* Validation error — muted note, never crimson */}
+      {formError && (
         <p className="font-ui" style={{ fontSize: 12.5, color: 'var(--muted)', margin: 0 }}>
-          {addError}
+          {formError}
         </p>
       )}
     </div>
