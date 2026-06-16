@@ -17,21 +17,38 @@ const WINK = {
   confirmSub: [
     'Just the two of you and the math. Your money, not ours.',
     'You, them, and the numbers. We never hold a cent.',
+    "One approval and it's logged. Ponti never touches the money.",
+    "You're in control — one tap, and we keep the count.",
   ],
   runningNote: [
-    'Hang tight — moving at the speed of trust.',
-    'One sec — handling the trustworthy part.',
+    'Hang tight — this only takes a moment.',
+    'One sec — putting it where it belongs.',
+    'Almost there — you can keep this open.',
   ],
-  doneTitle: ['Squared away', 'Sorted'],
-  doneSub: 'Squared away.',
-  // FLAGGED COPY GAP: send-failed error uses this string. Receipt-failed error
-  // (write IS on-chain, hash known) needs distinct copy — not a failure framing.
-  // Placeholder used for receipt-failed until copy is routed through design.
-  errorHeading: "That didn't go through",
-  errorSubSendFailed: "Just the two of you and the math. Your money, not ours.",
-  // FLAGGED: receipt-failed placeholder — the write succeeded, so "didn't go through"
-  // would be misleading. Replace with reviewed copy from the design project.
-  errorSubReceiptFailed: "It's on its way — we just lost the confirmation signal.",
+  doneTitle: ['Squared away', 'Sorted', 'All set', 'Done'],
+  // Per-action doneSub pools; {name} is substituted with pending.who at pick time.
+  doneSub: {
+    create: [
+      'Your shared tab with {name} is ready.',
+      'You and {name} are connected — start adding what you spend.',
+    ],
+    add: [
+      'On the tab — the balance just updated.',
+      'Added. Future-you will thank present-you.',
+    ],
+    edit: [
+      'Updated — the balance recalculated to match.',
+      'Fixed. The tab remembers the new details.',
+    ],
+    delete: [
+      'Removed — the history still notes it was there.',
+      'Gone from the balance; the trail keeps the record.',
+    ],
+    settle: [
+      'You and {name} are even again.',
+      'Balance back to zero — nothing owed either way.',
+    ],
+  },
 } as const
 
 function rotPick<T>(arr: readonly T[]): T {
@@ -144,12 +161,15 @@ export function FlowWidget({
     confirmSub: string
     runningNote: string
     doneTitle: string
+    doneSub: string
   } | null>(null)
   if (!picked.current) {
+    const rawDoneSub = rotPick(WINK.doneSub[pending.kind])
     picked.current = {
       confirmSub: rotPick(WINK.confirmSub),
       runningNote: rotPick(WINK.runningNote),
       doneTitle: rotPick(WINK.doneTitle),
+      doneSub: rawDoneSub.replace('{name}', pending.who ?? 'them'),
     }
   }
 
@@ -169,7 +189,7 @@ export function FlowWidget({
     phase === 'done'
       ? picked.current.doneTitle
       : phase === 'error'
-      ? WINK.errorHeading
+      ? (submitFailed ? "That didn't go through" : "It's saved — just catching up")
       : pending.title
 
   // Block explorer URL for the "View receipt" link.
@@ -298,7 +318,7 @@ export function FlowWidget({
               className="font-ui"
               style={{ fontSize: 13.5, color: 'var(--muted)', textAlign: 'center' }}
             >
-              {WINK.doneSub}
+              {picked.current.doneSub}
             </span>
 
             {/* Block-explorer receipt link — omitted if explorer URL is unknown */}
@@ -321,32 +341,52 @@ export function FlowWidget({
         )}
 
         {/* ── Error phase (neutral, never red) ── */}
-        {phase === 'error' && (
+        {/* Two error worlds: send-failed (nothing on-chain, retry safe) vs. receipt-failed (write succeeded, re-send risks duplicate). */}
+        {phase === 'error' && submitFailed && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <span
               className="font-display"
               style={{ fontSize: 21, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}
             >
-              {WINK.errorHeading}
+              That didn&apos;t go through
             </span>
             <span
               className="font-ui"
               style={{ fontSize: 13.5, color: 'var(--muted)', marginBottom: 12 }}
             >
-              {submitFailed ? WINK.errorSubSendFailed : WINK.errorSubReceiptFailed}
+              Nothing moved and nothing&apos;s lost — give it another go.
             </span>
 
             <Button variant="primary" full onClick={onRetry}>
               Try again
             </Button>
-            {/* Receipt-failed cancel: the write is on-chain, so onComplete must fire. */}
-            <Button
-              variant="quiet"
-              full
-              onClick={() => onClose(!submitFailed)}
-              style={{ marginTop: 2 }}
-            >
+            <Button variant="quiet" full onClick={() => onClose(false)} style={{ marginTop: 2 }}>
               Cancel
+            </Button>
+          </div>
+        )}
+        {phase === 'error' && !submitFailed && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span
+              className="font-display"
+              style={{ fontSize: 21, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}
+            >
+              It&apos;s saved — just catching up
+            </span>
+            <span
+              className="font-ui"
+              style={{ fontSize: 13.5, color: 'var(--muted)', marginBottom: 12 }}
+            >
+              Your change went through. We&apos;re still waiting on the confirmation to show — it&apos;ll appear on its own.
+            </span>
+
+            {/* Done fires onComplete so the screen drops to its grey "Saved — updating…" state. */}
+            <Button variant="primary" full onClick={() => onClose(true)}>
+              Done
+            </Button>
+            {/* Manual-refresh escape hatch — matches the group screen's lagging-index copy. */}
+            <Button variant="quiet" full onClick={() => window.location.reload()} style={{ marginTop: 2 }}>
+              Reload to see the latest
             </Button>
           </div>
         )}

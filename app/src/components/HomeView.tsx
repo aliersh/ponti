@@ -1,6 +1,7 @@
 // HomeView.tsx — Home screen (§8.2). Full-height column, bg-bg, px-18, pb-28.
 //
-// Structure: AppHeader → net summary → WalletStrip → SectionLabel → group list.
+// Structure: AppHeader → net summary → "People you share with" section + group list
+//            → [hairline] → "Your account" section → WalletStrip.
 //
 // Data: fetches homeBalances + USDC in parallel on mount and on retry.
 // State precedence for list area: error → loading → empty → normal.
@@ -13,7 +14,6 @@
 //   avatar button → profile (F5)
 //   "New" affordance → create group (F5)
 //   empty CTA "Create a group" → create group (F5)
-//   WalletStrip "Add funds" → AddFundsPanel (F3)
 
 import { useEffect, useState, useCallback } from 'react'
 import { AddFundsPanel } from './AddFundsPanel'
@@ -161,12 +161,12 @@ export function HomeView({
             dir={net > 0n ? 'in' : net < 0n ? 'out' : 'settled'}
             label={net > 0n ? "You're owed" : net < 0n ? 'You owe' : 'Settled up'}
           />
-          {/* "net" mini-label — uppercase, tight tracking, muted; prototype screens.jsx */}
+          {/* "across everyone" caption — muted prose, sits beside DirChip per §5.13 */}
           <span
             className="font-ui text-muted"
-            style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}
+            style={{ fontSize: 10.5, fontWeight: 700 }}
           >
-            net
+            across everyone
           </span>
         </div>
         {/* Hero amount: unsigned (direction is in chip above); loading/error branches preserved */}
@@ -189,12 +189,7 @@ export function HomeView({
         </div>
       </div>
 
-      {/* 3. WalletStrip */}
-      <div style={{ marginBottom: 22 }}> {/* prototype screens.jsx */}
-        <WalletStrip usdc={usdcError ? null : usdc} onAddFunds={() => setFundsOpen(true)} />
-      </div>
-
-      {/* 4. SectionLabel */}
+      {/* 3. SectionLabel */}
       <SectionLabel
         right={
           /* "New" affordance — stub for F2; create path is F5 */
@@ -218,10 +213,10 @@ export function HomeView({
           </button>
         }
       >
-        Your groups
+        People you share with
       </SectionLabel>
 
-      {/* 5. Group list — 4-state precedence: error → loading → empty → normal */}
+      {/* 4. Group list — 4-state precedence: error → loading → empty → normal */}
       <div className="flex flex-col" style={{ gap: 9, marginTop: 8 }}>
         {hasError ? (
           /* Error state */
@@ -271,6 +266,14 @@ export function HomeView({
             />
           ))
         )}
+      </div>
+
+      {/* 5. Your account — USDC funds, separated from relational balances by hairline */}
+      <div style={{ borderTop: '1px solid var(--border)', margin: '22px 0 0', padding: '20px 0 0' }}>
+        <SectionLabel>Your account</SectionLabel>
+        <div style={{ marginTop: 8 }}>
+          <WalletStrip usdc={usdcError ? null : usdc} onAddFunds={() => setFundsOpen(true)} />
+        </div>
       </div>
 
       {/* AddFundsPanel — guarded: only rendered when smartAccount is defined */}

@@ -44,7 +44,7 @@ export function WalletStrip({ usdc, onAddFunds }: WalletStripProps) {
           className="font-ui font-semibold text-muted"
           style={{ fontSize: 12 }} /* prototype wallet.jsx */
         >
-          Your USDC
+          Funds available
         </span>
         <span>
           {usdc === null ? (

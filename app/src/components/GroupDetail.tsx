@@ -17,7 +17,7 @@ import {
   Left, Right, Dots, Plus,
 } from '../ui'
 import { SettleSection } from './SettleSection'
-import { AddExpenseForm } from './AddExpenseForm'
+import { ExpenseFormScreen } from './ExpenseFormScreen'
 import { ExpenseList } from './ExpenseList'
 import { AddFundsPanel } from './AddFundsPanel'
 
@@ -30,6 +30,12 @@ type Props = {
   send: SendUserOperation | undefined
   sendBatch: SendBatch | undefined
 }
+
+// formState: null = detail body; non-null = full-screen form.
+type FormState =
+  | { mode: 'add' }
+  | { mode: 'edit'; expense: ExpenseEntry }
+  | null
 
 // Fetches all four reads concurrently, committing whichever succeed.
 // Uses allSettled so one failing read (e.g. subgraph overload) never blanks
@@ -71,8 +77,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
   const [detailError, setDetailError] = useState<string | null>(null)
   const [usdcBalance, setUsdcBalance] = useState<bigint | null>(null)
   const [postWriteStatus, setPostWriteStatus] = useState<string | null>(null)
-  // Controls Add expense form visibility; toggled by the hero "Add expense" button.
-  const [showAdd, setShowAdd] = useState(false)
+  const [formState, setFormState] = useState<FormState>(null)
   const [fundsOpen, setFundsOpen] = useState(false)
 
   async function loadDetail(opts?: { silent?: boolean }) {
@@ -128,7 +133,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
         return
       }
     }
-    setPostWriteStatus("Confirmed on-chain — couldn't refresh the list, reload to see the latest.")
+    setPostWriteStatus('Saved — reload to see the latest.')
   }
 
   // Waits for the subgraph to index at least the chain head at call time, then
@@ -138,7 +143,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
   // happy path); any retries run in the background.
   async function pollUntilChanged() {
     if (!resolvedGroup) return
-    setPostWriteStatus('Confirmed on-chain — refreshing…')
+    setPostWriteStatus('Saved — updating…')
     if (await attemptRefresh()) {
       setPostWriteStatus(null)
       return
@@ -200,10 +205,30 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
     )
   }
 
+  const reload = () => pollUntilChanged()
+
+  // Form screen replaces the detail body while add or edit is in progress.
+  // onComplete: clear formState first so the detail body mounts and shows the
+  // "Saved — updating…" post-write status while the reload runs.
+  if (formState !== null) {
+    return (
+      <main style={{ background: 'var(--bg)', minHeight: '100%' }}>
+        <ExpenseFormScreen
+          mode={formState.mode}
+          initial={formState.mode === 'edit' ? formState.expense : undefined}
+          send={send}
+          groupAddress={resolvedGroup.address}
+          smartAccount={smartAccount}
+          counterparty={resolvedGroup.counterparty}
+          onBack={() => setFormState(null)}
+          onComplete={async () => { setFormState(null); await reload() }}
+        />
+      </main>
+    )
+  }
+
   const display: BalanceDisplay | null =
     balance !== null ? interpretBalance(balance, smartAccount, resolvedGroup.memberA) : null
-
-  const reload = () => pollUntilChanged()
 
   // Counterparty identity — nickname (if set) or truncated address.
   const identity = getIdentity(resolvedGroup.counterparty)
@@ -357,7 +382,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
                     <Button
                       variant="primary"
                       full
-                      onClick={() => setShowAdd((v) => !v)}
+                      onClick={() => setFormState({ mode: 'add' })}
                     >
                       <Plus color="var(--accent-ink)" size={16} /> Add expense
                     </Button>
@@ -372,7 +397,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
         )}
       </div>
 
-      {/* Activity section — SectionLabel + existing ExpenseList (rebuilt later) */}
+      {/* Activity section — SectionLabel + ExpenseList */}
       <div style={{ marginTop: 22 }}>
         <SectionLabel>Activity</SectionLabel>
         <ExpenseList
@@ -384,19 +409,9 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
           smartAccount={smartAccount}
           counterparty={resolvedGroup.counterparty}
           onMutated={reload}
+          onEdit={(expense) => setFormState({ mode: 'edit', expense })}
         />
       </div>
-
-      {/* Add expense form — gated by showAdd; props/callbacks unchanged */}
-      {showAdd && (
-        <AddExpenseForm
-          send={send}
-          groupAddress={resolvedGroup.address}
-          smartAccount={smartAccount}
-          counterparty={resolvedGroup.counterparty}
-          onAdded={reload}
-        />
-      )}
 
       {/* AddFundsPanel — opened by SettleSection's onAddFunds; onBalance updates the
           low-USDC gate so the callout clears reactively once funded. */}

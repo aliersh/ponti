@@ -4,44 +4,23 @@
 // expenses before each settle collapse into an expandable segment. Uses
 // buildTimeline() (pure, from fetchGroup.ts) to partition expenses into an
 // open window and closed segments; sub-components are defined at module scope
-// (not nested) to prevent remounting on every edit-state update, which would
-// drop input focus and reset each row's local `open` state.
+// (not nested) to prevent remounting on every parent state update, which would
+// drop each row's local `open` state.
 
 import { useState, useMemo } from 'react'
-import { formatUnits, getAddress, parseUnits } from 'viem'
+import { getAddress } from 'viem'
 import type { Address, Hex } from 'viem'
-import { submitEditExpense } from '../lib/editExpense'
 import { submitDeleteExpense } from '../lib/deleteExpense'
 import { buildTimeline } from '../lib/fetchGroup'
 import type { ExpenseEntry, SettlementEntry } from '../lib/fetchGroup'
 import { getIdentity } from '../lib/identity'
 import {
-  Button, Num, money, Field, Input, Pill, Skeleton,
+  Button, Num, money, Pill, Skeleton,
   Pencil, Trash, Check, Right,
 } from '../ui'
 import { useFlow } from '../flow/FlowContext'
 
 type SendUserOperation = (req: { to: Address; data: Hex }) => Promise<Hex>
-
-// ── Shared types ───────────────────────────────────────────────────────────────
-
-// EditProps threads all edit/delete state and callbacks from ExpenseList down
-// into ExpenseRowWrap and InlineEditForm — necessary because those components
-// live at module scope and cannot close over ExpenseList's state directly.
-type EditProps = {
-  editingId: bigint | null
-  editPayer: 'me' | 'counterparty'
-  editAmount: string
-  editDescription: string
-  editError: string | null
-  setEditPayer: (v: 'me' | 'counterparty') => void
-  setEditAmount: (v: string) => void
-  setEditDescription: (v: string) => void
-  onStartEdit: (e: ExpenseEntry) => void
-  onCancelEdit: () => void
-  onSaveEdit: () => void
-  onDeleteExpense: (expense: ExpenseEntry) => void
-}
 
 type Props = {
   expenses: ExpenseEntry[]
@@ -52,6 +31,7 @@ type Props = {
   smartAccount: Address
   counterparty: Address
   onMutated: () => Promise<void>
+  onEdit: (expense: ExpenseEntry) => void
 }
 
 // ── Date helper ────────────────────────────────────────────────────────────────
@@ -62,99 +42,6 @@ function fmtDate(unixSec: number): string {
     month: 'short',
     day: 'numeric',
   })
-}
-
-// ── InlineEditForm ─────────────────────────────────────────────────────────────
-
-// Rendered by ExpenseRowWrap in place of the row when editingId === e.id.
-//
-// RADIO NAME GOTCHA: edit-payer radios use name="edit-payer", not name="payer".
-// Both this form and AddExpenseForm can be in the DOM simultaneously (add panel
-// is toggled independently of edit). A shared name would silently merge them
-// into one selection group, making one payer radio clear the other form's state.
-function InlineEditForm({
-  ep,
-  send,
-}: {
-  ep: EditProps
-  send: SendUserOperation | undefined
-}) {
-  return (
-    <div
-      className="bg-surface-2 rounded-sm"
-      style={{ padding: '12px 10px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}
-    >
-      {/* Payer radios — name="edit-payer" intentionally distinct from Add form's name="payer" */}
-      <div style={{ display: 'flex', gap: 18 }}>
-        <label
-          className="font-ui"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5, color: 'var(--ink)', cursor: 'pointer' }}
-        >
-          <input
-            type="radio"
-            name="edit-payer"
-            value="me"
-            checked={ep.editPayer === 'me'}
-            onChange={() => ep.setEditPayer('me')}
-          />
-          I paid
-        </label>
-        <label
-          className="font-ui"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5, color: 'var(--ink)', cursor: 'pointer' }}
-        >
-          <input
-            type="radio"
-            name="edit-payer"
-            value="counterparty"
-            checked={ep.editPayer === 'counterparty'}
-            onChange={() => ep.setEditPayer('counterparty')}
-          />
-          Counterparty paid
-        </label>
-      </div>
-
-      <Field label="Amount">
-        <Input
-          placeholder="e.g. 12.50"
-          value={ep.editAmount}
-          onChange={(ev) => ep.setEditAmount(ev.target.value)}
-          inputMode="decimal"
-        />
-      </Field>
-
-      <Field label="Description">
-        <Input
-          placeholder="What was this for?"
-          value={ep.editDescription}
-          onChange={(ev) => ep.setEditDescription(ev.target.value)}
-        />
-      </Field>
-
-      {/* Action row */}
-      <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
-        <Button
-          onClick={ep.onSaveEdit}
-          disabled={!send}
-        >
-          Save
-        </Button>
-        <Button variant="quiet" onClick={ep.onCancelEdit}>
-          Cancel
-        </Button>
-      </div>
-
-      {/* Edit error — muted note, never crimson */}
-      {ep.editError && (
-        <p
-          className="font-ui"
-          style={{ fontSize: 12.5, color: 'var(--muted)', margin: 0 }}
-        >
-          {ep.editError}
-        </p>
-      )}
-    </div>
-  )
 }
 
 // ── ExpenseRow ─────────────────────────────────────────────────────────────────
@@ -220,30 +107,23 @@ function ExpenseRow({
 
 // Tappable wrapper around ExpenseRow. Click toggles the local `open` state,
 // which lifts the row background and reveals Edit / Delete actions.
-// When editingId === e.id, renders InlineEditForm in place of the row + actions.
 // muted prop → opacity 0.92 for collapsed-segment items.
 function ExpenseRowWrap({
   e,
   smartAccount,
   counterparty,
   muted,
-  ep,
-  send,
+  onEdit,
+  onDeleteExpense,
 }: {
   e: ExpenseEntry
   smartAccount: Address
   counterparty: Address
   muted?: boolean
-  ep: EditProps
-  send: SendUserOperation | undefined
+  onEdit: (e: ExpenseEntry) => void
+  onDeleteExpense: (e: ExpenseEntry) => void
 }) {
   const [open, setOpen] = useState(false)
-  const isEditing = ep.editingId === e.id
-
-  // When editing, show the inline form in place of the row entirely.
-  if (isEditing) {
-    return <InlineEditForm ep={ep} send={send} />
-  }
 
   return (
     <div
@@ -268,14 +148,15 @@ function ExpenseRowWrap({
         <div style={{ display: 'flex', gap: 8, padding: '2px 10px 12px' }}>
           <Button
             variant="soft"
-            onClick={() => ep.onStartEdit(e)}
+            // bubbles to GroupDetail — edit opens FormScreen
+            onClick={() => onEdit(e)}
             style={{ padding: '8px 12px', fontSize: 13 }}
           >
             <Pencil color="var(--accent)" size={14} /> Edit
           </Button>
           <Button
             variant="ghost"
-            onClick={() => ep.onDeleteExpense(e)}
+            onClick={() => onDeleteExpense(e)}
             style={{ padding: '8px 12px', fontSize: 13 }}
           >
             <Trash color="var(--muted)" size={14} /> Delete
@@ -370,65 +251,9 @@ export function ExpenseList({
   smartAccount,
   counterparty,
   onMutated,
+  onEdit,
 }: Props) {
   const flow = useFlow()
-
-  // ── Edit state ──────────────────────────────────────────────────────────────
-  const [editingId, setEditingId] = useState<bigint | null>(null)
-  const [editPayer, setEditPayer] = useState<'me' | 'counterparty'>('me')
-  const [editAmount, setEditAmount] = useState('')
-  const [editDescription, setEditDescription] = useState('')
-  // Validation-only error — write errors are owned by the flow controller.
-  const [editError, setEditError] = useState<string | null>(null)
-
-  function onStartEdit(expense: ExpenseEntry) {
-    setEditingId(expense.id)
-    setEditPayer(getAddress(expense.payer) === getAddress(smartAccount) ? 'me' : 'counterparty')
-    setEditAmount(formatUnits(expense.amount, 6))
-    setEditDescription(expense.description)
-    setEditError(null)
-  }
-
-  function onCancelEdit() {
-    setEditingId(null)
-    setEditError(null)
-  }
-
-  function onSaveEdit() {
-    if (!send || editingId === null) return
-    let parsedAmount: bigint
-    try {
-      parsedAmount = parseUnits(editAmount, 6)
-    } catch {
-      setEditError('Invalid amount.')
-      return
-    }
-    if (parsedAmount <= 0n) {
-      setEditError('Amount must be greater than 0.')
-      return
-    }
-    const trimmed = editDescription.trim()
-    if (!trimmed) {
-      setEditError('Description is required.')
-      return
-    }
-    setEditError(null)
-    const payer = editPayer === 'me' ? smartAccount : counterparty
-    const payerLabel = editPayer === 'me' ? 'You' : getIdentity(counterparty).label
-    const id = editingId
-    flow.start({
-      kind: 'edit',
-      title: 'Edit expense',
-      confirmLabel: 'Save changes',
-      rows: [
-        { label: 'Who paid', value: payerLabel },
-        { label: 'Amount', value: `${money(parsedAmount)} USDC`, strong: true },
-        { label: 'For', value: trimmed },
-      ],
-      submit: () => submitEditExpense(send, groupAddress, id, payer, parsedAmount, trimmed),
-      onComplete: async () => { await onMutated(); setEditingId(null) },
-    })
-  }
 
   function onDeleteExpense(expense: ExpenseEntry) {
     if (!send) return
@@ -458,15 +283,6 @@ export function ExpenseList({
   // Segment expand state — keyed by settlement timestamp (SettlementEntry has no id).
   const [openSeg, setOpenSeg] = useState<Record<number, boolean>>({})
 
-  // Prop bag threaded into module-scope sub-components so they can reach edit state.
-  const ep: EditProps = {
-    editingId, editPayer, editAmount, editDescription,
-    editError,
-    setEditPayer, setEditAmount, setEditDescription,
-    onStartEdit, onCancelEdit, onSaveEdit,
-    onDeleteExpense,
-  }
-
   const isEmpty = open.length === 0 && segments.length === 0
 
   return (
@@ -493,8 +309,8 @@ export function ExpenseList({
           e={e}
           smartAccount={smartAccount}
           counterparty={counterparty}
-          ep={ep}
-          send={send}
+          onEdit={onEdit}
+          onDeleteExpense={onDeleteExpense}
         />
       ))}
 
@@ -526,8 +342,8 @@ export function ExpenseList({
                     smartAccount={smartAccount}
                     counterparty={counterparty}
                     muted
-                    ep={ep}
-                    send={send}
+                    onEdit={onEdit}
+                    onDeleteExpense={onDeleteExpense}
                   />
                 ))}
               </div>

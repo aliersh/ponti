@@ -31,7 +31,7 @@ export interface PendingFlow {
   confirmLabel: string
   /** Rows shown in the consent grid, in display order. */
   rows: ConsentRow[]
-  /** Counterparty label — used in the settle safety-line copy. */
+  /** Counterparty nickname — used in the settle safety-line copy AND in the per-action doneSub copy ({name} token). */
   who?: string
   /**
    * Executes ONLY the send/sendBatch call. Returns the tx hash.
