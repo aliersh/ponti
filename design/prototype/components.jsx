@@ -259,7 +259,7 @@ function GroupRow({ g, onClick }) {
           <span style={{ fontFamily: "var(--font-ui)", fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>{g.nickname}</span>
           {g.crossBorder && <span style={{ color: "var(--muted)", display: "inline-flex" }}>{I.globe("var(--muted)")}</span>}
         </div>
-        <span style={{ fontFamily: "var(--font-ui)", fontSize: 13, color: "var(--muted)" }}>{g.label}</span>
+        <span style={{ fontFamily: "var(--font-ui)", fontSize: 13, color: "var(--muted)" }}>{g.lastActivity ? `Last active ${g.lastActivity}` : "No activity yet"}</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
         {g.balance === 0

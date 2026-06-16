@@ -117,8 +117,8 @@ function NetSummary({ groups, size = 44 }) {
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 9 }}>
         <DirChip balance={net} label={net > 0 ? "You're owed" : net < 0 ? "You owe" : "Settled up"} />
-        <span style={{ fontFamily: "var(--font-ui)", fontSize: 10.5, fontWeight: 700, letterSpacing: "0.1em",
-          textTransform: "uppercase", color: "var(--muted)" }}>net</span>
+        <span style={{ fontFamily: "var(--font-ui)", fontSize: 11.5, fontWeight: 600,
+          color: "var(--muted)" }}>across everyone</span>
       </div>
       <div className="pnum" style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: size,
         letterSpacing: "-0.04em", color: "var(--ink)", lineHeight: 1.08 }}>
@@ -142,7 +142,7 @@ function RailGroupRow({ g, active, onClick }) {
           <span style={{ fontFamily: "var(--font-ui)", fontSize: 15, fontWeight: 600, color: "var(--ink)" }}>{g.nickname}</span>
           {g.crossBorder && <span style={{ color: "var(--muted)", display: "inline-flex" }}>{I.globe("var(--muted)")}</span>}
         </div>
-        <span style={{ fontFamily: "var(--font-ui)", fontSize: 12.5, color: "var(--muted)" }}>{g.label}</span>
+        <span style={{ fontFamily: "var(--font-ui)", fontSize: 12.5, color: "var(--muted)" }}>{g.lastActivity ? `Last active ${g.lastActivity}` : "No activity yet"}</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
         {g.balance === 0
@@ -184,7 +184,7 @@ function GroupDetailPane({ g, data, postWrite, lowUsdc, onAdd, onSettle, onEditE
             {g.crossBorder && <Pill tone="neutral">{I.globe("var(--muted)")} cross-border</Pill>}
           </div>
           <button className="dk-hover-link" style={{ all: "unset", cursor: "pointer", fontFamily: "var(--font-ui)", fontSize: 13,
-            color: "var(--muted)" }}>{g.label} · details {I.right("var(--muted)")}</button>
+            color: "var(--muted)" }}>{g.lastActivity ? `Last active ${g.lastActivity}` : "Shared tab"} · details {I.right("var(--muted)")}</button>
         </div>
         <button className="dk-hover-icon" style={{ all: "unset", cursor: "pointer", color: "var(--muted)", padding: 8, borderRadius: 8 }}>{I.dots("var(--muted)")}</button>
       </div>
@@ -259,12 +259,11 @@ function HomeFeed({ data, demoState, onOpen, onCreate, onAddFunds, narrow, maxW 
   const mw = maxW || (narrow ? 600 : 760);
   return (
     <div style={{ maxWidth: mw, margin: "0 auto", padding: narrow ? "26px 28px 48px" : "36px 44px 56px" }}>
-      <div style={{ marginBottom: 18 }}><NetSummary groups={groups} size={narrow ? 40 : 46} /></div>
-      <div style={{ marginBottom: 26 }}><WalletStrip me={data.me} onAddFunds={onAddFunds} /></div>
+      <div style={{ marginBottom: 22 }}><NetSummary groups={groups} size={narrow ? 40 : 46} /></div>
       <SectionLabel right={
         <button onClick={onCreate} className="dk-hover-link" style={{ all: "unset", cursor: "pointer", display: "inline-flex",
           alignItems: "center", gap: 5, color: "var(--accent)", fontFamily: "var(--font-ui)", fontSize: 13.5, fontWeight: 700 }}>{I.plus("var(--accent)")} New</button>
-      }>Your groups</SectionLabel>
+      }>People you share with</SectionLabel>
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
         {demoState === "loading" && [0, 1, 2].map((i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 13, padding: "15px 16px",
@@ -306,7 +305,7 @@ function HomeFeed({ data, demoState, onOpen, onCreate, onAddFunds, narrow, maxW 
                 <span style={{ fontFamily: "var(--font-ui)", fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>{g.nickname}</span>
                 {g.crossBorder && <span style={{ color: "var(--muted)", display: "inline-flex" }}>{I.globe("var(--muted)")}</span>}
               </div>
-              <span style={{ fontFamily: "var(--font-ui)", fontSize: 13, color: "var(--muted)" }}>{g.label}</span>
+              <span style={{ fontFamily: "var(--font-ui)", fontSize: 13, color: "var(--muted)" }}>{g.lastActivity ? `Last active ${g.lastActivity}` : "No activity yet"}</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
               {g.balance === 0
@@ -316,6 +315,12 @@ function HomeFeed({ data, demoState, onOpen, onCreate, onAddFunds, narrow, maxW 
             </div>
           </button>
         ))}
+      </div>
+
+      {/* wallet = UTILITY, set apart from the relational net + group balances above */}
+      <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid var(--border)" }}>
+        <SectionLabel>Your account</SectionLabel>
+        <div style={{ marginTop: 10 }}><WalletStrip me={data.me} onAddFunds={onAddFunds} /></div>
       </div>
     </div>
   );
@@ -346,7 +351,7 @@ function DesktopAddModal({ g, onClose, onSubmit }) {
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 4 }}>
           <div>
             <h2 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 21, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.02em" }}>Add expense</h2>
-            <p style={{ margin: "4px 0 0", fontFamily: "var(--font-ui)", fontSize: 13, color: "var(--muted)" }}>Shared with {g.nickname}. No money moves yet — just the record.</p>
+            <p style={{ margin: "4px 0 0", fontFamily: "var(--font-ui)", fontSize: 13, color: "var(--muted)" }}>Add what you paid for — Ponti keeps the count.</p>
           </div>
           <button onClick={onClose} className="dk-hover-icon" style={{ all: "unset", cursor: "pointer", color: "var(--muted)", padding: 6, borderRadius: 8 }}>{DI.close("var(--muted)")}</button>
         </div>
@@ -366,6 +371,18 @@ function AddExpenseFields({ g, onSubmit, initial, submitLabel = "Review & add" }
   const ok = parseFloat(amt) > 0 && desc.trim();
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <Field label="Amount">
+        <div style={{ position: "relative" }}>
+          <Input placeholder="0.00" inputMode="decimal" value={amt} onChange={(e) => setAmt(e.target.value)}
+            style={{ fontFamily: "var(--font-display)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em",
+              paddingRight: 72, fontSize: 30, fontWeight: 700 }} />
+          <span style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)",
+            fontFamily: "var(--font-ui)", fontSize: 15, fontWeight: 600, color: "var(--muted)" }}>USDC</span>
+        </div>
+      </Field>
+      <Field label="What for?">
+        <Input placeholder="e.g. Groceries" value={desc} onChange={(e) => setDesc(e.target.value)} />
+      </Field>
       <Field label="Who paid?">
         <div style={{ display: "flex", gap: 8 }}>
           {[["me", "You"], ["them", g.nickname]].map(([k, lbl]) => (
@@ -377,17 +394,6 @@ function AddExpenseFields({ g, onSubmit, initial, submitLabel = "Review & add" }
               boxShadow: payer === k ? "inset 0 0 0 1.5px var(--accent)" : "inset 0 0 0 1px var(--border)" }}>{lbl}</button>
           ))}
         </div>
-      </Field>
-      <Field label="Amount">
-        <div style={{ position: "relative" }}>
-          <Input placeholder="0.00" inputMode="decimal" value={amt} onChange={(e) => setAmt(e.target.value)}
-            style={{ fontFamily: "var(--font-ui)", fontVariantNumeric: "tabular-nums", paddingRight: 56, fontSize: 18, fontWeight: 600 }} />
-          <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
-            fontFamily: "var(--font-ui)", fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>USDC</span>
-        </div>
-      </Field>
-      <Field label="What for?">
-        <Input placeholder="e.g. Groceries" value={desc} onChange={(e) => setDesc(e.target.value)} />
       </Field>
       <Button variant="primary" full disabled={!ok} onClick={() => onSubmit({ payer, amt, desc })} style={{ marginTop: 4 }}>{submitLabel}</Button>
     </div>
@@ -443,7 +449,7 @@ function YourPontiModal({ me, onClose, onLogout, onAddFunds, dark, onToggleTheme
             <QRCode value="ponti-ariel" size={150} />
           </div>
           <p style={{ margin: 0, fontFamily: "var(--font-ui)", fontSize: 12.5, color: "var(--muted)", textAlign: "center", lineHeight: 1.45, maxWidth: 250 }}>
-            Someone scans this or opens your link to add you — that's all they need.
+            This is your Ponti ID — like a username. Share it and someone can start a shared tab with you.
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", width: "100%",
             background: "var(--surface-2)", borderRadius: "var(--radius-sm)", boxSizing: "border-box" }}>
@@ -455,7 +461,7 @@ function YourPontiModal({ me, onClose, onLogout, onAddFunds, dark, onToggleTheme
               {copied ? <>{I.check("var(--accent)", 14)} Copied</> : <>{I.copy("var(--accent)")} Copy</>}
             </button>
           </div>
-          <Button variant="primary" full>{I.share("var(--accent-ink)")} Share invite</Button>
+          <Button variant="primary" full>{I.share("var(--accent-ink)")} Share link</Button>
         </div>
 
         {/* appearance */}
@@ -488,7 +494,7 @@ function DesktopEditModal({ g, expense, onClose, onSubmit }) {
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 4 }}>
           <div>
             <h2 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 21, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.02em" }}>Edit expense</h2>
-            <p style={{ margin: "4px 0 0", fontFamily: "var(--font-ui)", fontSize: 13, color: "var(--muted)" }}>Editing your tab with {g.nickname}. The change is logged — nothing moves yet.</p>
+            <p style={{ margin: "4px 0 0", fontFamily: "var(--font-ui)", fontSize: 13, color: "var(--muted)" }}>Fix the details — the balance updates to match.</p>
           </div>
           <button onClick={onClose} className="dk-hover-icon" style={{ all: "unset", cursor: "pointer", color: "var(--muted)", padding: 6, borderRadius: 8 }}>{DI.close("var(--muted)")}</button>
         </div>
@@ -567,12 +573,11 @@ function DesktopSplit(p) {
           </button>
         </div>
         <div style={{ padding: "4px 22px 14px" }}><NetSummary groups={data.groups} size={36} /></div>
-        <div style={{ padding: "0 22px 18px" }}><WalletStrip me={data.me} onAddFunds={p.onAddFunds} /></div>
         <div style={{ padding: "0 22px" }}>
           <SectionLabel right={
             <button onClick={onCreate} className="dk-hover-link" style={{ all: "unset", cursor: "pointer", display: "inline-flex",
               alignItems: "center", gap: 5, color: "var(--accent)", fontFamily: "var(--font-ui)", fontSize: 13, fontWeight: 700 }}>{I.plus("var(--accent)")} New</button>
-          }>Your groups</SectionLabel>
+          }>People you share with</SectionLabel>
         </div>
         <div style={{ flex: 1, overflow: "auto", padding: "8px 14px 16px", display: "flex", flexDirection: "column", gap: 4 }}>
           {demoState === "loading" && [0, 1, 2].map((i) => (
@@ -600,9 +605,12 @@ function DesktopSplit(p) {
             </div>
           )}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 22px", borderTop: "1px solid var(--border)", color: "var(--muted)" }}>
-          <span style={{ display: "inline-flex" }}>{I.shield("var(--muted)")}</span>
-          <span style={{ fontFamily: "var(--font-ui)", fontSize: 12 }}>Ponti never holds your money. It only keeps the count.</span>
+        <div style={{ borderTop: "1px solid var(--border)", padding: "14px 22px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <WalletStrip me={data.me} onAddFunds={p.onAddFunds} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--muted)" }}>
+            <span style={{ display: "inline-flex" }}>{I.shield("var(--muted)")}</span>
+            <span style={{ fontFamily: "var(--font-ui)", fontSize: 12 }}>Ponti never holds your money. It only keeps the count.</span>
+          </div>
         </div>
       </aside>
       {/* detail */}

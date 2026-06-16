@@ -113,7 +113,8 @@ fixed value (§7).
     **Accent on "you owe" only** (accent-soft bg + accent text/arrow — it carries the
     pending Settle); "owes you" + settled stay neutral (surface-2 / muted). Numbers
     stay `--ink`; chip carries direction → **+/− sign dropped** from displayed
-    amounts. Sizes: `lg` (hero) · `md` (Home/desktop net + "NET" mini-label) · `sm`
+    amounts. Sizes: `lg` (hero) · `md` (Home/desktop net + an **"across everyone"**
+    caption — the old "NET" mini-label was cut as finance jargon, §12/§17) · `sm`
     (rows). Hero/net chips personalize the label ("You owe Cami" / "Cami owes you" /
     "You're owed" / "All settled up"); rows use short form. Applied on every
     balance-direction surface: Home net, group rows, group-detail balance hero, mobile
@@ -198,8 +199,25 @@ input, one primary button, and a reassurance line **"Ponti never holds your mone
 Email only — no Google, no password. States: idle, submitting, "check your email."
 
 ### 8.2 Home — **extend** → `HomeView`
-Top app bar (brand + Your-Ponti/profile entry); a **net summary** header (one big
-**proportional** amount in `--ink`, USDC suffix, a **DirChip** (§5.13) — directional arrow + word pill + "NET" mini-label, accent only on "you owe" side; a compact **WalletStrip** (§10); then a list of **group rows** (avatar + nickname + balance **tabular** + a **DirChip sm** below the amount — no +/− sign; settled rows show a check chip). Primary "Add someone" affordance.
+Top app bar (brand + Your-Ponti/profile entry). Home shows **three money figures that are really
+TWO categories** — the layout must make that legible at a glance (Jun 16, 2nd pass):
+
+- **RELATIONAL — "who owes whom":**
+  1. **Net = the headline.** One big **proportional** amount in `--ink`, USDC suffix, a **DirChip**
+     (§5.13, accent only on the "you owe" side) and the plain caption **"across everyone"**
+     (replaces the old "NET" jargon; names the running total across all the people you share with).
+     The number that matters.
+  2. **Per-group balances = its breakdown.** The **"People you share with"** rows (avatar +
+     nickname + balance **tabular** + **DirChip sm**, no +/− sign; settled rows show a check) sit
+     **directly under the net as its detail** — visually subordinate, part of the same block.
+- **UTILITY — "what I can pay with" (a different category):**
+  3. **Funds available** (WalletStrip, §10) is **NOT** a balance. It is set **apart** from the
+     relational block by a **real hairline + spacing**, under its own **"Your account"** label, so
+     it **never reads as a third balance**. Eyebrow "Funds available," amount `--ink` **tabular**,
+     inline **Add funds**.
+
+The per-row secondary tag stays **deferred** with group naming/tagging (§14) — show a neutral
+last-activity line if anything, never an invented label. Primary "Add someone" affordance.
 **States** (all in the Tweaks demo-state control):
 - **normal** — net header + group rows.
 - **loading** — skeleton rows (no spinner-only screens).
@@ -223,14 +241,35 @@ Top→bottom:
    amounts are **tabular**.
 3. **Settle gate** (`SettleSection`) — shows only when the viewer is the **debtor**.
    Settle is an **outline** button. If the debtor lacks USDC, it's **disabled** with
-   "You need X more USDC" + an **Add funds** affordance (§10) — never a failed tx.
+   "You need X more USDC" + an **Add funds** affordance (§10) — never a failed tx. This
+   **just-in-time** callout is the **only** place funds/wallet appear in the group view —
+   there is **no permanent wallet strip here** (§10).
 
 ### 8.4 Add / Edit expense — **extend** → `AddExpenseForm` / `ExpenseList` (edit) → FlowWidget
-Form: amount (numeric, big), description, **who paid** (radio between the two people).
-Edit is the **same form prefilled** via a `mode`/`initial` distinction. Submitting
-routes through the **FlowWidget** (§9).
-**Gotcha:** the inline **edit** form's payer radios must use a **distinct radio-group
-name** from the Add form (both can render at once; a shared `name` merges them).
+
+**Presentation (the IA call — LOCKED Jun 16):** Add/Edit is a **dedicated form**, *not* a
+bottom-sheet and *not* an inline panel. On **mobile** it's a full **FormScreen with a Back
+affordance**; on **desktop** it's a **`ModalShell` dialog**. Two reasons it isn't a sheet:
+(a) the sheet is reserved for the **FlowWidget** + **AddFundsPanel**, and the form *routes into*
+the FlowWidget on submit — you must never stack sheet-on-sheet; (b) the form has enough fields
+to deserve a focused surface. **Edit reuses the exact same form, prefilled,** via a
+`mode`/`initial` distinction.
+
+**Layout, top → bottom:**
+1. **Title + contextual subtitle** (copy below).
+2. **Amount** — the focal field: a large numeric input with a `USDC` suffix (big display
+   figure). Money rule holds — `--ink`, never accent-colored.
+3. **"What for?"** — single-line text; placeholder **"e.g. Groceries"**.
+4. **"Who paid?"** — payer selector as two **styled toggle buttons** (a single-select
+   segmented control: **You** / the counterparty by nickname + avatar). **Not raw radios.**
+   *(This also retires the old shared-`name` radio-group gotcha entirely — toggle buttons
+   don't collide when Add + Edit can both be mounted.)*
+5. **Primary button** → routes into the FlowWidget confirm step (§9).
+
+**Locked copy:** field labels **"Who paid?"** / **"What for?"**; placeholder **"e.g. Groceries"**;
+subtitle — Add: **"Add what you paid for — Ponti keeps the count."** · Edit: **"Fix the details —
+the balance updates to match."**; primary button — Add: **"Review & add"** · Edit:
+**"Review changes"**. Full string set in §17.
 
 ### 8.5 Your Ponti (profile) — **new** → new Profile/`YourPonti` screen
 **Avatar (photo upload**, persisted locally; initial fallback) + **editable display
@@ -266,10 +305,24 @@ One sheet, three phases: **confirm → in-progress → done.**
 - **In-flight is resilient and never red.** Success offers "view receipt." Returning
   to the underlying screen shows a grey **"Saved — updating…"** (mirrors the repo's
   resilient post-write refresh — see §11).
-- **Copy tone is LOCKED to wink.** Soft copy (confirm subtitle / running note / done
-  title / per-flow done subtitle) **rotates** among a few wink phrasings — one picked
-  at random per open (stable for that opening). **Numbers never rotate and are never
-  colored.** (Rotation is presentational only.)
+- **Copy tone is LOCKED to wink**, and the soft copy **rotates** among real phrase
+  **pools** — one variant picked at random per open (stable for that opening).
+  **Pool architecture (decided Jun 16):** `confirmSub`, `runningNote` and `doneTitle`
+  are **shared by STATE** (action-agnostic — the consent reassurance and the in-flight
+  note read the same whether you're adding, settling or deleting), while **`doneSub`
+  is PER-ACTION** (settle / add / edit / delete / create each get their own distinct
+  pool — that's the one line that genuinely differs by what just happened). `doneSub`
+  is a **separate pool from `doneTitle`** and must never repeat a title line (the old
+  single fixed `doneSub` duplicated a title ~half the time — fixed). **Numbers never
+  rotate and are never colored.** Full pools in §17.
+- **Two terminal error branches** (the prototype always succeeds, so this copy is new —
+  wire it in the repo). Both are **wink and never alarm-red**:
+  - **send-failed** — *nothing happened* (the UserOp never submitted): a soft "that
+    didn't go through — try again," with a **Try again** button. Retryable.
+  - **receipt-failed** — *it DID go through; only the confirmation signal was lost*
+    (write mined, the post-write refresh/index is lagging). **No failure framing, no
+    re-send** — reassure that it landed and we're just re-checking; closing drops the
+    user onto the grey "Saved — updating…" state (§11). Strings in §17.
 - **Placement is a prop:** mobile = bottom **sheet**; desktop = centered **modal**
   (default), with **side** and **sheet** also supported.
 
@@ -283,19 +336,31 @@ One sheet, three phases: **confirm → in-progress → done.**
 
 An account-level **USDC balance** (`me.usdc`, distinct from the per-person tabs).
 
+> **Where the wallet lives (LOCKED Jun 16).** Funds appear on **Home** (a *utility* strip set
+> apart from the relational balances — §8.2) and the **Your Ponti** account screen only. In the
+> **group view the wallet is surfaced just-in-time at settle** (the low-USDC callout / settle
+> confirm) — **never a permanent wallet strip there.** The group view is the relationship with one
+> person; an account balance sitting in it recreates the competing-amounts problem.
+
 - **WalletCard** — full card, primary location: the account screen ("Your Ponti").
-  Eyebrow "Your USDC" + amount in `--ink` (**tabular**) + "USDC" suffix + an
-  **Add funds** soft-accent button + a one-line reassurance caption.
-- **WalletStrip** — compact row (Home, desktop feed/rail): coin badge + "Your USDC" +
-  amount (`--ink`, tabular) + Add funds.
+  Eyebrow **"Funds available"** (was "Your USDC" — plain-language pass, §17) + amount in
+  `--ink` (**tabular**) + "USDC" suffix + an **Add funds** soft-accent button + a one-line
+  reassurance caption.
+- **WalletStrip** — compact row (Home, desktop feed/rail): coin badge + **"Funds
+  available"** + amount (`--ink`, tabular) + Add funds. On Home it sits **secondary,
+  below the net headline** (§8.2).
 - **Low-USDC settle gate** — when `you owe` and `me.usdc < owed`, Settle is disabled
   with "You need **X** more USDC" + Add funds. `X` is derived from `me.usdc` and the
   callout **clears reactively** the instant funds cover the debt (no manual refresh).
 - **AddFundsPanel** — opened by any Add-funds affordance. **Not a FlowWidget** (no
   "approve transaction" button). One panel, three phases:
-  1. **Guide** — copy your address → "Open faucet" (external testnet faucet, new
-     tab) → plain steps (pick USDC on **Base**, paste address, up to 20 every 2h).
-  2. **Waiting** — passive "Waiting for your funds…", auto-detecting, **no manual
+  1. **Guide** — plain intro **"Add USDC so you're ready to settle up. It's free — we'll
+     point you to a page that hands out test funds. Takes about a minute."** → copy your
+     address → "Open the funds page" (external, new tab) → steps (pick USDC on **Base**,
+     paste address, up to 20 every 2h). **"Faucet"/"Base" appear ONLY inside these steps**
+     (where the user must recognize the external site) — never in the headline copy.
+  2. **Waiting** — passive **"Waiting for your funds… you can leave this open, it'll
+     update on its own."**, auto-detecting, **no manual
      refresh button, never red.** Close is hidden here.
   3. **Received** — "Funds received ✓" + the new balance.
   - **Faucet isolation:** keep Phase 1's external-faucet content self-contained so a
@@ -319,9 +384,13 @@ testnet faucet), grant `20` USDC.
   `encodeFunctionData → send({to,data})` (or `sendBatch(calls)` for settle). `send` /
   `sendBatch` are derived once in `App.tsx` and passed down as props — **the
   FlowWidget consumes these props, not Privy directly.**
-- **One explicit approval per write** (decision §5.7). Privy still shows its own
-  per-call confirmation; the FlowWidget is Ponti's wrapper around the whole action,
-  not a replacement for Privy's signer UI.
+- **One explicit approval per write** (decision §5.7). **Privy runs headless** — its
+  built-in confirm and "All Done" modals have been **removed** — so the **FlowWidget is
+  the ONLY surface for consent, progress and success.** The FlowWidget's single approval
+  button **IS** the consent step; there is no separate Privy signer screen behind it. The
+  widget consumes the repo's `send`/`sendBatch` props and **never imports or renders Privy
+  UI**. *(Updated Jun 16: earlier drafts of this doc described Privy's per-call confirm /
+  "All Done" screens — that wiring is gone; ignore any lingering reference to it.)*
 - **Reads fork:** the **groups list** and **folded expense history** come from the
   **subgraph over GraphQL** (`fetchGroups.ts`, `fetchGroup.ts`); **balance** (signed
   `int256`) and the user's **USDC balance** are direct `readContract` calls. Balance
@@ -373,9 +442,14 @@ Data-layer boxes the UI reads/writes through (already built — don't rebuild):
 - **No crypto jargon** (§5.4). Keep **USDC**.
 - **Wink at the edges, calm on the money** — empty/success/microcopy use the **wink**
   tone (locked); numbers and confirmations stay sober and are never colored.
-- **Interface is English.**
+- **Interface is English.** Copy must travel cleanly to **es/pt** later — avoid puns or
+  idioms that only work in English.
 - Plain truths to keep surfacing: it's **free**, money goes **straight to the other
   person**, **Ponti never holds it**, it's **non-custodial**.
+- **Plain-language sweep (Jun 16) + the full copy spec** — every locked string (Home
+  "across everyone", "Funds available", the "Saved — updating…" refresh line that replaces
+  "Confirmed on-chain", Add-funds, Add-someone / "your Ponti ID is your username", the
+  FlowWidget pools, the two error states, and the Add/Edit form copy) — lives in **§17**.
 
 ---
 
@@ -459,4 +533,83 @@ blocked by CORS.
 8. **Desktop/responsive** layout (confirm which of the three with the user).
 9. **Consistency pass** — mobile↔desktop sweep of copy, states, dark mode; confirm
    nothing is left in Spanish and no crypto jargon slipped in.
+
+---
+
+## 17. Copy spec — locked strings (Jun 16 re-export)
+
+> This appendix is the canonical English copy for the surfaces touched in the Jun 16
+> pass. Voice = **wink** (warm, light, sure — *"your money, not ours"*; Ponti never
+> holds funds); **numbers stay calm and uncolored**; no crypto jargon; written to travel
+> cleanly to es/pt (no English-only puns). This pass is **copy + contract only** — the
+> logic/data/flow live in the repo.
+
+### 17.1 Plain-language sweep (kill the jargon)
+
+| Surface | Was (jargon / unclear) | Now (locked) |
+|---|---|---|
+| **Home — net caption** | "NET" | **"across everyone"** — the running total across all the people you share with |
+| **Home — net vs wallet** | two amounts competing as one | **Net = headline** (big proportional amount + DirChip + "across everyone"); **wallet = secondary strip below**, set off so they never merge (§8.2) |
+| **Wallet label** (WalletCard / WalletStrip eyebrow) | "Your USDC" | **"Funds available"** ("USDC" stays only as the unit suffix on the number) |
+| **Post-write refresh** (grey, never red) | "Confirmed on-chain — refreshing…" | **"Saved — updating…"** |
+| **Post-write, refresh still lagging** | "Confirmed on-chain — reload to see the latest" | **"Saved — reload to see the latest."** |
+| **Group list — section header** | "Groups" | **"People you share with"** |
+| **Group row — secondary tag** | mock tag ("Apartment", "US ↔ Chile") | **deferred** with group naming/tagging (§14); until then a neutral last-activity line, **never an invented label** |
+
+### 17.2 Add funds (guide → waiting → received) — plain, non-crypto
+
+- **Guide intro:** "Add USDC so you're ready to settle up. It's free — we'll point you to a page that hands out test funds. Takes about a minute."
+- **Steps (the only place "Base"/"faucet" appear):** "Copy your address" → "Open the funds page ↗" → on that page: "Pick **USDC** on the **Base** network," "Paste your address," "Up to 20 every 2 hours."
+- **Waiting:** "Waiting for your funds… you can leave this open — it'll update on its own." *(auto-detecting; no manual refresh button; never red; close hidden here)*
+- **Received:** "Funds received ✓ — you're ready to settle."
+
+### 17.3 Add someone / Your Ponti — "your Ponti ID is your username"
+
+- **Your Ponti (share side):** "This is your **Ponti ID** — like a username. Share it so someone can start a shared tab with you." Actions: **Share link** · **Show QR code** (the ID itself is copyable). *(No raw `0x`, no "address".)*
+- **Add someone (receive side):** "Have someone's Ponti ID? Paste their link or scan their QR to start a shared tab." Actions: **Paste a link** · **Scan a QR code**.
+
+### 17.4 FlowWidget copy pools (wink — LOCKED)
+
+**Architecture:** `confirmSub` + `runningNote` + `doneTitle` are **shared by state**;
+**`doneSub` is per-action** and **distinct from `doneTitle`** (never repeats a title).
+Numbers never rotate, never colored.
+
+**`confirmSub` (shared):**
+- "Just the two of you and the math. Your money, not ours."
+- "You, them, and the numbers. We never hold a cent."
+- "One approval and it's logged. Ponti never touches the money."
+- "You're in control — one tap, and we keep the count."
+
+**`runningNote` (shared):**
+- "Hang tight — this only takes a moment."
+- "One sec — putting it where it belongs."
+- "Almost there — you can keep this open."
+
+**`doneTitle` (shared, short):** "Squared away" · "Sorted" · "All set" · "Done"
+
+**`doneSub` (per-action — `{name}` = counterparty nickname):**
+- **create:** "Your shared tab with {name} is ready." · "You and {name} are connected — start adding what you spend."
+- **add:** "On the tab — the balance just updated." · "Added. Future-you will thank present-you."
+- **edit:** "Updated — the balance recalculated to match." · "Fixed. The tab remembers the new details."
+- **delete:** "Removed — the history still notes it was there." · "Gone from the balance; the trail keeps the record."
+- **settle:** "You and {name} are even again." · "Balance back to zero — nothing owed either way."
+
+### 17.5 FlowWidget error states (NEW — both wink, never alarm-red)
+
+| Case | What really happened | Title | Subtitle | Actions |
+|---|---|---|---|---|
+| **send-failed** | Nothing happened — the write never submitted | **"That didn't go through"** | "Nothing moved and nothing's lost — give it another go." | **Try again** (primary) · Cancel |
+| **receipt-failed** | It **did** go through; we only lost the confirmation signal (mined, refresh/index lagging) | **"It's saved — just catching up"** | "Your change went through. We're still waiting on the confirmation to show — it'll appear on its own." | **Done** (primary; closes to the grey "Saved — updating…") · *quiet* "Reload to see the latest" |
+
+> **Rule:** `receipt-failed` carries **no failure framing and no re-send** — the write
+> already succeeded; offering "try again" would risk a duplicate. This mirrors §11's
+> resilient-refresh contract: a refresh/index lag must never look like a write failure.
+
+### 17.6 Add / Edit expense form copy (see §8.4 for layout)
+
+- **Subtitle** — Add: "Add what you paid for — Ponti keeps the count." · Edit: "Fix the details — the balance updates to match."
+- **Field labels:** "Who paid?" · "What for?"
+- **Placeholder:** "e.g. Groceries"
+- **Primary button** — Add: "Review & add" · Edit: "Review changes"
+- **Payer toggle buttons:** "You" / the counterparty's nickname.
 </content>

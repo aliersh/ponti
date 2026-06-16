@@ -36,7 +36,7 @@ function WalletCard({ me, onAddFunds }) {
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
         <span style={{ display: "inline-flex", color: "var(--muted)" }}>{WI.coin("var(--muted)", 15)}</span>
         <span style={{ fontFamily: "var(--font-ui)", fontSize: 11.5, fontWeight: 600, color: "var(--muted)",
-          letterSpacing: "0.03em", textTransform: "uppercase" }}>Your USDC</span>
+          letterSpacing: "0.03em", textTransform: "uppercase" }}>Funds available</span>
       </div>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
         <div className="tnum" style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 31,
@@ -60,7 +60,7 @@ function WalletStrip({ me, onAddFunds }) {
       <span style={{ width: 34, height: 34, borderRadius: "50%", flex: "0 0 auto", display: "flex",
         alignItems: "center", justifyContent: "center", background: "var(--surface-2)", color: "var(--muted)" }}>{WI.coin("var(--muted)", 16)}</span>
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 1 }}>
-        <span style={{ fontFamily: "var(--font-ui)", fontSize: 12, fontWeight: 600, color: "var(--muted)" }}>Your USDC</span>
+        <span style={{ fontFamily: "var(--font-ui)", fontSize: 12, fontWeight: 600, color: "var(--muted)" }}>Funds available</span>
         <span className="tnum" style={{ fontFamily: "var(--font-ui)", fontSize: 16.5, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.01em" }}>
           {money(me.usdc)} <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>USDC</span>
         </span>
@@ -156,7 +156,7 @@ function AddFundsPanel({ me, placement = "sheet", onClose, onReceived }) {
           <span style={{ flex: 1, display: "flex", alignItems: "center", gap: 9 }}>
             <span style={{ fontFamily: "var(--font-display)", fontSize: 21, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.02em" }}>Add funds</span>
             <span style={{ fontFamily: "var(--font-ui)", fontSize: 10.5, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase",
-              color: "var(--muted)", background: "var(--surface-2)", padding: "3px 7px", borderRadius: 999 }}>Testnet</span>
+              color: "var(--muted)", background: "var(--surface-2)", padding: "3px 7px", borderRadius: 999 }}>Test funds</span>
           </span>
           {phase !== "waiting" && (
             <button onClick={close} aria-label="Close" style={{ all: "unset", cursor: "pointer", color: "var(--muted)", padding: 4, display: "inline-flex" }}>
@@ -169,7 +169,7 @@ function AddFundsPanel({ me, placement = "sheet", onClose, onReceived }) {
         {phase === "guide" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <p style={{ margin: 0, fontFamily: "var(--font-ui)", fontSize: 13.5, color: "var(--muted)", lineHeight: 1.5 }}>
-              Add USDC to your balance so you're ready to settle up. For now it's free — you'll grab some test funds from a faucet. Takes about a minute.
+              Add USDC so you're ready to settle up. It's free — we'll point you to a page that hands out test funds. Takes about a minute.
             </p>
 
             <div>
@@ -180,13 +180,13 @@ function AddFundsPanel({ me, placement = "sheet", onClose, onReceived }) {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
               <span style={{ fontFamily: "var(--font-ui)", fontSize: 11.5, fontWeight: 600, color: "var(--muted)",
-                letterSpacing: "0.03em", textTransform: "uppercase" }}>On the faucet</span>
+                letterSpacing: "0.03em", textTransform: "uppercase" }}>On the funds page</span>
               <FaucetStep n={1}>Choose <strong style={{ color: "var(--ink)", fontWeight: 700 }}>USDC</strong> on the <strong style={{ color: "var(--ink)", fontWeight: 700 }}>Base</strong> network.</FaucetStep>
               <FaucetStep n={2}>Paste the address above.</FaucetStep>
               <FaucetStep n={3}>Request — you can get up to <strong style={{ color: "var(--ink)", fontWeight: 700 }}>20 USDC every 2 hours</strong>.</FaucetStep>
             </div>
 
-            <Button variant="primary" full onClick={openFaucet}>{I.external("var(--accent-ink)")} Open faucet</Button>
+            <Button variant="primary" full onClick={openFaucet}>{I.external("var(--accent-ink)")} Open the funds page</Button>
 
             <div style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--muted)", marginTop: -4 }}>
               <span style={{ display: "inline-flex" }}>{I.shield("var(--muted)")}</span>
@@ -203,7 +203,7 @@ function AddFundsPanel({ me, placement = "sheet", onClose, onReceived }) {
               <span style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.02em" }}>Waiting for your funds…</span>
             </div>
             <p style={{ margin: 0, fontFamily: "var(--font-ui)", fontSize: 13.5, color: "var(--muted)", lineHeight: 1.5 }}>
-              This usually lands in under a minute. You can close this — we'll keep watching, and your balance updates on its own.
+              You can leave this open — it'll update on its own.
             </p>
             <div>
               <span style={{ fontFamily: "var(--font-ui)", fontSize: 11.5, fontWeight: 600, color: "var(--muted)",
@@ -212,7 +212,7 @@ function AddFundsPanel({ me, placement = "sheet", onClose, onReceived }) {
             </div>
             <a href={FAUCET_URL} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6,
               textDecoration: "none", color: "var(--accent)", fontFamily: "var(--font-ui)", fontSize: 13, fontWeight: 600 }}>
-              {I.external("var(--accent)")} Open faucet again
+              {I.external("var(--accent)")} Open the funds page again
             </a>
             <Button variant="ghost" full onClick={close} style={{ marginTop: 2 }}>Close — keep watching</Button>
           </div>
@@ -226,8 +226,8 @@ function AddFundsPanel({ me, placement = "sheet", onClose, onReceived }) {
               {I.check("var(--accent)", 26)}
             </div>
             <span style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.02em" }}>Funds received</span>
-            <span className="tnum" style={{ fontFamily: "var(--font-ui)", fontSize: 14, fontWeight: 600, color: "var(--muted)" }}>
-              +{money(FAUCET_GRANT)} USDC added to your balance
+            <span style={{ fontFamily: "var(--font-ui)", fontSize: 14, fontWeight: 600, color: "var(--muted)" }}>
+              You're ready to settle up.
             </span>
             {newBal != null && (
               <div style={{ marginTop: 4, padding: "10px 16px", background: "var(--surface-2)", borderRadius: "var(--radius-sm)",

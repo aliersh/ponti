@@ -63,8 +63,8 @@ function Home({ data, demoState, onOpenGroup, onCreate, onProfile, onAddFunds })
       <div style={{ padding: "2px 2px 20px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 9 }}>
           <DirChip balance={net} label={net > 0 ? "You're owed" : net < 0 ? "You owe" : "Settled up"} />
-          <span style={{ fontFamily: "var(--font-ui)", fontSize: 10.5, fontWeight: 700, letterSpacing: "0.1em",
-            textTransform: "uppercase", color: "var(--muted)" }}>net</span>
+          <span style={{ fontFamily: "var(--font-ui)", fontSize: 11.5, fontWeight: 600,
+            color: "var(--muted)" }}>across everyone</span>
         </div>
         <div className="pnum" style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 38,
           letterSpacing: "-0.04em", color: "var(--ink)", lineHeight: 1.1 }}>
@@ -72,16 +72,11 @@ function Home({ data, demoState, onOpenGroup, onCreate, onProfile, onAddFunds })
         </div>
       </div>
 
-      {/* wallet: account-level USDC you hold + always-available Add funds */}
-      <div style={{ marginBottom: 22 }}>
-        <WalletStrip me={data.me} onAddFunds={onAddFunds} />
-      </div>
-
       <SectionLabel right={
         <button onClick={onCreate} style={{ all: "unset", cursor: "pointer", display: "inline-flex",
           alignItems: "center", gap: 5, color: "var(--accent)", fontFamily: "var(--font-ui)",
           fontSize: 13, fontWeight: 700 }}>{I.plus("var(--accent)")} New</button>
-      }>Your groups</SectionLabel>
+      }>People you share with</SectionLabel>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 8 }}>
         {demoState === "loading" && [0, 1, 2].map((i) => (
@@ -111,6 +106,16 @@ function Home({ data, demoState, onOpenGroup, onCreate, onProfile, onAddFunds })
         {demoState === "normal" && groups.map((g) => (
           <GroupRow key={g.id} g={g} onClick={() => onOpenGroup(g)} />
         ))}
+      </div>
+
+      {/* wallet = UTILITY ("what I can pay with") — a DIFFERENT category from the
+          relational net + per-group balances above. Set apart by a real hairline so
+          it never reads as a third balance. */}
+      <div style={{ marginTop: 26, paddingTop: 18, borderTop: "1px solid var(--border)" }}>
+        <SectionLabel>Your account</SectionLabel>
+        <div style={{ marginTop: 8 }}>
+          <WalletStrip me={data.me} onAddFunds={onAddFunds} />
+        </div>
       </div>
     </div>
   );
@@ -217,7 +222,7 @@ function GroupDetail({ g, data, postWrite, onBack, onAdd, onSettle, onEditExpens
             {g.crossBorder && <Pill tone="neutral">{I.globe("var(--muted)")} cross-border</Pill>}
           </div>
           <button style={{ all: "unset", cursor: "pointer", fontFamily: "var(--font-ui)", fontSize: 12.5,
-            color: "var(--muted)" }}>{g.label} · details {I.right("var(--muted)")}</button>
+            color: "var(--muted)" }}>{g.lastActivity ? `Last active ${g.lastActivity}` : "Shared tab"} · details {I.right("var(--muted)")}</button>
         </div>
       </div>
 
@@ -318,11 +323,11 @@ function CreateGroup({ onBack, onSubmit, onShare }) {
   const ok = nick.trim() && link.trim().length > 4;
   return (
     <FormScreen title="Add someone" onBack={onBack}
-      sub="Connect with one person to start a shared tab. Nothing moves until you choose to settle.">
+      sub="Paste their link or scan their QR to start a shared tab. A Ponti ID is just a username — no wallet addresses to copy.">
       <Field label="What will you call them?" hint="Just for you — only you ever see this name.">
         <Input placeholder="e.g. Cami" value={nick} onChange={(e) => setNick(e.target.value)} />
       </Field>
-      <Field label="Their Ponti invite" hint="Paste the link they sent you, or scan their code.">
+      <Field label="Their Ponti ID" hint="Paste the link they shared, or scan their QR code.">
         <div style={{ display: "flex", gap: 8 }}>
           <Input placeholder="ponti.money/c/…" value={link} onChange={(e) => setLink(e.target.value)} style={{ flex: 1 }} />
           <Button variant="ghost" onClick={() => setScanning(true)} style={{ padding: "0 14px", flex: "0 0 auto" }}>{I.scan("var(--ink)")} Scan</Button>
@@ -341,8 +346,8 @@ function CreateGroup({ onBack, onSubmit, onShare }) {
         <div style={{ width: 38, height: 38, borderRadius: 10, background: "var(--accent-soft)", color: "var(--accent)",
           display: "flex", alignItems: "center", justifyContent: "center" }}>{I.share("var(--accent)")}</div>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 1 }}>
-          <span style={{ fontFamily: "var(--font-ui)", fontSize: 14.5, fontWeight: 600, color: "var(--ink)" }}>Share your invite instead</span>
-          <span style={{ fontFamily: "var(--font-ui)", fontSize: 12.5, color: "var(--muted)" }}>Let them add you with your link or code.</span>
+          <span style={{ fontFamily: "var(--font-ui)", fontSize: 14.5, fontWeight: 600, color: "var(--ink)" }}>Share your Ponti ID instead</span>
+          <span style={{ fontFamily: "var(--font-ui)", fontSize: 12.5, color: "var(--muted)" }}>Let someone add you with your link or QR code.</span>
         </div>
         {I.right("var(--muted)")}
       </button>
@@ -485,7 +490,7 @@ function Profile({ me, onBack, onLogout, onAddFunds, dark, onToggleTheme = () =>
       </div>
 
       {/* invite */}
-      <SectionLabel>Your invite</SectionLabel>
+      <SectionLabel>Your Ponti ID</SectionLabel>
       <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)",
         boxShadow: "var(--shadow)", padding: "22px 20px", display: "flex", flexDirection: "column",
         alignItems: "center", gap: 14, marginTop: 8, marginBottom: 18 }}>
@@ -493,7 +498,7 @@ function Profile({ me, onBack, onLogout, onAddFunds, dark, onToggleTheme = () =>
           <QRCode value="ponti-ariel" size={156} />
         </div>
         <p style={{ margin: 0, fontFamily: "var(--font-ui)", fontSize: 13, color: "var(--muted)", textAlign: "center", lineHeight: 1.45, maxWidth: 260 }}>
-          Someone scans this or opens your link to add you — that's all they need.
+          This is your Ponti ID — like a username. Share it and someone can start a shared tab with you.
         </p>
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", width: "100%",
           background: "var(--surface-2)", borderRadius: "var(--radius-sm)", boxSizing: "border-box" }}>
@@ -505,7 +510,7 @@ function Profile({ me, onBack, onLogout, onAddFunds, dark, onToggleTheme = () =>
             {copied ? <>{I.check("var(--accent)", 14)} Copied</> : <>{I.copy("var(--accent)")} Copy</>}
           </button>
         </div>
-        <Button variant="primary" full>{I.share("var(--accent-ink)")} Share invite</Button>
+        <Button variant="primary" full>{I.share("var(--accent-ink)")} Share link</Button>
       </div>
 
       {/* appearance */}
@@ -535,8 +540,20 @@ function AddExpense({ g, onBack, onSubmit, initial, mode = "add" }) {
   return (
     <FormScreen title={editing ? "Edit expense" : "Add expense"} onBack={onBack}
       sub={editing
-        ? `Editing your shared tab with ${g.nickname}. The change is logged — nothing moves yet.`
-        : `Shared with ${g.nickname}. No money moves yet — just the record.`}>
+        ? "Fix the details — the balance updates to match."
+        : "Add what you paid for — Ponti keeps the count."}>
+      <Field label="Amount">
+        <div style={{ position: "relative" }}>
+          <Input placeholder="0.00" inputMode="decimal" value={amt} onChange={(e) => setAmt(e.target.value)}
+            style={{ fontFamily: "var(--font-display)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em",
+              paddingRight: 72, fontSize: 30, fontWeight: 700 }} />
+          <span style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)",
+            fontFamily: "var(--font-ui)", fontSize: 15, fontWeight: 600, color: "var(--muted)" }}>USDC</span>
+        </div>
+      </Field>
+      <Field label="What for?">
+        <Input placeholder="e.g. Groceries" value={desc} onChange={(e) => setDesc(e.target.value)} />
+      </Field>
       <Field label="Who paid?">
         <div style={{ display: "flex", gap: 8 }}>
           {[["me", "You"], ["them", g.nickname]].map(([k, lbl]) => (
@@ -548,17 +565,6 @@ function AddExpense({ g, onBack, onSubmit, initial, mode = "add" }) {
               boxShadow: payer === k ? "inset 0 0 0 1.5px var(--accent)" : "inset 0 0 0 1px var(--border)" }}>{lbl}</button>
           ))}
         </div>
-      </Field>
-      <Field label="Amount">
-        <div style={{ position: "relative" }}>
-          <Input placeholder="0.00" inputMode="decimal" value={amt} onChange={(e) => setAmt(e.target.value)}
-            style={{ fontFamily: "var(--font-ui)", fontVariantNumeric: "tabular-nums", paddingRight: 56, fontSize: 18, fontWeight: 600 }} />
-          <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
-            fontFamily: "var(--font-ui)", fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>USDC</span>
-        </div>
-      </Field>
-      <Field label="What for?">
-        <Input placeholder="e.g. Groceries" value={desc} onChange={(e) => setDesc(e.target.value)} />
       </Field>
       <Button variant="primary" full disabled={!ok} onClick={() => onSubmit({ payer, amt, desc })} style={{ marginTop: 6 }}>{editing ? "Review changes" : "Review & add"}</Button>
     </FormScreen>

@@ -27,6 +27,37 @@ function stepsFor(kind, tone) {
 // reads from the flow's doneSub[Wink|Playful], which may ALSO be an array. To add
 // more variety, just push strings to these arrays — no other wiring needed.
 // (Tech note for handoff: rotation is client-side, presentational only.)
+// PER-ACTION done-subtitle pools (wink). DECIDED Jun 16: confirmSub / runningNote /
+// doneTitle are SHARED by state; doneSub is PER ACTION and a DISTINCT pool from
+// doneTitle (it never repeats a title). {name} = counterparty nickname (flow.who).
+const DONE_SUB_WINK = {
+  create: [
+    "Your shared tab with {name} is ready.",
+    "You and {name} are connected — start adding what you spend.",
+  ],
+  add: [
+    "On the tab — the balance just updated.",
+    "Added. Future-you will thank present-you.",
+  ],
+  edit: [
+    "Updated — the balance recalculated to match.",
+    "Fixed. The tab remembers the new details.",
+  ],
+  delete: [
+    "Removed — the history still notes it was there.",
+    "Gone from the balance; the trail keeps the record.",
+  ],
+  settle: [
+    "You and {name} are even again.",
+    "Balance back to zero — nothing owed either way.",
+  ],
+};
+function doneSubPool(f, fallback) {
+  const pool = DONE_SUB_WINK[f.kind] || (f.doneSub ? [f.doneSub] : [fallback || "All set."]);
+  const name = f.who || "them";
+  return pool.map((s) => s.replace(/\{name\}/g, name));
+}
+
 const COPY = {
   calm: {
     confirmSub: [
@@ -44,13 +75,16 @@ const COPY = {
     confirmSub: [
       "Just the two of you and the math. Your money, not ours.",
       "You, them, and the numbers. We never hold a cent.",
+      "One approval and it's logged. Ponti never touches the money.",
+      "You're in control — one tap, and we keep the count.",
     ],
     runningNote: [
-      "Hang tight — moving at the speed of trust.",
-      "One sec — handling the trustworthy part.",
+      "Hang tight — this only takes a moment.",
+      "One sec — putting it where it belongs.",
+      "Almost there — you can keep this open.",
     ],
-    doneTitle: ["Squared away", "Sorted"],
-    doneSub: (f) => f.doneSubWink || f.doneSub || "Squared away.",
+    doneTitle: ["Squared away", "Sorted", "All set", "Done"],
+    doneSub: (f) => doneSubPool(f),
   },
   playful: {
     confirmSub: [
@@ -136,8 +170,8 @@ function Spinner({ s = 18 }) {
   );
 }
 
-function FlowSheet({ flow, tone = "calm", placement = "sheet", onClose, onComplete }) {
-  const [phase, setPhase] = useStateF("confirm"); // confirm | running | done
+function FlowSheet({ flow, tone = "calm", placement = "sheet", outcome = "ok", onClose, onComplete }) {
+  const [phase, setPhase] = useStateF("confirm"); // confirm | running | done | error-send | error-receipt
   const [idx, setIdx] = useStateF(0);
   const [show, setShow] = useStateF(false);
   const timers = useRefF([]);
@@ -157,11 +191,15 @@ function FlowSheet({ flow, tone = "calm", placement = "sheet", onClose, onComple
 
   function run() {
     setPhase("running"); setIdx(0);
-    steps.forEach((_, i) => {
-      if (i === 0) return;
-      timers.current.push(setTimeout(() => setIdx(i), i * 720));
-    });
-    timers.current.push(setTimeout(() => setPhase("done"), steps.length * 720 + 250));
+    // send-failed stops early (the write never lands); receipt-failed and ok run
+    // the full track (the write did land — only the confirmation/refresh lags).
+    const n = outcome === "send-failed" ? Math.min(2, steps.length) : steps.length;
+    for (let i = 1; i < n; i++) {
+      timers.current.push(setTimeout(((k) => () => setIdx(k))(i), i * 720));
+    }
+    const finalPhase = outcome === "send-failed" ? "error-send"
+      : outcome === "receipt-failed" ? "error-receipt" : "done";
+    timers.current.push(setTimeout(() => setPhase(finalPhase), n * 720 + 250));
   }
 
   function close(done) {
@@ -189,8 +227,8 @@ function FlowSheet({ flow, tone = "calm", placement = "sheet", onClose, onComple
   return (
     <div style={{ position: "absolute", inset: 0, zIndex: 80, display: "flex",
       alignItems: containerAlign, justifyContent: containerJustify }}>
-      {/* scrim */}
-      <div onClick={() => phase !== "running" && close(false)} style={{ position: "absolute", inset: 0,
+      {/* scrim — receipt-failed is already saved, so dismissing it commits */}
+      <div onClick={() => phase !== "running" && close(phase === "error-receipt")} style={{ position: "absolute", inset: 0,
         background: "rgba(20,14,18,.46)", opacity: show ? 1 : 0, transition: "opacity .24s",
         backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)" }} />
       {/* sheet / modal / side panel */}
@@ -243,6 +281,42 @@ function FlowSheet({ flow, tone = "calm", placement = "sheet", onClose, onComple
             <a href="#" onClick={(e) => e.preventDefault()} style={{ fontFamily: "var(--font-ui)", fontSize: 13,
               fontWeight: 600, color: "var(--accent)", textDecoration: "none", marginTop: 2 }}>View receipt ↗</a>
             <Button variant="primary" full onClick={() => close(true)} style={{ marginTop: 8 }}>Done</Button>
+          </div>
+        )}
+
+        {/* send-failed: nothing happened — wink, never red, retryable */}
+        {phase === "error-send" && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 9, padding: "6px 0 2px" }}>
+            <div style={{ width: 54, height: 54, borderRadius: "50%", background: "var(--surface-2)",
+              display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 700, color: "var(--muted)", lineHeight: 1 }}>!</span>
+            </div>
+            <span style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.02em" }}>That didn't go through</span>
+            <span style={{ fontFamily: "var(--font-ui)", fontSize: 13.5, color: "var(--muted)", textAlign: "center", maxWidth: 300 }}>
+              Nothing moved and nothing's lost — give it another go.
+            </span>
+            <Button variant="primary" full onClick={run} style={{ marginTop: 8 }}>Try again</Button>
+            <Button variant="quiet" full onClick={() => close(false)} style={{ marginTop: 2 }}>Cancel</Button>
+          </div>
+        )}
+
+        {/* receipt-failed: it DID go through — no failure framing, no re-send */}
+        {phase === "error-receipt" && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 9, padding: "6px 0 2px" }}>
+            <div style={{ width: 54, height: 54, borderRadius: "50%", background: "var(--accent-soft)",
+              display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {I.check("var(--accent)", 26)}
+            </div>
+            <span style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.02em" }}>It's saved — just catching up</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--muted)" }}>
+              <Spinner s={14} />
+              <span style={{ fontFamily: "var(--font-ui)", fontSize: 13.5, color: "var(--muted)", textAlign: "center", maxWidth: 300 }}>
+                Your change went through. We're still waiting on the confirmation to show — it'll appear on its own.
+              </span>
+            </div>
+            <Button variant="primary" full onClick={() => close(true)} style={{ marginTop: 8 }}>Done</Button>
+            <a href="#" onClick={(e) => { e.preventDefault(); close(true); }} style={{ fontFamily: "var(--font-ui)", fontSize: 13,
+              fontWeight: 600, color: "var(--muted)", textDecoration: "none", marginTop: 2 }}>Reload to see the latest</a>
           </div>
         )}
       </div>
