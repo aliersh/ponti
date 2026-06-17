@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@500,700,800&f[]=switzer@400,500,600,700&display=swap" rel="stylesheet">
+<style>
+/* =================================================================
+   PONTI · CAL  — design tokens
+   Base: Cal (architectural warmth, saturated planes, never cream)
+   Graft: the structural line from Trazo, living in the warm palette
+   ================================================================= */
+:root{
+  /* light (default) */
+  --bg:#ECEDE8;          /* plaster / lime ground */
+  --surface:#F4F4EF;     /* card */
+  --raised:#FBFBF7;      /* sheets, dialogs, overlays */
+  --ink:#221C1B;         /* warm near-black */
+  --ink-2:#6B625C;       /* secondary */
+  --ink-3:#988F89;       /* tertiary / faint */
+  --line:#D6D6CD;        /* structural hairline (the tie) */
+  --line-2:#C7C7BD;      /* stronger structural line */
+  --hairline:#DEDED7;    /* dividers */
+  --accent:#D1486A;      /* rosa — the saturated plane */
+  --accent-strong:#C23A5C;/* rosa interactive (AA: #FFF text = 5.19:1) */
+  --accent-soft:#F4E3E8; /* rosa tint surface */
+  --accent-soft-ink:#B23553;
+  --lilac:#6E4F94;       /* secondary plane, sparingly */
+  --lilac-soft:#ECE6F2;
+  --lilac-ink:#5A3E7E;
+  --sage:#5B7060;        /* settled / even — calm, not money-green */
+  --sage-soft:#E5E8E2;
+  --on-accent:#FFFFFF;
+  --skel:#E3E3DB;
+  --skel-sheen:#EEEEE7;
+  --shadow-card:0 1px 2px rgba(34,28,27,.05),0 10px 24px -16px rgba(34,28,27,.18);
+  --shadow-overlay:0 -1px 6px rgba(34,28,27,.05),0 26px 60px -24px rgba(34,28,27,.34);
+  --scrim:rgba(34,28,27,.32);
+
+  --font-display:"Cabinet Grotesk",ui-sans-serif,system-ui,sans-serif;
+  --font-ui:"Switzer",ui-sans-serif,system-ui,-apple-system,sans-serif;
+
+  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:20px;--s6:24px;--s7:32px;--s8:40px;
+  --r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:20px;--r-pill:999px;
+}
+[data-theme="dark"]{
+  --bg:#191613;          /* warm near-black (dusk concrete) */
+  --surface:#221E19;
+  --raised:#2A2620;
+  --ink:#F0ECE5;
+  --ink-2:#ABA39B;
+  --ink-3:#79716A;
+  --line:#38322B;
+  --line-2:#4A4239;
+  --hairline:#322C25;
+  --accent:#DA5774;      /* rosa plane, lifted to hold on dark */
+  --accent-strong:#C23A5C;
+  --accent-soft:#3A2127;
+  --accent-soft-ink:#EC8AA0;
+  --lilac:#9B7DC0;
+  --lilac-soft:#2E2638;
+  --lilac-ink:#B79BD8;
+  --sage:#8AA593;
+  --sage-soft:#24302A;
+  --on-accent:#FFFFFF;
+  --skel:#2A2620;
+  --skel-sheen:#332D26;
+  --shadow-card:0 1px 2px rgba(0,0,0,.40),0 12px 28px -16px rgba(0,0,0,.60);
+  --shadow-overlay:0 26px 64px -22px rgba(0,0,0,.78);
+  --scrim:rgba(0,0,0,.55);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:var(--font-ui);line-height:1.5;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  transition:background .25s ease,color .25s ease;
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+
+a{color:inherit}
+:focus-visible{outline:2.5px solid var(--accent-strong);outline-offset:2px;border-radius:4px}
+
+/* ---------- doc shell ---------- */
+.doc{max-width:1180px;margin:0 auto;padding:var(--s8) var(--s6) 96px}
+.doc-head{position:relative;padding-bottom:var(--s7);margin-bottom:var(--s7);border-bottom:1px solid var(--hairline)}
+.brandline{display:flex;align-items:center;gap:12px;margin-bottom:var(--s5)}
+.brandline .name{font-family:var(--font-display);font-weight:800;font-size:30px;letter-spacing:-.02em}
+.kick{font-family:var(--font-ui);font-size:11.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.doc-head h1{font-family:var(--font-display);font-weight:700;font-size:clamp(28px,4vw,40px);letter-spacing:-.02em;line-height:1.05;max-width:18ch;margin-bottom:var(--s4)}
+.doc-head p{max-width:60ch;color:var(--ink-2);font-size:15px}
+.doc-head p + p{margin-top:var(--s3)}
+
+.toggle{
+  position:absolute;top:0;right:0;display:inline-flex;align-items:center;gap:8px;
+  background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-pill);
+  padding:7px 13px;font-family:var(--font-ui);font-size:12.5px;font-weight:600;color:var(--ink);
+  cursor:pointer;box-shadow:var(--shadow-card);transition:background .2s
+}
+.toggle .glyph{width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:inset -4px -2px 0 var(--bg)}
+[data-theme="dark"] .toggle .glyph{box-shadow:none;background:var(--accent)}
+
+/* section scaffolding */
+.sec{margin-top:var(--s8);padding-top:var(--s7);border-top:1px solid var(--hairline)}
+.sec:first-of-type{border-top:none}
+.sec-num{font-family:var(--font-display);font-weight:700;font-size:13px;color:var(--accent-strong);letter-spacing:.04em}
+.sec h2{font-family:var(--font-display);font-weight:700;font-size:24px;letter-spacing:-.015em;margin:6px 0 6px}
+.sec .lede{color:var(--ink-2);font-size:14px;max-width:64ch;margin-bottom:var(--s6)}
+.sub{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:-.01em;margin:var(--s7) 0 var(--s4);color:var(--ink)}
+.sub:first-child{margin-top:0}
+
+/* ---------- foundations: tokens ---------- */
+.pal-cols{display:grid;grid-template-columns:1fr 1fr;gap:var(--s6)}
+@media (max-width:720px){.pal-cols{grid-template-columns:1fr}}
+.pal-card{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:var(--s5);box-shadow:var(--shadow-card)}
+.pal-card h4{font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);margin-bottom:var(--s4)}
+.swrow{display:flex;align-items:center;gap:12px;padding:7px 0}
+.sw{width:40px;height:40px;border-radius:10px;flex:none;border:1px solid rgba(128,128,128,.18)}
+.swmeta .nm{font-size:13px;font-weight:600}
+.swmeta .hex{font-size:11.5px;color:var(--ink-3);font-feature-settings:"tnum" 1;letter-spacing:.02em}
+.aa{display:inline-block;margin-left:8px;font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--sage);border:1px solid var(--sage);border-radius:5px;padding:1px 5px;vertical-align:middle}
+
+.type-spec > div{padding:var(--s4) 0;border-top:1px solid var(--hairline);display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.type-spec > div:first-child{border-top:none}
+.type-spec .lbl{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);flex:none;width:130px}
+.type-spec .dem{flex:1;min-width:200px}
+.tnum{font-feature-settings:"tnum" 1,"lnum" 1}
+
+.scale-row{display:flex;gap:var(--s4);flex-wrap:wrap}
+.tk{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-md);padding:10px 14px;font-size:12.5px}
+.tk b{font-family:var(--font-display);font-weight:700}
+.tk .v{color:var(--ink-3);font-feature-settings:"tnum" 1}
+.elev-row{display:flex;gap:var(--s6);flex-wrap:wrap;margin-top:var(--s2)}
+.elev{width:150px;height:84px;border-radius:var(--r-md);background:var(--surface);display:grid;place-items:center;font-size:12px;color:var(--ink-2);border:1px solid var(--hairline)}
+.elev.e1{box-shadow:var(--shadow-card)}
+.elev.e2{box-shadow:var(--shadow-overlay);background:var(--raised)}
+
+/* the signature line, explained */
+.sig{display:grid;grid-template-columns:1.1fr 1fr;gap:var(--s6);align-items:center;background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:var(--s6);box-shadow:var(--shadow-card)}
+@media (max-width:720px){.sig{grid-template-columns:1fr}}
+.sig p{font-size:13.5px;color:var(--ink-2);margin-top:var(--s3)}
+.sig h4{font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:-.01em}
+.sig-demo{display:flex;flex-direction:column;gap:18px;padding:var(--s5);background:var(--bg);border-radius:var(--r-md)}
+
+/* ---------- components grid ---------- */
+.comp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s5)}
+@media (max-width:760px){.comp-grid{grid-template-columns:1fr}}
+.comp{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:var(--s5);box-shadow:var(--shadow-card)}
+.comp h4{font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:-.005em;margin-bottom:4px}
+.comp .role{font-size:11px;color:var(--ink-3);margin-bottom:var(--s4)}
+.comp .demo{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:var(--s4);background:var(--bg);border-radius:var(--r-md);margin-bottom:var(--s3)}
+.dd{display:flex;gap:8px;font-size:11.5px;margin-top:8px}
+.dd .do,.dd .dont{flex:1}
+.dd b{display:block;font-weight:700;letter-spacing:.02em;font-size:10px;text-transform:uppercase;margin-bottom:2px}
+.dd .do b{color:var(--sage)} .dd .dont b{color:var(--accent-strong)}
+.dd span{color:var(--ink-2)}
+
+/* ===== shared UI primitives (used in components AND applied screens) ===== */
+.btn{font-family:var(--font-ui);font-weight:600;border:none;cursor:pointer;border-radius:var(--r-md);letter-spacing:.005em;font-size:14px;transition:transform .08s ease,filter .15s ease;line-height:1.1}
+.btn:active{transform:translateY(1px)}
+.btn--primary{background:var(--accent-strong);color:var(--on-accent);padding:13px 18px}
+.btn--primary:hover{filter:brightness(1.04)}
+.btn--outline{background:transparent;color:var(--ink);border:1.5px solid var(--line-2);padding:11.5px 18px}
+.btn--soft{background:var(--accent-soft);color:var(--accent-soft-ink);padding:8px 13px;font-size:12.5px}
+.btn--ghost{background:transparent;color:var(--ink-2);padding:8px 12px;font-size:12.5px}
+.btn--quiet{background:none;color:var(--ink-3);padding:6px 4px;font-size:12.5px;text-decoration:underline;text-underline-offset:2px;font-weight:500}
+.btn--block{width:100%;display:block}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-ui);font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:var(--r-pill);white-space:nowrap;line-height:1.2}
+.chip .d{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.6}
+.chip--in{background:var(--surface);color:var(--ink-2);border:1px solid var(--line)}
+.chip--out{background:var(--accent-strong);color:var(--on-accent)}
+.chip--settled{background:var(--sage-soft);color:var(--sage)}
+.chip.lg{font-size:13px;padding:6px 12px}
+.chip.sm{font-size:10.5px;padding:3px 8px}
+.bg-surface .chip--in{background:var(--bg)}
+
+.pill{display:inline-flex;align-items:center;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:6px;background:var(--lilac-soft);color:var(--lilac-ink)}
+
+.ava{border-radius:50%;display:grid;place-items:center;font-weight:700;flex:none;font-family:var(--font-ui)}
+.ava.s{width:30px;height:30px;font-size:11px}
+.ava.m{width:36px;height:36px;font-size:13px}
+.ava.l{width:64px;height:64px;font-size:24px}
+.ava--c{background:var(--accent-soft);color:var(--accent-soft-ink)}
+.ava--n{background:var(--line);color:var(--ink-2)}
+.ava--s{background:var(--sage-soft);color:var(--sage)}
+.ava--lilac{background:var(--lilac-soft);color:var(--lilac-ink)}
+
+.field{display:block}
+.field .l{display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.field .inp{width:100%;background:var(--surface);border:1.5px solid var(--line);border-radius:var(--r-md);padding:12px 14px;font-family:var(--font-ui);font-size:14.5px;color:var(--ink)}
+.field .inp::placeholder{color:var(--ink-3)}
+.field .inp:focus{outline:none;border-color:var(--accent-strong);box-shadow:0 0 0 3px var(--accent-soft)}
+.field .hint{font-size:11.5px;color:var(--ink-3);margin-top:6px}
+.field .hint.muted{color:var(--ink-3)}
+
+.seg{display:flex;gap:8px}
+.seg button{flex:1;font-family:var(--font-ui);font-weight:600;font-size:13.5px;padding:11px 10px;border-radius:var(--r-md);border:1.5px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.seg button[aria-selected="true"]{background:var(--accent-strong);border-color:var(--accent-strong);color:var(--on-accent)}
+.seg button[aria-selected="true"] .ava{background:rgba(255,255,255,.22);color:#fff}
+
+.skel{display:block;background:linear-gradient(90deg,var(--skel) 0%,var(--skel-sheen) 50%,var(--skel) 100%);background-size:200% 100%;border-radius:8px;animation:sk 1.4s ease-in-out infinite}
+@keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+.eyebrow{font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* the tie-line primitives */
+.tie{position:relative}
+.tie-v{width:1.5px;background:var(--line);margin-left:3px}
+.node{width:7px;height:7px;border-radius:50%;flex:none}
+.node--ink{background:var(--ink)}
+.node--mut{background:var(--ink-3)}
+.node--out{background:var(--accent-strong)}
+.node--sage{background:var(--sage)}
+.node--open{background:transparent;border:1.5px solid var(--line-2)}
+
+/* pair motif: two points joined by a line */
+.pair{display:inline-flex;align-items:center;gap:0}
+.pair .seg-line{height:1.5px;width:26px;background:var(--line)}
+.pair .seg-line.dash{background:repeating-linear-gradient(90deg,var(--line-2) 0 4px,transparent 4px 8px)}
+.pair .seg-line.hot{background:linear-gradient(90deg,var(--ink),var(--accent-strong))}
+
+/* ---------- patterns ---------- */
+.pat{background:var(--surface);border:1px solid var(--hairline);border-left:3px solid var(--accent-strong);border-radius:var(--r-md);padding:var(--s4) var(--s5);margin-bottom:var(--s3)}
+.pat h4{font-family:var(--font-display);font-weight:700;font-size:14px;margin-bottom:3px}
+.pat p{font-size:13px;color:var(--ink-2)}
+.pat.line{border-left-color:var(--lilac)}
+
+/* ---------- applied screens ---------- */
+.screens{display:flex;flex-wrap:wrap;gap:30px 28px;align-items:flex-start}
+.scd{width:344px;max-width:100%}
+@media (max-width:420px){.scd{width:100%}}
+.scd .cap{margin-top:12px;display:flex;align-items:baseline;gap:8px}
+.scd .cap .t{font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:-.01em}
+.scd .cap .s{font-size:11.5px;color:var(--ink-3)}
+
+.screen{
+  position:relative;width:100%;height:680px;overflow:hidden;
+  background:var(--surface);border-radius:26px;
+  border:1px solid var(--hairline);box-shadow:var(--shadow-card);
+  display:flex;flex-direction:column;
+}
+.screen.short{height:auto;min-height:560px}
+.screen .scr-body{flex:1;overflow:hidden;display:flex;flex-direction:column}
+
+/* app bars */
+.appbar{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;flex:none}
+.appbar.plane{background:var(--accent);color:var(--on-accent)}
+.appbar.plane .name{color:#fff}
+.appbar.plane .ig .ava{background:rgba(255,255,255,.2);color:#fff}
+.appbar .b{display:flex;align-items:center;gap:9px}
+.appbar .name{font-family:var(--font-display);font-weight:700;font-size:17px;letter-spacing:-.01em}
+.ig{display:flex;align-items:center;gap:7px;font-size:12px;color:inherit;opacity:.95}
+.backbar{display:flex;align-items:center;gap:12px;padding:16px 18px;flex:none}
+.backbar .x{width:30px;height:30px;border-radius:9px;border:1px solid var(--line);display:grid;place-items:center;color:var(--ink-2);font-size:16px;background:var(--surface)}
+.backbar .ttl{font-family:var(--font-display);font-weight:700;font-size:17px}
+
+.pad{padding:18px 18px 20px;overflow:auto}
+.pad::-webkit-scrollbar{width:0}
+
+/* mark */
+.mk{display:block}
+
+/* net headline block */
+.net-eye{margin-bottom:6px}
+.net{display:flex;align-items:flex-end;gap:8px}
+.net .amt{font-family:var(--font-display);font-weight:700;font-size:46px;line-height:.92;letter-spacing:-.025em;color:var(--ink);font-feature-settings:"tnum" 1,"lnum" 1}
+.net .u{font-size:13px;font-weight:600;color:var(--ink-3);margin-bottom:6px}
+.netrow{display:flex;align-items:center;gap:10px;margin-top:9px}
+.netrow .cap{font-size:12px;color:var(--ink-3)}
+
+/* group rows with tie spine */
+.relblock{margin-top:18px}
+.relblock .lbl{margin-bottom:6px}
+.glist{position:relative;padding-left:14px}
+.glist:before{content:"";position:absolute;left:3px;top:-2px;bottom:18px;width:1.5px;background:var(--line)}
+.glist:after{content:"";position:absolute;left:3px;top:-8px;width:7px;height:7px;border-radius:50%;background:var(--ink-3);transform:translateX(-2.7px)}
+.grow{display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--hairline)}
+.grow:first-child{border-top:none}
+.grow:before{content:"";position:absolute;margin-left:-14px;width:8px;height:1.5px;background:var(--line)}
+.grow .who{flex:1;min-width:0}
+.grow .nick{font-size:14px;font-weight:600}
+.grow .sub{font-size:11px;color:var(--ink-3);margin-top:1px}
+.grow .r{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.grow .ramt{font-size:14.5px;font-weight:600;color:var(--ink);font-feature-settings:"tnum" 1,"lnum" 1}
+
+/* account zone */
+.acct{margin-top:18px;border-top:1px solid var(--hairline);padding-top:15px}
+.fstrip{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:9px;background:var(--bg);border:1px solid var(--hairline);border-radius:var(--r-md);padding:11px 13px}
+.fstrip .fe{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.fstrip .fv{font-family:var(--font-display);font-weight:700;font-size:17px;margin-top:2px;font-feature-settings:"tnum" 1}
+.fstrip .fv .u{font-size:11px;color:var(--ink-3);font-weight:600;margin-left:3px;font-family:var(--font-ui)}
+
+.cta-foot{margin-top:18px}
+.wink{margin-top:14px;text-align:center;font-size:12.5px;color:var(--ink-3)}
+
+/* banners */
+.banner{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--hairline);border-radius:var(--r-md);padding:9px 12px;font-size:12px;color:var(--ink-2);margin-top:12px}
+.banner .sp{width:13px;height:13px;border-radius:50%;border:2px solid var(--line-2);border-top-color:var(--ink-3);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* empty / error cards */
+.estate{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:38px 22px;margin:auto 0}
+.estate .ic{width:54px;height:54px;border-radius:16px;background:var(--accent-soft);display:grid;place-items:center;margin-bottom:4px}
+.estate.err .ic{background:var(--bg);border:1px solid var(--hairline)}
+.estate h3{font-family:var(--font-display);font-weight:700;font-size:18px}
+.estate p{font-size:13px;color:var(--ink-2);max-width:30ch}
+
+/* group detail */
+.balhero{padding:6px 0 4px}
+.balhero .pairline{margin:4px 0 12px}
+.balhero .amt{font-family:var(--font-display);font-weight:700;font-size:44px;line-height:.92;letter-spacing:-.025em;font-feature-settings:"tnum" 1}
+.balhero .amt .u{font-size:13px;color:var(--ink-3);font-weight:600;margin-left:6px;font-family:var(--font-ui)}
+.disc{font-size:12px;color:var(--ink-3);text-decoration:underline;text-underline-offset:2px;margin-top:10px;display:inline-block}
+
+.tl{position:relative;margin-top:20px;padding-left:20px}
+.tl:before{content:"";position:absolute;left:4px;top:4px;bottom:6px;width:1.5px;background:var(--line)}
+.exp{position:relative;padding:11px 0;border-bottom:1px solid var(--hairline)}
+.exp:before{content:"";position:absolute;left:-19px;top:17px;width:9px;height:9px;border-radius:50%;background:var(--surface);border:1.5px solid var(--line-2)}
+.exp .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.exp .for{font-size:13.5px;font-weight:600}
+.exp .amt{font-size:13.5px;font-weight:600;font-feature-settings:"tnum" 1}
+.exp .meta{font-size:11px;color:var(--ink-3);margin-top:2px}
+/* settlement divider = a knot where the thread closes */
+.knot{position:relative;padding:12px 0;margin:4px 0}
+.knot:before{content:"";position:absolute;left:-20.5px;top:14px;width:12px;height:12px;border-radius:50%;background:var(--sage-soft);border:1.5px solid var(--sage)}
+.knot .row{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
+.knot .lbl{font-size:12.5px;font-weight:600;color:var(--sage)}
+.knot .cnt{font-size:11.5px;color:var(--ink-3)}
+.knot .chev{color:var(--ink-3);font-size:12px}
+
+.settle{margin-top:20px;border-top:1px solid var(--hairline);padding-top:16px}
+.callout{display:flex;flex-direction:column;gap:10px;background:var(--accent-soft);border-radius:var(--r-md);padding:13px 14px;margin-bottom:12px}
+.callout .ct{font-size:13px;font-weight:600;color:var(--accent-soft-ink)}
+.callout .cs{font-size:11.5px;color:var(--ink-2)}
+
+/* add / edit expense */
+.amount-field{margin-bottom:18px}
+.amount-field .l{display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:8px}
+.amount-box{display:flex;align-items:baseline;gap:8px;border-bottom:2px solid var(--line-2);padding-bottom:8px}
+.amount-box .big{font-family:var(--font-display);font-weight:700;font-size:42px;letter-spacing:-.025em;color:var(--ink);font-feature-settings:"tnum" 1;background:none;border:none;width:100%;outline:none}
+.amount-box .big::placeholder{color:var(--ink-3)}
+.amount-box .u{font-size:15px;font-weight:600;color:var(--ink-3)}
+.subtitle{font-size:13px;color:var(--ink-2);margin:-4px 0 18px}
+.stack{display:flex;flex-direction:column;gap:16px}
+
+/* who-paid pair frame */
+.payframe{position:relative}
+.payframe .joiner{display:flex;align-items:center;justify-content:center;margin:-2px 0}
+.payframe .joiner .seg-line{height:1.5px;width:30px;background:var(--line)}
+
+/* your ponti */
+.profile-top{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:8px 0 4px}
+.profile-top .nm{font-family:var(--font-display);font-weight:700;font-size:20px;display:flex;align-items:center;gap:7px}
+.profile-top .nm .pen{font-size:13px;color:var(--ink-3)}
+.profile-top .em{font-size:12.5px;color:var(--ink-3)}
+.card{background:var(--bg);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:16px;margin-top:18px}
+.card .ce{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.card .cv{font-family:var(--font-display);font-weight:700;font-size:26px;margin:6px 0 4px;font-feature-settings:"tnum" 1}
+.card .cv .u{font-size:13px;color:var(--ink-3);font-weight:600;margin-left:4px;font-family:var(--font-ui)}
+.card .cap-line{font-size:11.5px;color:var(--ink-3);margin-top:4px}
+.card .crow{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.invite{margin-top:18px}
+.invite .it{font-size:12.5px;color:var(--ink-2);margin-bottom:10px}
+.idbox{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);border:1px solid var(--hairline);border-radius:var(--r-md);padding:11px 13px;margin-bottom:12px}
+.idbox .id{font-size:13px;font-weight:600;font-feature-settings:"tnum" 1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.idbox .cp{font-size:11px;color:var(--ink-3);flex:none}
+.btn-pair{display:flex;gap:10px}
+.btn-pair .btn{flex:1;text-align:center}
+.adv{margin-top:18px;border-top:1px solid var(--hairline);padding-top:14px}
+.adv .ah{display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink-2)}
+.adv .arow{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--hairline);font-size:12px}
+.adv .arow:first-of-type{margin-top:10px}
+.adv .ak{color:var(--ink-3)}
+.adv .av{color:var(--ink);font-weight:500;text-align:right;font-feature-settings:"tnum" 1}
+.logout{margin-top:18px;text-align:center}
+
+/* ---------- sheet / FlowWidget ---------- */
+.scrim-screen{position:relative}
+.scrim-screen .behind{position:absolute;inset:0;filter:saturate(.6);opacity:.5}
+.scrim-screen .scrim-fill{position:absolute;inset:0;background:var(--scrim)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--raised);border-radius:24px 24px 26px 26px;box-shadow:var(--shadow-overlay);padding:22px 20px 24px;z-index:2}
+.sheet .grab{width:36px;height:4px;border-radius:99px;background:var(--line-2);margin:0 auto 18px}
+.flow-kind{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);text-align:center}
+.consent{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg);border:1px solid var(--hairline);border-radius:var(--r-md);padding:14px;margin:12px 0}
+.consent .ck{font-size:12px;color:var(--ink-3)}
+.consent .camt{font-family:var(--font-display);font-weight:700;font-size:22px;font-feature-settings:"tnum" 1}
+.consent .camt .u{font-size:12px;color:var(--ink-3);font-weight:600;margin-left:3px;font-family:var(--font-ui)}
+.reassure{text-align:center;font-size:12.5px;color:var(--ink-2);margin-bottom:16px;max-width:32ch;margin-left:auto;margin-right:auto}
+.flow-actions{display:flex;flex-direction:column;gap:8px}
+
+/* running line */
+.flow-center{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:8px 0 4px}
+.drawline{position:relative;width:170px;height:18px;margin:14px 0}
+.drawline .track{position:absolute;top:8px;left:0;right:0;height:1.5px;background:var(--line)}
+.drawline .dotL{position:absolute;top:5px;left:0;width:8px;height:8px;border-radius:50%;background:var(--ink)}
+.drawline .dotR{position:absolute;top:5px;right:0;width:8px;height:8px;border-radius:50%;background:var(--ink-3)}
+.drawline .runner{position:absolute;top:7.5px;left:0;width:34px;height:3px;border-radius:3px;background:var(--accent-strong);animation:run 1.25s ease-in-out infinite}
+@keyframes run{0%{left:4px}100%{left:calc(100% - 38px)}}
+.flow-title{font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:-.01em}
+.flow-sub{font-size:13px;color:var(--ink-2);max-width:30ch}
+.knot-done{width:52px;height:52px;border-radius:50%;background:var(--sage-soft);display:grid;place-items:center;color:var(--sage);margin-bottom:4px}
+.gapline{position:relative;width:170px;height:18px;margin:6px 0 2px}
+.gapline .track{position:absolute;top:8px;left:0;right:0;height:1.5px;background:repeating-linear-gradient(90deg,var(--line-2) 0 5px,transparent 5px 11px)}
+.gapline .dotL{position:absolute;top:5px;left:0;width:8px;height:8px;border-radius:50%;background:var(--ink)}
+.gapline .dotR{position:absolute;top:5px;right:0;width:8px;height:8px;border-radius:50%;background:var(--accent-strong);box-shadow:0 0 0 4px var(--accent-soft)}
+.receipt{display:inline-block;margin-top:12px;font-size:12.5px;color:var(--ink-2);text-decoration:underline;text-underline-offset:2px}
+
+.note{font-size:12px;color:var(--ink-3);font-style:italic;margin-top:6px}
+.foot{margin-top:64px;padding-top:var(--s5);border-top:1px solid var(--hairline);font-size:12.5px;color:var(--ink-3);text-align:center}
+</style>
+</helmet>
+<div class="doc">
+
+  <!-- ============================ HEADER ============================ -->
+  <header class="doc-head">
+    <button class="toggle" onClick="{{ toggleTheme }}" aria-label="Toggle light and dark"><span class="glyph"></span><span>{{ themeLabel }}</span></button>
+    <div class="brandline">
+      <svg class="mk" width="40" height="14" viewBox="0 0 40 14" aria-hidden="true">
+        <line x1="5" y1="7" x2="35" y2="7" stroke="currentColor" stroke-width="2"/>
+        <circle cx="5" cy="7" r="3.4" fill="currentColor"/>
+        <circle cx="35" cy="7" r="3.4" fill="#D1486A"/>
+      </svg>
+      <span class="name">Ponti</span>
+    </div>
+    <div class="kick">Design system · direction “Cal”</div>
+    <h1>Architectural warmth, tied by a single line.</h1>
+    <p>Cal is the base: warmth delivered through saturated, architectural color planes — never cream, never cozy. From the “Trazo” direction we keep only the idea, recolored into Cal’s warm palette: <strong>the mark — two points, one line — is the grammar of the whole product.</strong> The two points are always two people; the line ties what is owed to its breakdown, becomes the activity timeline, and closes into a knot at every settlement.</p>
+    <p>Saturated planes scale because they’re rationed. Rosa is the architecture of human, decisive moments — the Home front door, primary actions, the consent moment — while data, lists, and forms stay calm. Color is architecture; <strong>it never touches a number</strong>.</p>
+  </header>
+
+  <!-- ============================ 1 · FOUNDATIONS ============================ -->
+  <section class="sec" id="foundations">
+    <div class="sec-num">01</div>
+    <h2>Foundations</h2>
+    <p class="lede">Tokens for light and dark. Contrast verified to WCAG AA on the load-bearing pairs; amounts always render in <code>--ink</code>, never an accent.</p>
+
+    <div class="sub">Color</div>
+    <div class="pal-cols">
+      <div class="pal-card">
+        <h4>Light</h4>
+        <div class="swrow"><span class="sw" style="background:#ECEDE8"></span><span class="swmeta"><span class="nm">bg — plaster</span><span class="hex">#ECEDE8</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#F4F4EF"></span><span class="swmeta"><span class="nm">surface</span><span class="hex">#F4F4EF</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#FBFBF7"></span><span class="swmeta"><span class="nm">raised — sheets</span><span class="hex">#FBFBF7</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#221C1B"></span><span class="swmeta"><span class="nm">ink<span class="aa">AA 13.1</span></span><span class="hex">#221C1B</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#6B625C"></span><span class="swmeta"><span class="nm">ink-2<span class="aa">AA 4.6</span></span><span class="hex">#6B625C</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#D6D6CD"></span><span class="swmeta"><span class="nm">line — the tie</span><span class="hex">#D6D6CD</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#D1486A"></span><span class="swmeta"><span class="nm">accent — rosa plane</span><span class="hex">#D1486A</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#C23A5C"></span><span class="swmeta"><span class="nm">accent-strong<span class="aa">AA 5.2 / #FFF</span></span><span class="hex">#C23A5C</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#6E4F94"></span><span class="swmeta"><span class="nm">lilac — counterpoint</span><span class="hex">#6E4F94</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#5B7060"></span><span class="swmeta"><span class="nm">sage — settled</span><span class="hex">#5B7060</span></span></div>
+      </div>
+      <div class="pal-card">
+        <h4>Dark</h4>
+        <div class="swrow"><span class="sw" style="background:#191613"></span><span class="swmeta"><span class="nm">bg — dusk concrete</span><span class="hex">#191613</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#221E19"></span><span class="swmeta"><span class="nm">surface</span><span class="hex">#221E19</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#2A2620"></span><span class="swmeta"><span class="nm">raised — sheets</span><span class="hex">#2A2620</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#F0ECE5"></span><span class="swmeta"><span class="nm">ink<span class="aa">AA 14.0</span></span><span class="hex">#F0ECE5</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#ABA39B"></span><span class="swmeta"><span class="nm">ink-2<span class="aa">AA 5.1</span></span><span class="hex">#ABA39B</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#38322B"></span><span class="swmeta"><span class="nm">line — the tie</span><span class="hex">#38322B</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#DA5774"></span><span class="swmeta"><span class="nm">accent — rosa plane</span><span class="hex">#DA5774</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#C23A5C"></span><span class="swmeta"><span class="nm">accent-strong<span class="aa">AA 5.2 / #FFF</span></span><span class="hex">#C23A5C</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#9B7DC0"></span><span class="swmeta"><span class="nm">lilac — counterpoint</span><span class="hex">#9B7DC0</span></span></div>
+        <div class="swrow"><span class="sw" style="background:#8AA593"></span><span class="swmeta"><span class="nm">sage — settled</span><span class="hex">#8AA593</span></span></div>
+      </div>
+    </div>
+
+    <div class="sub">Type — Cabinet Grotesk (display) · Switzer (UI)</div>
+    <div class="type-spec">
+      <div><span class="lbl">Balance / hero</span><span class="dem tnum" style="font-family:var(--font-display);font-weight:700;font-size:44px;letter-spacing:-.025em;line-height:1">180.00</span></div>
+      <div><span class="lbl">Screen title</span><span class="dem" style="font-family:var(--font-display);font-weight:700;font-size:24px;letter-spacing:-.015em">Add an expense</span></div>
+      <div><span class="lbl">Section title</span><span class="dem" style="font-family:var(--font-display);font-weight:600;font-size:18px">People you share with</span></div>
+      <div><span class="lbl">Body</span><span class="dem" style="font-size:15px">Clear accounts keep people close, even when they live far apart.</span></div>
+      <div><span class="lbl">Eyebrow / label</span><span class="dem eyebrow">Funds available</span></div>
+      <div><span class="lbl">Data — tabular</span><span class="dem tnum" style="font-size:15px;font-weight:600">1,240.00 · 60.00 · 9,803.50</span></div>
+    </div>
+    <p class="note">High legibility is load-bearing — this is money. Figures are tabular lining (<code>tnum, lnum</code>) everywhere, so columns align and 0/O never blur. No mono, no code-style faces.</p>
+
+    <div class="sub">Spacing · radius</div>
+    <div class="scale-row">
+      <span class="tk"><b>4-base</b> <span class="v">4·8·12·16·20·24·32·40</span></span>
+      <span class="tk"><b>radius</b> <span class="v">sm 8 · md 12 · lg 16 · xl 20 · pill</span></span>
+    </div>
+
+    <div class="sub">Elevation</div>
+    <div class="elev-row">
+      <div class="elev e1">card · resting</div>
+      <div class="elev e2">overlay · sheet / dialog</div>
+    </div>
+    <p class="note">Two levels only. Shadows are warm-tinted (ink-based), never cool grey — keeps depth on-brand in both themes.</p>
+
+    <div class="sub">Signature — the line</div>
+    <div class="sig">
+      <div>
+        <h4>One line, two points, carried everywhere</h4>
+        <p>The brand mark is not decoration — it’s the structural rule. Wherever two things relate (two people, you and an action, you and the person you’re inviting), a line joins two points. Solid = connected/settled. Dashed = pending or not-yet-connected. The line is warm hairline; only an <em>active</em> endpoint takes rosa, only a <em>settled</em> knot takes sage. This is the entire system in one gesture.</p>
+      </div>
+      <div class="sig-demo">
+        <div class="pair" title="connected"><span class="node node--ink"></span><span class="seg-line"></span><span class="node node--mut"></span></div>
+        <div class="pair" title="you owe — active endpoint"><span class="node node--ink"></span><span class="seg-line hot"></span><span class="node node--out"></span></div>
+        <div class="pair" title="not yet connected"><span class="node node--ink"></span><span class="seg-line dash"></span><span class="node node--open"></span></div>
+        <div class="pair" title="settled — a knot"><span class="node node--sage"></span><span class="seg-line"></span><span class="node node--sage"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ 2 · COMPONENTS ============================ -->
+  <section class="sec" id="components">
+    <div class="sec-num">02</div>
+    <h2>Components</h2>
+    <p class="lede">Variants, states, and the one rule each must never break.</p>
+
+    <div class="comp-grid">
+
+      <div class="comp">
+        <h4>DirChip — direction indicator</h4>
+        <div class="role">Who owes whom. Never contains a number. Emphasis only on “out”.</div>
+        <div class="demo">
+          <span class="chip chip--in lg"><span class="d"></span>you’re owed</span>
+          <span class="chip chip--out">you owe</span>
+          <span class="chip chip--settled">✓ settled</span>
+          <span class="chip chip--in sm"><span class="d"></span>in</span>
+        </div>
+        <div class="dd"><div class="do"><b>Do</b><span>rosa on “out” only — it carries the pending settle action.</span></div><div class="dont"><b>Don’t</b><span>put a +/− or any amount inside the chip.</span></div></div>
+      </div>
+
+      <div class="comp">
+        <h4>Button — five emphases</h4>
+        <div class="role">primary · outline · soft · ghost · quiet</div>
+        <div class="demo">
+          <button class="btn btn--primary">Add someone</button>
+          <button class="btn btn--outline">Settle up</button>
+          <button class="btn btn--soft">Add funds</button>
+          <button class="btn btn--quiet">Reload</button>
+        </div>
+        <div class="dd"><div class="do"><b>Do</b><span>one primary per screen; rosa = the decisive action.</span></div><div class="dont"><b>Don’t</b><span>colour a destructive action red — nothing alarms.</span></div></div>
+      </div>
+
+      <div class="comp">
+        <h4>Avatar</h4>
+        <div class="role">Image or letter fallback · tone deterministic per person</div>
+        <div class="demo">
+          <span class="ava m ava--c">C</span>
+          <span class="ava m ava--n">M</span>
+          <span class="ava m ava--s">S</span>
+          <span class="ava m ava--lilac">A</span>
+        </div>
+        <div class="dd"><div class="do"><b>Do</b><span>same person → same tone, every screen.</span></div><div class="dont"><b>Don’t</b><span>show a raw 0x address as identity.</span></div></div>
+      </div>
+
+      <div class="comp">
+        <h4>Group Row</h4>
+        <div class="role">One shared pair, hung on the tie spine</div>
+        <div class="demo" style="display:block">
+          <div style="position:relative">
+            <div class="grow" style="border:none;padding:6px 0"><span class="ava s ava--c">C</span><span class="who"><span class="nick">Camila</span><div class="sub">she owes you</div></span><span class="r"><span class="ramt tnum">240.00</span><span class="chip chip--in sm"><span class="d"></span>in</span></span></div>
+          </div>
+        </div>
+        <div class="dd"><div class="do"><b>Do</b><span>amount neutral; direction in the chip.</span></div><div class="dont"><b>Don’t</b><span>sign the amount or tint it.</span></div></div>
+      </div>
+
+      <div class="comp">
+        <h4>Field & numeric input</h4>
+        <div class="role">Label above · optional hint · inline suffix</div>
+        <div class="demo" style="display:block">
+          <label class="field"><span class="l">What for?</span><input class="inp" placeholder="e.g. Groceries"></label>
+        </div>
+        <div class="dd"><div class="do"><b>Do</b><span>plain labels people recognise.</span></div><div class="dont"><b>Don’t</b><span>say “wallet”, “gas”, “address”.</span></div></div>
+      </div>
+
+      <div class="comp">
+        <h4>Segmented / payer toggle</h4>
+        <div class="role">Single-select, exactly one active</div>
+        <div class="demo" style="display:block">
+          <div class="seg"><button aria-selected="true">You</button><button aria-selected="false"><span class="ava s ava--c">C</span>Cami</button></div>
+        </div>
+        <div class="dd"><div class="do"><b>Do</b><span>render as buttons, active = rosa.</span></div><div class="dont"><b>Don’t</b><span>use bare radio inputs.</span></div></div>
+      </div>
+
+      <div class="comp">
+        <h4>Wallet card / strip</h4>
+        <div class="role">Full card on account · compact strip on Home</div>
+        <div class="demo" style="display:block">
+          <div class="fstrip"><div><div class="fe">Funds available</div><div class="fv tnum">320.00<span class="u">USDC</span></div></div><button class="btn btn--soft">Add funds</button></div>
+        </div>
+        <div class="dd"><div class="do"><b>Do</b><span>label it “Funds available”.</span></div><div class="dont"><b>Don’t</b><span>let it read as a third balance.</span></div></div>
+      </div>
+
+      <div class="comp">
+        <h4>Pill · Skeleton</h4>
+        <div class="role">Status tag · loading placeholder</div>
+        <div class="demo">
+          <span class="pill">edited</span>
+          <span class="skel" style="width:120px;height:14px"></span>
+          <span class="skel" style="width:60px;height:14px"></span>
+        </div>
+        <div class="dd"><div class="do"><b>Do</b><span>skeleton rows for loading.</span></div><div class="dont"><b>Don’t</b><span>show a spinner-only screen.</span></div></div>
+      </div>
+
+      <div class="comp">
+        <h4>Empty state</h4>
+        <div class="role">Centered: icon · title · body · one CTA</div>
+        <div class="demo" style="display:block;text-align:center">
+          <span class="ava m ava--c" style="border-radius:14px;margin-bottom:6px">＋</span>
+          <div style="font-family:var(--font-display);font-weight:700;font-size:15px">No shared tabs yet</div>
+          <div style="font-size:12px;color:var(--ink-2);margin:4px 0 10px">Add someone and start keeping the count.</div>
+          <button class="btn btn--primary" style="padding:9px 16px;font-size:13px">Add someone</button>
+        </div>
+        <div class="dd"><div class="do"><b>Do</b><span>an empty screen invites an action.</span></div><div class="dont"><b>Don’t</b><span>use a primary button on an error.</span></div></div>
+      </div>
+
+      <div class="comp">
+        <h4>Sheet / dialog shell</h4>
+        <div class="role">Bottom sheet (mobile) · dialog (desktop)</div>
+        <div class="demo" style="display:block">
+          <div style="background:var(--raised);border-radius:14px;padding:14px;box-shadow:var(--shadow-card)"><div class="grab" style="margin-bottom:12px"></div><div style="font-size:12.5px;color:var(--ink-2);text-align:center">Focus-trapped · scroll-locked · supports a non-dismissible mode</div></div>
+        </div>
+        <div class="dd"><div class="do"><b>Do</b><span>lock during in-progress / waiting.</span></div><div class="dont"><b>Don’t</b><span>stack a sheet over a sheet.</span></div></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================ 3 · PATTERNS ============================ -->
+  <section class="sec" id="patterns">
+    <div class="sec-num">03</div>
+    <h2>Patterns</h2>
+    <p class="lede">The semantic rules — where things go and why. These bind every screen.</p>
+
+    <div class="pat"><h4>Money rule — colour is architecture, never the number</h4><p>The rosa plane and accent draw the eye to actions and to the “you owe” chip. Amounts — net, per-pair, per-expense, funds — are always neutral ink. The constraint is <em>where</em> emphasis lands, not what it looks like.</p></div>
+    <div class="pat"><h4>Direction lives in the chip</h4><p>The +/− sign is dropped from every displayed amount. Who owes whom is read from the DirChip beside the number, never from the number itself.</p></div>
+    <div class="pat"><h4>Never alarm-red</h4><p>Nothing about money or actions turns red. Errors use a warm, neutral treatment; the “you owe” emphasis is an affordance, not a warning — including FlowWidget errors.</p></div>
+    <div class="pat line"><h4>The line system</h4><p>Two points, one line — carried across the product. Home: the net ties down to its breakdown. Group detail: the timeline <em>is</em> the line, and a settlement is a knot where prior expenses close. Add someone: your point reaches a dashed-open point. FlowWidget: the line draws, then knots (done) or gaps (error).</p></div>
+    <div class="pat"><h4>Timeline structure</h4><p>The activity list is segmented by settlements. A settlement knot closes the expenses above it; they collapse and expand on tap. The open window sits at the top, newest first. Edited rows carry a badge; deleted rows are gone.</p></div>
+    <div class="pat"><h4>Form-as-screen · one consent per write</h4><p>Add / edit expense and add someone are full screens (mobile) or dialogs (desktop), never sheets over content. Every data-changing action opens the FlowWidget, where the user taps exactly one confirm. It never auto-fires.</p></div>
+    <div class="pat"><h4>Post-write resilience</h4><p>After a write succeeds, the list lags briefly. The app shows a calm grey “Saved — updating…”, then “Saved — reload to see the latest.” A failed refresh is never shown as a write failure.</p></div>
+  </section>
+
+  <!-- ============================ 4 · APPLIED ============================ -->
+  <section class="sec" id="applied">
+    <div class="sec-num">04</div>
+    <h2>Applied</h2>
+    <p class="lede">The system on the real screens. Flip the theme (top-right) to see light and dark — and whether the planes hold as the surface area grows.</p>
+
+    <div class="screens">
+
+      <!-- ===== HOME — normal ===== -->
+      <div class="scd">
+        <div class="screen">
+          <div class="appbar plane">
+            <div class="b">
+              <svg class="mk" width="34" height="12" viewBox="0 0 34 12"><line x1="4" y1="6" x2="30" y2="6" stroke="#fff" stroke-width="2"/><circle cx="4" cy="6" r="3" fill="#fff"/><circle cx="30" cy="6" r="3" fill="#fff" fill-opacity=".55"/></svg>
+              <span class="name">Ponti</span>
+            </div>
+            <div class="ig"><span>Your Ponti</span><span class="ava s" style="background:rgba(255,255,255,.2);color:#fff">A</span></div>
+          </div>
+          <div class="scr-body"><div class="pad">
+            <div class="eyebrow net-eye">Net</div>
+            <div class="net"><span class="amt">180.00</span><span class="u">USDC</span></div>
+            <div class="netrow"><span class="chip chip--in lg"><span class="d"></span>you’re owed</span><span class="cap">across everyone</span></div>
+
+            <div class="relblock">
+              <div class="eyebrow lbl">People you share with</div>
+              <div class="glist">
+                <div class="grow"><span class="ava m ava--c">C</span><span class="who"><span class="nick">Camila</span><div class="sub">she owes you</div></span><span class="r"><span class="ramt">240.00</span><span class="chip chip--in sm"><span class="d"></span>in</span></span></div>
+                <div class="grow"><span class="ava m ava--n">M</span><span class="who"><span class="nick">Mateo</span><div class="sub">you owe</div></span><span class="r"><span class="ramt">60.00</span><span class="chip chip--out sm">you owe</span></span></div>
+                <div class="grow"><span class="ava m ava--s">S</span><span class="who"><span class="nick">Sofía</span><div class="sub">all settled</div></span><span class="r"><span class="chip chip--settled sm">✓ settled</span></span></div>
+              </div>
+            </div>
+
+            <div class="acct">
+              <div class="eyebrow">Your account</div>
+              <div class="fstrip"><div><div class="fe">Funds available</div><div class="fv">320.00<span class="u">USDC</span></div></div><button class="btn btn--soft">Add funds</button></div>
+            </div>
+
+            <div class="cta-foot"><button class="btn btn--primary btn--block">Add someone</button></div>
+            <div class="wink">One balance, wherever you live.</div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Home</span><span class="s">normal · the rosa front door</span></div>
+      </div>
+
+      <!-- ===== HOME — loading / empty / error ===== -->
+      <div class="scd">
+        <div class="screen">
+          <div class="appbar plane">
+            <div class="b"><svg class="mk" width="34" height="12" viewBox="0 0 34 12"><line x1="4" y1="6" x2="30" y2="6" stroke="#fff" stroke-width="2"/><circle cx="4" cy="6" r="3" fill="#fff"/><circle cx="30" cy="6" r="3" fill="#fff" fill-opacity=".55"/></svg><span class="name">Ponti</span></div>
+            <div class="ig"><span>Your Ponti</span><span class="ava s" style="background:rgba(255,255,255,.2);color:#fff">A</span></div>
+          </div>
+          <div class="scr-body"><div class="pad">
+            <div class="eyebrow net-eye">Net</div>
+            <span class="skel" style="width:160px;height:42px;margin-bottom:10px"></span>
+            <span class="skel" style="width:130px;height:18px"></span>
+            <div class="relblock">
+              <div class="eyebrow lbl">People you share with</div>
+              <div class="glist" style="gap:0">
+                <div class="grow"><span class="skel" style="width:36px;height:36px;border-radius:50%"></span><span class="who"><span class="skel" style="width:90px;height:13px;display:block;margin-bottom:6px"></span><span class="skel" style="width:60px;height:10px;display:block"></span></span><span class="skel" style="width:48px;height:14px"></span></div>
+                <div class="grow"><span class="skel" style="width:36px;height:36px;border-radius:50%"></span><span class="who"><span class="skel" style="width:70px;height:13px;display:block;margin-bottom:6px"></span><span class="skel" style="width:54px;height:10px;display:block"></span></span><span class="skel" style="width:48px;height:14px"></span></div>
+              </div>
+            </div>
+            <div class="banner"><span class="sp"></span>Loading your tabs…</div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Home — loading</span><span class="s">skeleton rows, never a bare spinner</span></div>
+      </div>
+
+      <!-- ===== HOME empty + error stacked ===== -->
+      <div class="scd">
+        <div class="screen short">
+          <div class="appbar plane">
+            <div class="b"><svg class="mk" width="34" height="12" viewBox="0 0 34 12"><line x1="4" y1="6" x2="30" y2="6" stroke="#fff" stroke-width="2"/><circle cx="4" cy="6" r="3" fill="#fff"/><circle cx="30" cy="6" r="3" fill="#fff" fill-opacity=".55"/></svg><span class="name">Ponti</span></div>
+            <div class="ig"><span>Your Ponti</span><span class="ava s" style="background:rgba(255,255,255,.2);color:#fff">A</span></div>
+          </div>
+          <div class="scr-body">
+            <div class="estate">
+              <span class="ic"><svg width="22" height="10" viewBox="0 0 22 10"><line x1="3" y1="5" x2="19" y2="5" stroke="#C23A5C" stroke-width="1.8" stroke-dasharray="3 3"/><circle cx="3" cy="5" r="2.6" fill="#C23A5C"/><circle cx="19" cy="5" r="2.6" fill="none" stroke="#C23A5C" stroke-width="1.6"/></svg></span>
+              <h3>No shared tabs yet</h3>
+              <p>Add someone and start keeping the count — Ponti does the math.</p>
+              <button class="btn btn--primary" style="padding:11px 20px;margin-top:4px">Add someone</button>
+            </div>
+            <div style="border-top:1px solid var(--hairline);padding:18px">
+              <div class="estate err" style="padding:8px 0">
+                <span class="ic"><svg width="22" height="10" viewBox="0 0 22 10"><line x1="3" y1="5" x2="10" y2="5" stroke="#988F89" stroke-width="1.8"/><line x1="13" y1="5" x2="19" y2="5" stroke="#988F89" stroke-width="1.8" stroke-dasharray="2 2"/><circle cx="3" cy="5" r="2.4" fill="#988F89"/></svg></span>
+                <h3 style="font-size:15px">Couldn’t load this right now</h3>
+                <p style="font-size:12px">Nothing’s lost — your money is where it was. This is a display hiccup, not a funds issue.</p>
+                <button class="btn btn--ghost" style="margin-top:2px">Try again</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="cap"><span class="t">Home — empty &amp; error</span><span class="s">calm; error gets a quiet CTA, never red</span></div>
+      </div>
+
+      <!-- ===== GROUP DETAIL — you owe ===== -->
+      <div class="scd">
+        <div class="screen">
+          <div class="backbar"><span class="x">‹</span><span class="ttl">Camila</span></div>
+          <div class="scr-body"><div class="pad">
+            <div class="balhero">
+              <span class="chip chip--out lg">You owe Cami</span>
+              <div class="pairline pair" style="margin-top:12px"><span class="ava s ava--lilac" style="width:22px;height:22px;font-size:10px">A</span><span class="seg-line hot" style="width:46px"></span><span class="ava s ava--c" style="width:22px;height:22px;font-size:10px">C</span></div>
+              <div class="amt">60.00<span class="u">USDC</span></div>
+              <a class="disc">Group details</a>
+            </div>
+
+            <div class="tl">
+              <div class="exp"><div class="top"><span class="for">Groceries</span><span class="amt">40.00</span></div><div class="meta">Cami paid · Jun 14</div></div>
+              <div class="exp"><div class="top"><span class="for">Taxi <span class="pill">edited</span></span><span class="amt">20.00</span></div><div class="meta">Cami paid · Jun 12</div></div>
+              <div class="knot"><div class="row"><span class="lbl">Settled up · May 30</span><span class="cnt">3 expenses squared away ›</span></div></div>
+            </div>
+
+            <div class="settle">
+              <button class="btn btn--primary btn--block">Settle up</button>
+            </div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Group detail</span><span class="s">timeline = the line; settlement = a knot</span></div>
+      </div>
+
+      <!-- ===== GROUP DETAIL — insufficient funds ===== -->
+      <div class="scd">
+        <div class="screen short">
+          <div class="backbar"><span class="x">‹</span><span class="ttl">Camila</span></div>
+          <div class="scr-body"><div class="pad">
+            <div class="balhero">
+              <span class="chip chip--out lg">You owe Cami</span>
+              <div class="pairline pair" style="margin-top:12px"><span class="ava s ava--lilac" style="width:22px;height:22px;font-size:10px">A</span><span class="seg-line hot" style="width:46px"></span><span class="ava s ava--c" style="width:22px;height:22px;font-size:10px">C</span></div>
+              <div class="amt">60.00<span class="u">USDC</span></div>
+            </div>
+            <div class="tl" style="margin-top:16px">
+              <div class="exp"><div class="top"><span class="for">Groceries</span><span class="amt">40.00</span></div><div class="meta">Cami paid · Jun 14</div></div>
+              <div class="exp" style="border:none"><div class="top"><span class="for">Taxi</span><span class="amt">20.00</span></div><div class="meta">Cami paid · Jun 12</div></div>
+            </div>
+            <div class="settle">
+              <div class="callout">
+                <span class="ct">You need 25.00 more USDC</span>
+                <span class="cs">Add funds and the settle button unlocks on its own.</span>
+                <button class="btn btn--soft" style="align-self:flex-start">Add funds</button>
+              </div>
+              <button class="btn btn--primary btn--block" disabled>Settle up</button>
+            </div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Group detail — low funds</span><span class="s">just-in-time gate; warm, not alarmed</span></div>
+      </div>
+
+      <!-- ===== ADD EXPENSE ===== -->
+      <div class="scd">
+        <div class="screen short">
+          <div class="backbar"><span class="x">‹</span><span class="ttl">Add an expense</span></div>
+          <div class="scr-body"><div class="pad">
+            <div class="subtitle">Add what you paid for — Ponti keeps the count.</div>
+            <div class="amount-field">
+              <span class="l">Amount</span>
+              <div class="amount-box"><input class="big" placeholder="0.00" value="42.50"><span class="u">USDC</span></div>
+            </div>
+            <div class="stack">
+              <label class="field"><span class="l">What for?</span><input class="inp" placeholder="e.g. Groceries" value="Dinner"></label>
+              <div class="field payframe">
+                <span class="l">Who paid?</span>
+                <div class="seg"><button aria-selected="true">You</button><button aria-selected="false"><span class="ava s ava--c">C</span>Cami</button></div>
+              </div>
+              <button class="btn btn--primary btn--block" style="margin-top:4px">Review &amp; add</button>
+            </div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Add expense</span><span class="s">amount is the focal field · neutral</span></div>
+      </div>
+
+      <!-- ===== EDIT EXPENSE (header variant) + ADD SOMEONE ===== -->
+      <div class="scd">
+        <div class="screen short">
+          <div class="backbar"><span class="x">‹</span><span class="ttl">Edit expense</span></div>
+          <div class="scr-body"><div class="pad">
+            <div class="subtitle">Fix the details — the balance updates to match.</div>
+            <div class="amount-field">
+              <span class="l">Amount</span>
+              <div class="amount-box"><input class="big" value="40.00"><span class="u">USDC</span></div>
+            </div>
+            <div class="stack">
+              <label class="field"><span class="l">What for?</span><input class="inp" value="Groceries"></label>
+              <div class="field"><span class="l">Who paid?</span><div class="seg"><button aria-selected="false">You</button><button aria-selected="true"><span class="ava s">C</span>Cami</button></div></div>
+              <button class="btn btn--primary btn--block" style="margin-top:4px">Review changes</button>
+              <button class="btn btn--quiet" style="align-self:center">Delete expense</button>
+            </div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Edit expense</span><span class="s">same form, recolours nothing</span></div>
+      </div>
+
+      <!-- ===== ADD SOMEONE (normal + unresolved) ===== -->
+      <div class="scd">
+        <div class="screen short">
+          <div class="backbar"><span class="x">‹</span><span class="ttl">Add someone</span></div>
+          <div class="scr-body"><div class="pad">
+            <div class="subtitle">Have someone’s Ponti ID? Paste their link or scan their QR to start a shared tab.</div>
+            <div class="pair" style="justify-content:center;margin:18px 0 22px"><span class="ava s ava--lilac">A</span><span class="seg-line dash" style="width:64px"></span><span class="node node--open" style="width:14px;height:14px"></span></div>
+            <label class="field"><span class="l">Their Ponti ID</span><input class="inp" placeholder="Paste their Ponti ID"></label>
+            <button class="btn btn--primary btn--block" style="margin-top:18px">Add someone</button>
+
+            <div style="margin-top:26px;border-top:1px dashed var(--line);padding-top:18px">
+              <span class="eyebrow">Unresolved input</span>
+              <label class="field" style="margin-top:10px"><span class="l">Their Ponti ID</span><input class="inp" value="ponti.mony/ax9" style="border-color:var(--line)"><span class="hint muted">That doesn’t look like a Ponti ID yet — check the link and try again.</span></label>
+            </div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Add someone</span><span class="s">dashed line = not connected yet</span></div>
+      </div>
+
+      <!-- ===== YOUR PONTI ===== -->
+      <div class="scd">
+        <div class="screen">
+          <div class="backbar"><span class="x">‹</span><span class="ttl">Your Ponti</span></div>
+          <div class="scr-body"><div class="pad">
+            <div class="profile-top">
+              <span class="ava l ava--lilac">A</span>
+              <div class="nm">Ariel <span class="pen">✎</span></div>
+              <div class="em">ariel@ponti.money</div>
+            </div>
+            <div class="card">
+              <div class="ce">Funds available</div>
+              <div class="cv">320.00<span class="u">USDC</span></div>
+              <div class="cap-line">Your balance to settle with — Ponti never holds it.</div>
+              <div class="crow"><button class="btn btn--soft">Add funds</button></div>
+            </div>
+            <div class="invite">
+              <div class="it">This is your Ponti ID — like a username. Share it so someone can start a shared tab with you.</div>
+              <div class="idbox"><span class="id">ponti.money/ariel</span><span class="cp">Copy</span></div>
+              <div class="btn-pair"><button class="btn btn--outline">Share link</button><button class="btn btn--outline">Show QR code</button></div>
+            </div>
+            <div class="adv">
+              <div class="ah">Advanced details <span>▾</span></div>
+              <div class="arow"><span class="ak">Account address</span><span class="av">0x7a3f…9C2e ⧉</span></div>
+              <div class="arow"><span class="ak">Network</span><span class="av">Base — where USDC settles</span></div>
+              <div class="arow"><span class="ak">Account type</span><span class="av">Smart account · non-custodial</span></div>
+              <div class="arow"><span class="ak">Explorer</span><span class="av" style="color:var(--lilac-ink)">View on explorer ↗</span></div>
+            </div>
+            <div class="logout"><button class="btn btn--quiet">Log out</button></div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Your Ponti</span><span class="s">your point; the invite extends the line</span></div>
+      </div>
+
+      <!-- ===== FLOWWIDGET — CONFIRM ===== -->
+      <div class="scd">
+        <div class="screen scrim-screen">
+          <div class="behind"><div class="appbar"><div class="b"><span class="name">Ponti</span></div></div><div class="pad"><span class="chip chip--out lg">You owe Cami</span><div class="balhero"><div class="amt" style="margin-top:10px">60.00<span class="u">USDC</span></div></div></div></div>
+          <div class="scrim-fill"></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="flow-kind">Settle up</div>
+            <div class="consent">
+              <div><div class="ck">You’ll pay Cami</div></div>
+              <div class="camt">60.00<span class="u">USDC</span></div>
+            </div>
+            <div class="reassure">Just the two of you and the math. Your money, not ours.</div>
+            <div class="flow-actions">
+              <button class="btn btn--primary btn--block">Confirm</button>
+              <button class="btn btn--ghost" style="align-self:center">Cancel</button>
+            </div>
+          </div>
+        </div>
+        <div class="cap"><span class="t">FlowWidget — confirm</span><span class="s">one consent · never auto-fires</span></div>
+      </div>
+
+      <!-- ===== FLOWWIDGET — RUNNING ===== -->
+      <div class="scd">
+        <div class="screen scrim-screen">
+          <div class="behind"><div class="appbar"><div class="b"><span class="name">Ponti</span></div></div></div>
+          <div class="scrim-fill"></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="flow-center">
+              <div class="drawline"><div class="track"></div><div class="dotL"></div><div class="dotR"></div><div class="runner"></div></div>
+              <div class="flow-title">Putting it where it belongs</div>
+              <div class="flow-sub">One sec — you can keep this open.</div>
+            </div>
+            <div class="note" style="text-align:center;margin-top:14px">This view can’t be dismissed while it runs.</div>
+          </div>
+        </div>
+        <div class="cap"><span class="t">FlowWidget — in&nbsp;progress</span><span class="s">the line draws · sheet locked</span></div>
+      </div>
+
+      <!-- ===== FLOWWIDGET — DONE ===== -->
+      <div class="scd">
+        <div class="screen scrim-screen">
+          <div class="behind"><div class="appbar"><div class="b"><span class="name">Ponti</span></div></div></div>
+          <div class="scrim-fill"></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="flow-center">
+              <div class="knot-done"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M5 11.5l4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div class="flow-title">Squared away</div>
+              <div class="flow-sub">You and Cami are even again.</div>
+              <a class="receipt">View receipt ↗</a>
+            </div>
+            <div class="flow-actions" style="margin-top:18px"><button class="btn btn--primary btn--block">Done</button></div>
+          </div>
+        </div>
+        <div class="cap"><span class="t">FlowWidget — done</span><span class="s">the knot closes · sage</span></div>
+      </div>
+
+      <!-- ===== FLOWWIDGET — ERROR (never sent) ===== -->
+      <div class="scd">
+        <div class="screen scrim-screen">
+          <div class="behind"><div class="appbar"><div class="b"><span class="name">Ponti</span></div></div></div>
+          <div class="scrim-fill"></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="flow-center">
+              <div class="gapline" style="--x:1"><div class="track"></div><div class="dotL"></div><div class="dotR" style="background:var(--ink-3);box-shadow:none"></div></div>
+              <div class="flow-title">That didn’t go through</div>
+              <div class="flow-sub">Nothing moved and nothing’s lost — give it another go.</div>
+            </div>
+            <div class="flow-actions" style="margin-top:18px">
+              <button class="btn btn--primary btn--block">Try again</button>
+              <button class="btn btn--ghost" style="align-self:center">Cancel</button>
+            </div>
+          </div>
+        </div>
+        <div class="cap"><span class="t">FlowWidget — error</span><span class="s">write never sent · warm, not red</span></div>
+      </div>
+
+      <!-- ===== FLOWWIDGET — ERROR (catching up) ===== -->
+      <div class="scd">
+        <div class="screen scrim-screen">
+          <div class="behind"><div class="appbar"><div class="b"><span class="name">Ponti</span></div></div></div>
+          <div class="scrim-fill"></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="flow-center">
+              <div class="gapline"><div class="track"></div><div class="dotL"></div><div class="dotR"></div></div>
+              <div class="flow-title">It’s saved — just catching up</div>
+              <div class="flow-sub">Your change went through. We’re still waiting on the confirmation to show — it’ll appear on its own.</div>
+            </div>
+            <div class="flow-actions" style="margin-top:18px">
+              <button class="btn btn--primary btn--block">Done</button>
+              <button class="btn btn--quiet" style="align-self:center">Reload to see the latest</button>
+            </div>
+          </div>
+        </div>
+        <div class="cap"><span class="t">FlowWidget — saved, pending</span><span class="s">it completed · only the signal lags</span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="foot">Ponti · direction “Cal” — architectural warmth, tied by one line. Light + dark from day one · WCAG AA on load-bearing pairs · the accent never touches a number.</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;}}">
+class Component extends DCLogic {
+  state = { theme: null };
+  componentDidMount(){
+    this.applyTheme(this.props.theme || 'light');
+  }
+  componentDidUpdate(prev){
+    if(prev.theme !== this.props.theme && this.props.theme){
+      this.applyTheme(this.props.theme);
+    }
+  }
+  applyTheme(t){
+    document.documentElement.setAttribute('data-theme', t);
+    this.setState({ theme: t });
+  }
+  renderVals(){
+    const theme = this.state.theme || this.props.theme || 'light';
+    return {
+      themeLabel: theme === 'dark' ? 'Light' : 'Dark',
+      toggleTheme: () => this.applyTheme(theme === 'dark' ? 'light' : 'dark')
+    };
+  }
+}
+</script>
+</body>
+</html>
