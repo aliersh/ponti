@@ -1,18 +1,18 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 
 type Theme = 'light' | 'dark'
 
 interface ThemeState {
   theme: Theme
+  setTheme: (theme: Theme) => void
 }
 
 const ThemeContext = createContext<ThemeState | null>(null)
 
 const STORAGE_THEME = 'ponti-theme'
 
-// Hybrid: a stored override wins; otherwise follow the OS preference. The override
-// is never written yet (the manual toggle ships later) — for now the app tracks the OS.
+// A stored override wins over the OS preference; OS preference is the fallback when no override is stored.
 function readTheme(): Theme {
   const stored = localStorage.getItem(STORAGE_THEME)
   if (stored === 'dark' || stored === 'light') return stored
@@ -20,13 +20,19 @@ function readTheme(): Theme {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme] = useState<Theme>(readTheme)
+  const [theme, setThemeState] = useState<Theme>(readTheme)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
 
-  return <ThemeContext.Provider value={{ theme }}>{children}</ThemeContext.Provider>
+  // Persist the chosen theme as the stored override and re-render.
+  const setTheme = useCallback((next: Theme) => {
+    localStorage.setItem(STORAGE_THEME, next)
+    setThemeState(next)
+  }, [])
+
+  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>
 }
 
 export function useTheme(): ThemeState {

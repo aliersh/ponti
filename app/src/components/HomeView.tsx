@@ -9,11 +9,6 @@
 // Money rule (§5.3):
 //   net hero → <Num display> proportional, --ink; no +/− sign (DirChip carries direction)
 //   WalletStrip amount + group row amounts → <Num> tabular (default), --ink
-//
-// Stubs (wired in later phases):
-//   avatar button → profile (F5)
-//   "New" affordance → create group (F5)
-//   empty CTA "Create a group" → create group (F5)
 
 import { useEffect, useState, useCallback } from 'react'
 import { AddFundsPanel } from './AddFundsPanel'
@@ -25,7 +20,7 @@ import { fetchUsdcBalance } from '../lib/settle'
 import { getIdentity } from '../lib/identity'
 import {
   Mark, Wordmark, Avatar, Num, money, DirChip,
-  Skeleton, SectionLabel, Plus, Globe, Logout,
+  Skeleton, SectionLabel, Plus, Globe,
 } from '../ui'
 import { WalletStrip } from './WalletStrip'
 import { GroupRow } from './GroupRow'
@@ -33,8 +28,8 @@ import { EmptyState } from './EmptyState'
 
 // ── AppHeader ─────────────────────────────────────────────────────────────────
 // Local component — may be promoted to its own file for desktop reuse later.
-// Avatar button is a non-navigable stub; F5 wires it to the profile screen.
-function AppHeader({ smartAccount, onLogout }: { smartAccount: Address; onLogout: () => void }) {
+// Avatar button opens the account screen (YourPonti).
+function AppHeader({ smartAccount, onOpenAccount }: { smartAccount: Address; onOpenAccount: () => void }) {
   const me = getIdentity(smartAccount)
   return (
     <div
@@ -47,26 +42,13 @@ function AppHeader({ smartAccount, onLogout }: { smartAccount: Address; onLogout
         <Wordmark size={21} />
       </div>
 
-      {/* Right: avatar stub + discreet logout */}
+      {/* Right: avatar — opens account screen */}
       <div className="flex items-center" style={{ gap: 10 }}>
-        {/* interim logout until the profile screen ships */}
-        <button
-          type="button"
-          aria-label="Sign out"
-          onClick={onLogout}
-          className="text-muted flex items-center"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, gap: 4, fontFamily: 'var(--font-ui)', fontSize: 12 }}
-        >
-          <Logout color="var(--muted)" size={14} />
-          <span>Sign out</span>
-        </button>
-
-        {/* viewer avatar — stub; F5 wires navigation */}
         <button
           type="button"
           aria-label="Your Ponti"
-          aria-disabled="true"
-          style={{ all: 'unset', cursor: 'default', display: 'inline-flex' }}
+          onClick={onOpenAccount}
+          style={{ all: 'unset', cursor: 'pointer', display: 'inline-flex' }}
         >
           <Avatar initial={me.initial} tone="neutral" size={34} />
         </button>
@@ -85,7 +67,8 @@ interface HomeViewProps {
   groupsError: boolean
   onSelectGroup: (group: GroupItem) => void
   onRetry: () => void
-  onLogout: () => void
+  onOpenAccount: () => void
+  onAddSomeone: () => void
 }
 
 export function HomeView({
@@ -96,7 +79,8 @@ export function HomeView({
   groupsError,
   onSelectGroup,
   onRetry,
-  onLogout,
+  onOpenAccount,
+  onAddSomeone,
 }: HomeViewProps) {
   const [balances, setBalances] = useState<HomeBalances | null>(null)
   const [balancesLoading, setBalancesLoading] = useState(false)
@@ -152,7 +136,7 @@ export function HomeView({
       style={{ padding: '0 18px 28px' }} /* prototype screens.jsx Home */
     >
       {/* 1. AppHeader */}
-      {smartAccount && <AppHeader smartAccount={smartAccount} onLogout={onLogout} />}
+      {smartAccount && <AppHeader smartAccount={smartAccount} onOpenAccount={onOpenAccount} />}
 
       {/* 2. Net summary — chip row (direction + "net" label) above the hero amount */}
       <div style={{ padding: '2px 2px 20px' }}> {/* prototype screens.jsx */}
@@ -192,12 +176,13 @@ export function HomeView({
       {/* 3. SectionLabel */}
       <SectionLabel
         right={
-          /* "New" affordance — stub for F2; create path is F5 */
+          /* "New" button — navigates to the add-someone screen */
           <button
             type="button"
+            onClick={onAddSomeone}
             style={{
               all: 'unset',
-              cursor: 'default', /* non-navigable stub */
+              cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
               gap: 5,
@@ -206,7 +191,6 @@ export function HomeView({
               fontSize: 13,
               fontWeight: 700,
             }}
-            aria-disabled="true"
           >
             <Plus color="var(--accent)" size={13} />
             New
@@ -247,13 +231,13 @@ export function HomeView({
             ))}
           </>
         ) : groups.length === 0 ? (
-          /* Empty state — "Create a group" is a stub (no-op); create path is F5 */
+          /* Empty state — navigates to add-someone screen */
           <EmptyState
             icon={<Mark s={40} />}
             title="No groups yet"
             body="A group is one shared account between two people. Start one and add your first expense."
-            cta="Create a group"
-            onCta={undefined} /* stub: no-op so button looks active, not dimmed */
+            cta="Add someone"
+            onCta={onAddSomeone}
           />
         ) : (
           /* Normal state */

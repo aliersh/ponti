@@ -8,6 +8,8 @@ import type { CSSProperties } from 'react'
 import { HomeView } from './components/HomeView'
 import { GroupDetail } from './components/GroupDetail'
 import { SignIn } from './components/SignIn'
+import { YourPonti } from './components/YourPonti'
+import { AddSomeone } from './components/AddSomeone'
 import { fetchMyGroups } from './lib/fetchGroups'
 import type { GroupItem } from './lib/fetchGroups'
 import { FlowProvider } from './flow/FlowContext'
@@ -42,7 +44,7 @@ function GroupDetailWrapper({
 }
 
 export function App() {
-  const { ready, authenticated, logout } = usePrivy()
+  const { ready, authenticated } = usePrivy()
   const { client } = useSmartWallets()
   const smartAccount = useSmartAccountAddress()
   const navigate = useNavigate()
@@ -103,13 +105,26 @@ export function App() {
                 navigate('/group/' + group.address, { state: { group } })
               }
               onRetry={() => smartAccount && void loadGroups(smartAccount)}
-              onLogout={logout}
+              onOpenAccount={() => navigate('/you')}
+              onAddSomeone={() => navigate('/add')}
             />
           }
         />
         <Route
           path="/group/:address"
           element={<GroupDetailWrapper smartAccount={smartAccount} send={send} sendBatch={sendBatch} />}
+        />
+        <Route
+          path="/you"
+          element={
+            !smartAccount
+              ? <main style={page}><p>Loading…</p></main>
+              : <YourPonti smartAccount={smartAccount} onBack={() => navigate('/')} />
+          }
+        />
+        <Route
+          path="/add"
+          element={<AddSomeone send={send} onBack={() => navigate('/')} onCreated={(group) => navigate('/group/' + group)} />}
         />
       </Routes>
     </FlowProvider>
