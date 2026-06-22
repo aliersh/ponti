@@ -1,47 +1,55 @@
 // button.tsx — Button primitive
 //
-// Variants:
-//   primary  → bg-accent-strong / text-accent-ink (default)
-//   ghost    → bg-surface-2 / text-ink + inset 1px border ring
-//   outline  → transparent / text-ink + inset 1.5px accent ring
-//   soft     → bg-accent-soft / text-accent
-//   quiet    → transparent / text-muted + tighter padding
-//
-// Extra beyond prototype: focus-visible accent ring for keyboard a11y.
-// onMouseDown preventDefault prevents focus-flash on click (per prototype).
+// Five emphases: primary / outline / soft / ghost / quiet.
+// Full-width via `full` prop: inline-flex + w-full keeps justify-center working
+// in both inline and block contexts (display:block kills flex centering).
 
 import type { CSSProperties, ReactNode } from 'react'
 
 interface ButtonProps {
   children: ReactNode
-  variant?: 'primary' | 'ghost' | 'outline' | 'soft' | 'quiet'
+  variant?: 'primary' | 'outline' | 'soft' | 'ghost' | 'quiet'
   full?: boolean
   disabled?: boolean
   onClick?: () => void
   className?: string
-  /** Inline style — wins over equal-specificity padding utilities for tight-padding overrides. */
+  /** Inline style escape hatch — wins over class-level padding for tight-context overrides. */
   style?: CSSProperties
 }
 
-// Variant-specific Tailwind classes (background + text + optional ring).
-const variantClasses: Record<NonNullable<ButtonProps['variant']>, string> = {
-  primary: 'bg-accent-strong text-accent-ink',
-  ghost:
-    'bg-surface-2 text-ink shadow-[inset_0_0_0_1px_var(--border)]',
-  outline:
-    'bg-transparent text-ink shadow-[inset_0_0_0_1.5px_var(--accent)]',
-  soft: 'bg-accent-soft text-accent',
-  quiet: 'bg-transparent text-muted',
+// Per-variant classes: background + text only. Border and special cases handled below.
+const variantBase: Record<NonNullable<ButtonProps['variant']>, string> = {
+  primary: 'bg-accent-strong text-on-accent',
+  outline: 'bg-transparent text-ink',
+  soft:    'bg-accent-soft text-accent-soft-ink',
+  ghost:   'bg-transparent text-ink-2',
+  quiet:   'bg-transparent text-ink-3',
 }
 
-// quiet gets tighter padding; all others use the standard 14px/18px.
-const paddingClasses: Record<NonNullable<ButtonProps['variant']>, string> = {
-  primary: 'px-18 py-[14px]', /* 14px vertical — prototype components.jsx */
-  ghost:   'px-18 py-[14px]', /* 14px vertical — prototype components.jsx */
-  outline: 'px-18 py-[14px]', /* 14px vertical — prototype components.jsx */
-  soft:    'px-18 py-[14px]', /* 14px vertical — prototype components.jsx */
-  quiet:   'px-[12px] py-[10px]', /* tighter quiet — prototype components.jsx */
+// Per-variant padding (matches design contract §169–174).
+const variantPad: Record<NonNullable<ButtonProps['variant']>, string> = {
+  primary: 'py-[13px] px-18',   /* 13/18px — §169 */
+  outline: 'py-[11.5px] px-18', /* compensates for 1.5px border — §171 */
+  soft:    'py-2 px-[13px]',    /* 8/13px — §172 */
+  ghost:   'py-2 px-3',         /* 8/12px — §173 */
+  quiet:   'py-[6px] px-1',     /* tight — §174 */
 }
+
+// Per-variant font size (soft/ghost/quiet are 12.5px per §172–174).
+const variantSize: Record<NonNullable<ButtonProps['variant']>, string> = {
+  primary: 'text-[14px]',
+  outline: 'text-[14px]',
+  soft:    'text-[12.5px]',
+  ghost:   'text-[12.5px]',
+  quiet:   'text-[12.5px]',
+}
+
+// outline border is 1.5px solid line-2 (§171) — not a ring, not accent.
+// Applied as inline style so the fractional border-width is exact.
+const outlineBorderStyle: CSSProperties = { border: '1.5px solid var(--line-2)' }
+
+// quiet gets an underline decoration (§174).
+const quietExtra = 'underline underline-offset-2 font-medium'
 
 export function Button({
   children,
@@ -52,32 +60,40 @@ export function Button({
   className = '',
   style,
 }: ButtonProps) {
+  const isOutline = variant === 'outline'
+  const isQuiet   = variant === 'quiet'
+
   return (
     <button
       type="button"
       onClick={disabled ? undefined : onClick}
       onMouseDown={(e) => e.preventDefault()}
       disabled={disabled}
-      style={style}
+      style={{
+        ...(isOutline ? outlineBorderStyle : {}),
+        ...style,
+      }}
       className={[
-        // Base
-        'font-ui font-semibold text-base rounded-sm',
+        // Base layout + typography
+        'font-ui font-semibold rounded-md',
         'inline-flex items-center justify-center gap-2 whitespace-nowrap',
-        'transition-[filter,opacity] duration-150',
-        // Hover
-        'hover:brightness-95',
-        // Focus-visible a11y ring (beyond prototype — keyboard users)
-        // ring-offset intentionally omitted: Tailwind's ring-offset-color defaults to white,
-        // which breaks dark mode. The accent ring hugs the element edge instead.
+        'transition-[filter,transform] duration-150',
+        // Active press — all variants (§168)
+        'active:translate-y-px',
+        // Primary hover only — brightness up, not down (§170)
+        variant === 'primary' ? 'hover:brightness-[1.04]' : '',
+        // Focus-visible a11y ring — accent but no offset (offset defaults to white, breaks dark)
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
-        // Disabled
-        disabled ? 'opacity-50 cursor-default pointer-events-none' : 'cursor-pointer',
-        // Full width
+        // Disabled (§176)
+        disabled ? 'opacity-45 cursor-not-allowed pointer-events-none' : 'cursor-pointer',
+        // Full width — w-full expands inline-flex; justify-center stays active
         full ? 'w-full' : '',
-        // Variant
-        variantClasses[variant],
-        paddingClasses[variant],
-        // Caller override (e.g. tighter padding for strip context)
+        // Variant specifics
+        variantBase[variant],
+        variantPad[variant],
+        variantSize[variant],
+        isQuiet ? quietExtra : '',
+        // Caller override
         className,
       ]
         .filter(Boolean)

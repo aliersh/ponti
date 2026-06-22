@@ -1,17 +1,17 @@
 // spinner.tsx — Rotating progress indicator
-// Single-ring circle: one arc in var(--accent), the rest in var(--border).
+// Ring in line-2; top arc in ink-3 — the muted Cal banner spinner (§308).
 // Rotation via Tailwind's built-in animate-spin (no custom keyframe needed).
 
-/** Compact circular spinner. Default size 15px; used in post-write status rows. */
-export function Spinner({ size = 15 }: { size?: number }) {
+/** Compact circular spinner. Default size 13px; used in banners and status rows. */
+export function Spinner({ size = 13 }: { size?: number }) {
   return (
     <span
-      className="inline-block animate-spin rounded-full border-2 border-t-transparent shrink-0"
+      className="inline-block animate-spin rounded-full border-2 shrink-0"
       style={{
         width: size,
         height: size,
-        borderColor: 'var(--border)',
-        borderTopColor: 'var(--accent)',
+        borderColor: 'var(--line-2)',
+        borderTopColor: 'var(--ink-3)',
       }}
       aria-hidden="true"
     />

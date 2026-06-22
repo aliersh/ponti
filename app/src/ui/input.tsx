@@ -1,31 +1,32 @@
 // input.tsx — Input + Field primitives
 //
-// Input: extends React.InputHTMLAttributes; merges consumer className.
-//   Base: font-ui text-ink bg-surface border-border rounded-sm w-full
-//   Focus: focus-visible accent ring/border for a11y.
-//   Padding: 13px top/bottom, 14px left/right — from prototype components.jsx.
+// Input: native input with Cal border, radius, and focus ring.
+//   Base: font-ui 14.5px, bg-surface, 1.5px line border, rounded-md.
+//   Focus: accent-strong border + 3px accent-soft ring (§202).
 //
-// Field: label + optional hint wrapper.
-//   Renders a <label> column; label text is font-ui font-semibold text-muted ~13px;
-//   hint (if provided) is text-muted ~12px below the child.
+// Field: label + optional hint wrapper (§198–204).
+//   Label: ink-2 12px/600. Hint: ink-3 11.5px.
 
 import type { InputHTMLAttributes } from 'react'
 
 // ── Input ──────────────────────────────────────────────────────────────────────
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  // All native input attributes are accepted; className is merged, not replaced.
+  // All native input attributes; className is merged, not replaced.
 }
 
-export function Input({ className = '', ...rest }: InputProps) {
+export function Input({ className = '', style, ...rest }: InputProps) {
   return (
     <input
       {...rest}
+      // 1.5px border expressed as inline style — Tailwind can't emit fractional border-width
+      style={{ border: '1.5px solid var(--line)', ...style }}
       className={[
-        'font-ui text-base text-ink bg-surface',
-        'border border-border rounded-sm w-full outline-none',
-        'px-[14px] py-[13px]', /* 13/14px padding — prototype components.jsx */
-        // Focus-visible: accent ring + border color change
-        'focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/20',
+        'font-ui text-[14.5px] text-ink bg-surface',
+        'rounded-md w-full outline-none',
+        'px-[14px] py-3', /* 12px vertical — §200 */
+        'placeholder:text-ink-3',
+        // focus: accent-strong border + 3px accent-soft ring (§202)
+        'focus-visible:[border-color:var(--accent-strong)] focus-visible:shadow-[0_0_0_3px_var(--accent-soft)]',
         className,
       ]
         .filter(Boolean)
@@ -43,13 +44,13 @@ interface FieldProps {
 
 export function Field({ label, hint, children }: FieldProps) {
   return (
-    <label className="flex flex-col gap-[7px]"> {/* 7px gap — prototype components.jsx */}
-      <span className="font-ui font-semibold text-muted text-[13px]"> {/* 13px — prototype components.jsx */}
+    <label className="flex flex-col gap-[6px]"> {/* 6px — §199 */}
+      <span className="font-ui font-semibold text-ink-2 text-[12px]"> {/* §199 */}
         {label}
       </span>
       {children}
       {hint && (
-        <span className="font-ui text-muted text-xs"> {/* 12px = text-xs */}
+        <span className="font-ui text-ink-3 text-[11.5px]"> {/* §203 */}
           {hint}
         </span>
       )}

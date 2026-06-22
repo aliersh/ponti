@@ -1,8 +1,7 @@
-// GroupRow.tsx — Single group row for the Home screen group list.
-// Reusable. Calls onSelectGroup when tapped.
+// GroupRow.tsx — Single group row hung on the Home tie-spine.
+// Semantic tap-target button; layout controlled by .grow CSS, not the Button primitive.
 //
-// Money rule (§5.3): per-pair balance is tabular (<Num> default), always --ink.
-// Direction is conveyed by <DirChip>; amounts are unsigned (no +/− prefix).
+// Money rule: unsigned amount in --ink; direction in DirChip. Settled rows: chip only.
 
 import type { GroupItem } from '../lib/fetchGroups'
 import { getIdentity } from '../lib/identity'
@@ -15,41 +14,59 @@ interface GroupRowProps {
   onClick: () => void
 }
 
+// Gender-neutral sub-line copy — "she owes you" in the design HTML is illustrative only.
+function subLine(balance: bigint): string {
+  if (balance > 0n) return 'owes you'
+  if (balance < 0n) return 'you owe'
+  return 'all settled'
+}
+
 export function GroupRow({ group, balance, onClick }: GroupRowProps) {
   const identity = getIdentity(group.counterparty)
 
+  // Raw reset button: .grow CSS owns padding, margin, position:relative, and the
+  // ::before connector stub + hairline top border (with :first-child exception).
+  // Use explicit resets (not all:unset) so the .grow class rules aren't wiped.
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full text-left flex items-center gap-[13px] bg-surface border border-border rounded-sm cursor-pointer hover:brightness-[0.97] transition-[filter] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-      style={{ padding: '13px 14px' }} /* prototype screens.jsx */
+      className="grow w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      style={{
+        appearance: 'none',
+        background: 'none',
+        font: 'inherit',
+        color: 'inherit',
+        cursor: 'pointer',
+        textAlign: 'left',
+      }}
     >
-      {/* Avatar */}
-      <Avatar initial={identity.initial} tone={identity.tone} size={44} />
+      <Avatar initial={identity.initial} tone={identity.tone} size={36} />
 
-      {/* Identity label */}
-      <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
+      {/* Identity + neutral relationship sub-line */}
+      <div className="flex-1 min-w-0 flex flex-col" style={{ gap: 1 }}>
         <span
           className="font-ui font-semibold text-ink truncate"
-          style={{ fontSize: 16 }} /* prototype components.jsx GroupRow */
+          style={{ fontSize: 14 }}
         >
           {identity.label}
         </span>
-        <span className="font-ui text-muted" style={{ fontSize: 12 }}>
-          Shared account
-        </span>
+        {balance !== undefined && (
+          <span style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 1 }}>
+            {subLine(balance)}
+          </span>
+        )}
       </div>
 
-      {/* Balance column — amount (unsigned) above direction chip, or chip alone when settled */}
-      <div className="flex flex-col items-end gap-[4px] shrink-0">
+      {/* Balance column — amount above chip, or chip alone when settled */}
+      <div className="flex flex-col items-end shrink-0" style={{ gap: 4 }}>
         {balance === undefined ? (
-          <Skeleton w={56} h={16} />
+          <Skeleton w={48} h={14} />
         ) : balance === 0n ? (
-          <DirChip dir="settled" size="sm" />
+          <DirChip dir="settled" size="sm" label="settled" />
         ) : (
           <>
-            <Num size={16}>{money(balance)}</Num>
+            <Num size={14.5} weight={600}>{money(balance)}</Num>
             <DirChip dir={balance > 0n ? 'in' : 'out'} size="sm" />
           </>
         )}

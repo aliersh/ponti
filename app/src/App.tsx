@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { usePrivy } from '@privy-io/react-auth'
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets'
@@ -48,6 +48,7 @@ export function App() {
   const { client } = useSmartWallets()
   const smartAccount = useSmartAccountAddress()
   const navigate = useNavigate()
+  const prevAuthenticated = useRef<boolean | null>(null)
 
   // groups state lives here so it persists across home/detail navigation and
   // loads exactly once when smartAccount first becomes available.
@@ -82,6 +83,14 @@ export function App() {
     loadGroups(smartAccount)
   }, [smartAccount])
 
+  // Navigate to Home on login transition (false → true); null means first mount,
+  // so we skip to avoid stomping a deep link on an authenticated page refresh.
+  useEffect(() => {
+    if (prevAuthenticated.current === false && authenticated) {
+      navigate('/', { replace: true })
+    }
+    prevAuthenticated.current = authenticated
+  }, [authenticated, navigate])
 
   if (!ready) return <main style={page}><p>Loading…</p></main>
 
@@ -124,7 +133,7 @@ export function App() {
         />
         <Route
           path="/add"
-          element={<AddSomeone send={send} onBack={() => navigate('/')} onCreated={(group) => navigate('/group/' + group)} />}
+          element={<AddSomeone send={send} smartAccount={smartAccount} onBack={() => navigate('/')} onCreated={(group) => navigate('/group/' + group)} />}
         />
       </Routes>
     </FlowProvider>

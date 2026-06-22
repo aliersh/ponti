@@ -33,3 +33,7 @@ venv/
 out/
 cache/
 broadcast/
+
+design/README.md
+design/ponti-screen-flow.html
+design/support.js

@@ -1,18 +1,21 @@
 // avatar.tsx — Initial avatar primitive
 //
-// Circular avatar driven by either a single initial character or a person icon.
-// When `initial` is a non-empty string, renders the letter centered.
-// When `initial` is empty (no nickname), renders a neutral person silhouette
-// using `currentColor` so the glyph inherits the circle's tone color.
-// Tone controls background/text color pair:
-//   accent  → bg-accent-soft / text-accent  (default)
-//   neutral → bg-surface-2   / text-muted
-// Size is a number (px); drives width, height, fontSize, and icon size inline.
+// Circular avatar: letter initial or neutral-person fallback when initial is empty.
+// Four Cal tones map to background/text pairs; lib/identity emits 'accent' | 'neutral'
+// (the two primary tones). 's' and 'lilac' are available for screen-level use.
 
 interface AvatarProps {
   initial: string
-  tone?: 'accent' | 'neutral'
+  tone?: 'accent' | 'neutral' | 's' | 'lilac'
   size?: number
+}
+
+// Cal tone → background/text token pair (§193–196)
+const toneMap: Record<NonNullable<AvatarProps['tone']>, { bg: string; color: string }> = {
+  accent: { bg: 'var(--accent-soft)',  color: 'var(--accent-soft-ink)' }, /* .ava--c */
+  neutral:{ bg: 'var(--line)',         color: 'var(--ink-2)'           }, /* .ava--n */
+  s:      { bg: 'var(--sage-soft)',    color: 'var(--sage)'            }, /* .ava--s */
+  lilac:  { bg: 'var(--lilac-soft)',   color: 'var(--lilac-ink)'       }, /* .ava--lilac */
 }
 
 function PersonIcon({ size }: { size: number }) {
@@ -36,17 +39,16 @@ function PersonIcon({ size }: { size: number }) {
 }
 
 export function Avatar({ initial, tone = 'accent', size = 44 }: AvatarProps) {
-  const isAccent = tone === 'accent'
+  const { bg, color } = toneMap[tone]
   return (
     <div
-      className={[
-        'inline-flex items-center justify-center rounded-full shrink-0 font-ui font-bold',
-        isAccent ? 'bg-accent-soft text-accent' : 'bg-surface-2 text-muted',
-      ].join(' ')}
+      className="inline-flex items-center justify-center rounded-full shrink-0 font-ui font-bold"
       style={{
         width: size,
         height: size,
-        fontSize: size * 0.4, /* size-proportional; prototype components.jsx */
+        fontSize: size * 0.4,
+        background: bg,
+        color,
       }}
     >
       {initial ? initial : <PersonIcon size={size} />}

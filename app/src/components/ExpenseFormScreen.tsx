@@ -1,15 +1,17 @@
-// ExpenseFormScreen.tsx — Full-screen add/edit expense form (mobile).
+// ExpenseFormScreen.tsx — Full-screen add/edit expense form.
 // mode="add" starts with empty fields; mode="edit" prefills from `initial`.
-// Shell (Back + title + subtitle) and body (fields + button) are delineated — body wraps into ModalShell in a later desktop phase.
+// Shell (backbar + subtitle) and body (amount-field + stack) are delineated —
+// body wraps into a modal shell in a later desktop phase.
 
 import { useState } from 'react'
 import { formatUnits, getAddress, parseUnits } from 'viem'
 import type { Address, Hex } from 'viem'
 import { submitAddExpense } from '../lib/addExpense'
 import { submitEditExpense } from '../lib/editExpense'
+import { submitDeleteExpense } from '../lib/deleteExpense'
 import { getIdentity } from '../lib/identity'
 import type { ExpenseEntry } from '../lib/fetchGroup'
-import { Avatar, Button, Field, Input, Left, money } from '../ui'
+import { Avatar, Button, Field, Input, Seg, money } from '../ui'
 import { useFlow } from '../flow/FlowContext'
 
 type SendUserOperation = (req: { to: Address; data: Hex }) => Promise<Hex>
@@ -53,6 +55,17 @@ export function ExpenseFormScreen({
   // Validation: primary disabled until amount > 0 and description filled.
   const ok = parseFloat(amount) > 0 && description.trim().length > 0
 
+  // Edit-mode only: primary also disabled until at least one field differs from initial.
+  const dirty = (() => {
+    if (!editing || !initial) return true
+    const initialPayer = getAddress(initial.payer) === getAddress(smartAccount) ? 'me' : 'counterparty'
+    const payerChanged = payer !== initialPayer
+    const descChanged = description.trim() !== initial.description.trim()
+    let amountChanged = true
+    try { amountChanged = parseUnits(amount, 6) !== initial.amount } catch { /* invalid amount counts as changed */ }
+    return payerChanged || descChanged || amountChanged
+  })()
+
   function onSubmit() {
     if (!send) return
     let parsedAmount: bigint
@@ -86,6 +99,7 @@ export function ExpenseFormScreen({
           { label: 'Amount', value: `${money(parsedAmount)} USDC`, strong: true },
           { label: 'For', value: trimmed },
         ],
+        prevValue: money(initial.amount),
         submit: () => submitEditExpense(send, groupAddress, id, payerAddress, parsedAmount, trimmed),
         onComplete: async () => { await onComplete() },
       })
@@ -105,127 +119,110 @@ export function ExpenseFormScreen({
     }
   }
 
-  return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', padding: '0 18px 30px' }}>
+  // Delete is self-contained: same flow.start pattern, kind='delete', targets initial.id.
+  function onDelete() {
+    if (!send || !initial) return
+    flow.start({
+      kind: 'delete',
+      title: 'Delete expense',
+      confirmLabel: 'Delete expense',
+      rows: [
+        { label: 'For', value: initial.description },
+        { label: 'Amount', value: `${money(initial.amount)} USDC`, strong: true },
+      ],
+      submit: () => submitDeleteExpense(send, groupAddress, initial.id),
+      onComplete: async () => { await onComplete() },
+    })
+  }
 
-      {/* Shell: Back affordance, title, subtitle */}
-      <div style={{ padding: '6px 0 14px' }}>
-        <button
-          onClick={onBack}
-          style={{ all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 3 }}
-          className="font-ui"
-        >
-          <span style={{ color: 'var(--ink)', fontWeight: 600, fontSize: 15, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-            <Left color="var(--ink)" size={18} /> Back
-          </span>
-        </button>
+  return (
+    <div style={{ minHeight: '100%', background: 'var(--surface)', padding: '0 18px 30px' }}>
+
+      {/* Shell: backbar affordance (raw button) + display-font title */}
+      <div className="backbar" style={{ padding: '16px 0' }}>
+        <button className="x" onClick={onBack}>‹</button>
+        <span className="ttl">{editing ? 'Edit expense' : 'Add an expense'}</span>
       </div>
-      <h1
-        className="font-display"
-        style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--ink)' }}
-      >
-        {editing ? 'Edit expense' : 'Add expense'}
-      </h1>
-      <p
-        className="font-ui"
-        style={{ margin: '0 0 22px', fontSize: 14, color: 'var(--muted)', lineHeight: 1.5 }}
-      >
+
+      <div className="subtitle font-ui">
         {editing
           ? 'Fix the details — the balance updates to match.'
           : 'Add what you paid for — Ponti keeps the count.'}
-      </p>
+      </div>
 
-      {/* Form body — self-contained; wrappable by ModalShell in a later desktop phase */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      {/* Form body — self-contained; wrappable by a modal shell in a later desktop phase */}
 
-        <Field label="Amount">
-          {/* Amount: display font, tabular, ink — money rule §5.3 */}
-          <div style={{ position: 'relative' }}>
-            <Input
-              placeholder="0.00"
-              inputMode="decimal"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 30,
-                fontWeight: 700,
-                fontVariantNumeric: 'tabular-nums',
-                letterSpacing: '-0.02em',
-                color: 'var(--ink)',
-                paddingRight: 72,
-              }}
-            />
-            <span
-              className="font-ui"
-              style={{
-                position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)',
-                fontSize: 15, fontWeight: 600, color: 'var(--muted)',
-              }}
-            >
-              USDC
-            </span>
-          </div>
-        </Field>
+      {/* Amount: boxed centered card — eyebrow label, 48px display input */}
+      <div className="amount-field">
+        <span className="l font-ui">Amount</span>
+        <div className="amount-box">
+          <input
+            className="big"
+            placeholder="0.00"
+            inputMode="decimal"
+            autoComplete="off"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+          <span className="u font-ui">USDC</span>
+        </div>
+      </div>
+
+      <div className="stack">
 
         <Field label="What for?">
           <Input
             placeholder="e.g. Groceries"
+            autoComplete="off"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
         </Field>
 
-        <Field label="Who paid?">
-          {/* Payer toggles: selected = accent-soft bg + accent border; unselected = surface + border */}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={() => setPayer('me')}
-              style={{
-                all: 'unset', cursor: 'pointer', flex: 1,
-                textAlign: 'center', padding: '13px 0',
-                borderRadius: 'var(--radius-sm)',
-                fontFamily: 'var(--font-ui)', fontSize: 15, fontWeight: 600,
-                background: payer === 'me' ? 'var(--accent-soft)' : 'var(--surface)',
-                color: payer === 'me' ? 'var(--accent)' : 'var(--muted)',
-                boxShadow: payer === 'me' ? 'inset 0 0 0 1.5px var(--accent)' : 'inset 0 0 0 1px var(--border)',
-              }}
-            >
-              You
-            </button>
-            <button
-              onClick={() => setPayer('counterparty')}
-              style={{
-                all: 'unset', cursor: 'pointer', flex: 1,
-                textAlign: 'center', padding: '13px 0',
-                borderRadius: 'var(--radius-sm)',
-                fontFamily: 'var(--font-ui)', fontSize: 15, fontWeight: 600,
-                background: payer === 'counterparty' ? 'var(--accent-soft)' : 'var(--surface)',
-                color: payer === 'counterparty' ? 'var(--accent)' : 'var(--muted)',
-                boxShadow: payer === 'counterparty' ? 'inset 0 0 0 1.5px var(--accent)' : 'inset 0 0 0 1px var(--border)',
-              }}
-            >
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <Avatar initial={identity.initial} tone={identity.tone} size={18} />
-                {identity.label}
-              </span>
-            </button>
-          </div>
-        </Field>
+        {/* Payer toggle: 'me' | 'counterparty' as Seg values — no address round-trip needed */}
+        <div className="flex flex-col gap-[6px] payframe">
+          <span className="font-ui font-semibold text-ink-2 text-[12px]">Who paid?</span>
+          <Seg
+            options={[
+              { value: 'me', label: 'You' },
+              { value: 'counterparty', label: identity.label,
+                avatar: <Avatar initial={identity.initial} tone={identity.tone} size={18} /> },
+            ]}
+            selected={payer}
+            onChange={(v) => setPayer(v as 'me' | 'counterparty')}
+          />
+        </div>
 
-        {/* Primary disabled until amount > 0 and description filled; parseUnits error shows as muted note */}
+        {/* Primary disabled until amount > 0 and description filled; in edit mode also until a field changes */}
         <Button
           variant="primary"
           full
-          disabled={!ok || !send}
+          disabled={editing ? (!ok || !dirty || !send) : (!ok || !send)}
           onClick={onSubmit}
-          style={{ marginTop: 6 }}
+          style={{ marginTop: 4 }}
         >
           {editing ? 'Review changes' : 'Review & add'}
         </Button>
 
+        {editing && (
+          <Button
+            variant="quiet"
+            onClick={onDelete}
+            style={{ alignSelf: 'center' }}
+          >
+            Delete expense
+          </Button>
+        )}
+
+        {/* Hint shown when amount is not yet valid and no parseUnits error is active */}
+        {!formError && (!amount || parseFloat(amount) <= 0) && (
+          <p className="font-ui" style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-3)', margin: '6px 0 0' }}>
+            Enter an amount to continue.
+          </p>
+        )}
+
         {formError && (
-          <p className="font-ui" style={{ fontSize: 12.5, color: 'var(--muted)', margin: 0 }}>
+          <p className="font-ui" style={{ fontSize: 12.5, color: 'var(--ink-2)', margin: 0 }}>
             {formError}
           </p>
         )}

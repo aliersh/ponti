@@ -5,9 +5,8 @@
 // Props drive width/height/borderRadius inline so each skeleton can size freely.
 //
 // NOTE on shimmer: the `skel` @utility is appended to index.css; the keyframe
-// uses var(--surface-2) → var(--border) → var(--surface-2) so it flips
-// automatically in light and dark. Build verifies the class is present; the
-// animation itself requires a running app to visually confirm.
+// sweeps var(--skel) → var(--skel-sheen) → var(--skel) so it flips correctly
+// in light and dark. The animation itself requires a running app to visually confirm.
 
 interface SkeletonProps {
   w?: string | number

@@ -68,9 +68,9 @@ export function Sheet({
           right: 0,
           maxHeight: '92vh',
           overflowY: 'auto',
-          background: 'var(--bg)',
-          borderRadius: '22px 22px 0 0',
-          boxShadow: '0 -10px 40px rgba(0,0,0,.18)',
+          background: 'var(--raised)',        /* Cal: raised surface for sheets (§391) */
+          borderRadius: '24px 24px 0 0',     /* Cal: 24px top radius (§391) */
+          boxShadow: 'var(--shadow-overlay)', /* Cal: warm overlay shadow token */
           outline: 'none',
           // Enter/exit animations reference @keyframes in index.css so Radix's
           // Presence can defer unmount until the exit animation completes (~300ms).
@@ -84,9 +84,9 @@ export function Sheet({
           width: 'min(440px, calc(100% - 48px))',
           maxHeight: 'calc(100% - 60px)',
           overflowY: 'auto',
-          background: 'var(--bg)',
+          background: 'var(--raised)',
           borderRadius: 20,
-          boxShadow: '0 30px 80px -24px rgba(0,0,0,.5), 0 0 0 1px var(--border)',
+          boxShadow: 'var(--shadow-overlay)',
           outline: 'none',
         }
 
@@ -129,10 +129,10 @@ export function Sheet({
             <div
               aria-hidden
               style={{
-                width: 38,
+                width: 36,
                 height: 4,
                 borderRadius: 999,
-                background: 'var(--border)',
+                background: 'var(--line-2)', /* Cal: line-2 grab handle (§392) */
                 margin: '12px auto 0',
               }}
             />

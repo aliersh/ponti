@@ -7,6 +7,16 @@ import type { Hex } from 'viem'
 /** All on-chain write kinds the flow controller can gate. */
 export type FlowKind = 'create' | 'add' | 'edit' | 'delete' | 'settle'
 
+/**
+ * Display identity for an avatar in the create confirm pair.
+ * Extends the lib/identity tone set to include 'lilac' (self avatar per design contract).
+ */
+export interface FlowAvatar {
+  label: string
+  initial: string
+  tone: 'accent' | 'neutral' | 'lilac' | 's'
+}
+
 /** A single row in the consent grid shown on the confirm screen. */
 export interface ConsentRow {
   label: string
@@ -43,4 +53,14 @@ export interface PendingFlow {
    * Typically triggers a screen refetch. May be async; the controller awaits it.
    */
   onComplete: () => void | Promise<void>
+  /**
+   * Display-only: old amount string for the edit before→after delta (e.g. "40.00").
+   * Read only by FlowWidget. Never used by submit, onComplete, or balance math.
+   */
+  prevValue?: string
+  /**
+   * Display-only: avatar identities for the create confirm pair.
+   * Read only by FlowWidget. Never used by submit, onComplete, or balance math.
+   */
+  pair?: { self: FlowAvatar; other: FlowAvatar }
 }

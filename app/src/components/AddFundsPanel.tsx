@@ -6,8 +6,9 @@ import { useEffect, useRef, useState } from 'react'
 import type { Address } from 'viem'
 import { fetchUsdcBalance } from '../lib/settle'
 import {
-  Button, Check, Copy, External, Shield, Spinner, money,
+  Button, Check, Copy, External, Spinner, money,
 } from '../ui'
+import { DrawLine, KnotDone } from '../ui/line'
 import { Sheet } from '../ui/sheet'
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -40,7 +41,9 @@ function AddressBlock({ address }: { address: Address }) {
       style={{
         display: 'flex', alignItems: 'center', gap: 8,
         padding: '11px 13px',
-        background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)',
+        background: 'var(--bg)',
+        border: '1px solid var(--hairline)',
+        borderRadius: 'var(--radius-md)',
       }}
     >
       <span
@@ -58,36 +61,36 @@ function AddressBlock({ address }: { address: Address }) {
         style={{
           all: 'unset', cursor: 'pointer',
           display: 'inline-flex', alignItems: 'center', gap: 5,
-          color: 'var(--accent)',
+          color: 'var(--accent-strong)',
           fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 700,
           flexShrink: 0,
         }}
       >
         {copied
-          ? <><Check color="var(--accent)" size={14} /> Copied</>
-          : <><Copy color="var(--accent)" size={14} /> Copy</>}
+          ? <><Check color="var(--accent-strong)" size={14} /> Copied</>
+          : <><Copy color="var(--accent-strong)" size={14} /> Copy</>}
       </button>
     </div>
   )
 }
 
-// FaucetStep — numbered step with accent-soft circle badge.
+// FaucetStep — numbered step with 26px accent-soft circle badge.
 function FaucetStep({ n, children }: { n: number; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
+    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
       <span
         style={{
-          flex: '0 0 auto', width: 22, height: 22, borderRadius: '50%',
-          background: 'var(--accent-soft)', color: 'var(--accent)',
+          flex: '0 0 auto', width: 26, height: 26, borderRadius: '50%',
+          background: 'var(--accent-soft)', color: 'var(--accent-strong)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'var(--font-ui)', fontSize: 12, fontWeight: 700, marginTop: 1,
+          fontFamily: 'var(--font-ui)', fontSize: 12.5, fontWeight: 700,
         }}
       >
         {n}
       </span>
       <span
         className="font-ui"
-        style={{ flex: 1, fontSize: 13.5, color: 'var(--ink)', lineHeight: 1.45 }}
+        style={{ flex: 1, fontSize: 13.5, color: 'var(--ink)', lineHeight: 1.5, paddingTop: 4 }}
       >
         {children}
       </span>
@@ -103,7 +106,7 @@ function PanelHeader({ onClose, showClose }: { onClose: () => void; showClose: b
       <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9 }}>
         <span
           className="font-display"
-          style={{ fontSize: 21, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}
+          style={{ fontSize: 19, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.01em' }}
         >
           Add funds
         </span>
@@ -111,12 +114,13 @@ function PanelHeader({ onClose, showClose }: { onClose: () => void; showClose: b
         <span
           className="font-ui"
           style={{
-            fontSize: 10.5, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase',
-            color: 'var(--muted)', background: 'var(--surface-2)',
-            padding: '3px 7px', borderRadius: 999,
+            fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
+            color: 'var(--ink-3)', background: 'var(--surface)',
+            padding: '3px 8px', borderRadius: 'var(--radius-pill)',
+            border: '1px solid var(--line)',
           }}
         >
-          Testnet
+          TESTNET
         </span>
       </span>
       {showClose && (
@@ -125,14 +129,11 @@ function PanelHeader({ onClose, showClose }: { onClose: () => void; showClose: b
           onClick={onClose}
           aria-label="Close"
           style={{
-            all: 'unset', cursor: 'pointer', color: 'var(--muted)',
-            padding: 4, display: 'inline-flex',
+            all: 'unset', cursor: 'pointer', color: 'var(--ink-3)',
+            padding: 2, fontSize: 20, lineHeight: 1, display: 'inline-flex',
           }}
         >
-          {/* Inline X icon — no icon dep needed for a single 17px close mark */}
-          <svg width="17" height="17" viewBox="0 0 18 18" fill="none" aria-hidden>
-            <path d="M4 4l10 10M14 4L4 14" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" />
-          </svg>
+          ×
         </button>
       )}
     </div>
@@ -250,7 +251,7 @@ export function AddFundsPanel({ open, onOpenChange, smartAccount, onBalance }: A
         <div style={{ ...innerPadding, display: 'flex', flexDirection: 'column', gap: 16, marginTop: 8 }}>
           <p
             className="font-ui"
-            style={{ margin: 0, fontSize: 13.5, color: 'var(--muted)', lineHeight: 1.5 }}
+            style={{ margin: 0, fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.5 }}
           >
             Add USDC to your balance so you're ready to settle up. For now it's free — you'll grab
             some test funds from a faucet. Takes about a minute.
@@ -262,8 +263,8 @@ export function AddFundsPanel({ open, onOpenChange, smartAccount, onBalance }: A
               className="font-ui"
               style={{
                 display: 'block', marginBottom: 7,
-                fontSize: 11.5, fontWeight: 600, color: 'var(--muted)',
-                letterSpacing: '0.03em', textTransform: 'uppercase',
+                fontSize: 11.5, fontWeight: 600, color: 'var(--ink-3)',
+                letterSpacing: '0.12em', textTransform: 'uppercase',
               }}
             >
               Your address
@@ -276,8 +277,8 @@ export function AddFundsPanel({ open, onOpenChange, smartAccount, onBalance }: A
             <span
               className="font-ui"
               style={{
-                fontSize: 11.5, fontWeight: 600, color: 'var(--muted)',
-                letterSpacing: '0.03em', textTransform: 'uppercase',
+                fontSize: 11.5, fontWeight: 600, color: 'var(--ink-3)',
+                letterSpacing: '0.12em', textTransform: 'uppercase',
               }}
             >
               On the faucet
@@ -305,18 +306,8 @@ export function AddFundsPanel({ open, onOpenChange, smartAccount, onBalance }: A
               setPhase('waiting')
             }}
           >
-            <External color="var(--accent-ink)" size={15} /> Open faucet
+            <External color="var(--on-accent)" size={15} /> Open faucet
           </Button>
-
-          {/* Reassurance line */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'var(--muted)', marginTop: -4 }}>
-            <span style={{ display: 'inline-flex' }}>
-              <Shield color="var(--muted)" size={14} />
-            </span>
-            <span className="font-ui" style={{ fontSize: 12 }}>
-              No refresh needed — your balance updates here the moment it arrives.
-            </span>
-          </div>
         </div>
         // FAUCET CONTENT END
       )}
@@ -325,56 +316,25 @@ export function AddFundsPanel({ open, onOpenChange, smartAccount, onBalance }: A
           Sheet is non-dismissible (escape/outside blocked); only explicit close works.
           Poll runs in the background — no error UI ever shown. */}
       {phase === 'waiting' && (
-        <div style={{ ...innerPadding, display: 'flex', flexDirection: 'column', gap: 16, paddingTop: 12 }}>
-          {/* Status heading */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-            <Spinner size={20} />
-            <span
-              className="font-display"
-              style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}
-            >
-              Waiting for your funds…
-            </span>
+        <div style={{ ...innerPadding, display: 'flex', flexDirection: 'column', paddingTop: 4 }}>
+          <div className="flow-kind">Add funds · 2 of 3</div>
+          <div className="flow-center">
+            <DrawLine />
+            <div className="flow-title">Watching for your funds</div>
+            <div className="flow-sub">
+              This usually lands in under a minute. Keep this open — we'll catch it the moment it arrives.
+            </div>
           </div>
-
-          <p
-            className="font-ui"
-            style={{ margin: 0, fontSize: 13.5, color: 'var(--muted)', lineHeight: 1.5 }}
-          >
-            This usually lands in under a minute. You can close this — we'll keep watching, and
-            your balance updates on its own.
-          </p>
-
-          {/* Address block — user may need to copy it again */}
-          <div>
-            <span
-              className="font-ui"
-              style={{
-                display: 'block', marginBottom: 7,
-                fontSize: 11.5, fontWeight: 600, color: 'var(--muted)',
-                letterSpacing: '0.03em', textTransform: 'uppercase',
-              }}
-            >
-              Your address
-            </span>
-            <AddressBlock address={smartAccount} />
+          {/* Status banner — Spinner replaces the design's .sp ring; same visual */}
+          <div className="home-banner" style={{ justifyContent: 'center', marginTop: 18 }}>
+            <Spinner /> Checking the network…
           </div>
-
-          {/* Open faucet again link */}
-          <a
-            href={FAUCET_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none',
-              color: 'var(--accent)', fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 600,
-            }}
-          >
-            <External color="var(--accent)" size={14} /> Open faucet again
-          </a>
-
-          {/* Explicit close — only way to dismiss while waiting */}
-          <Button variant="ghost" full onClick={close} style={{ marginTop: 2 }}>
+          {/* DELIBERATE DEVIATION from contract: the watch survives close via baselineRef/onBalance,
+              so we expose the escape — note copy reflects this rather than the contract's lock copy */}
+          <div className="note" style={{ marginTop: 12 }}>
+            The watch keeps running after you close — your balance updates on its own.
+          </div>
+          <Button variant="ghost" full onClick={close} style={{ marginTop: 14 }}>
             Close — keep watching
           </Button>
         </div>
@@ -382,69 +342,40 @@ export function AddFundsPanel({ open, onOpenChange, smartAccount, onBalance }: A
 
       {/* ── PHASE 3: DONE ─────────────────────────────────────────────────── */}
       {phase === 'done' && (
-        <div
-          style={{
-            ...innerPadding,
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            gap: 10, paddingTop: 10,
-          }}
-        >
-          {/* Accent check circle — ponti-pop entrance animation (index.css) */}
-          <div
-            style={{
-              width: 54, height: 54, borderRadius: '50%',
-              background: 'var(--accent-soft)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              animation: 'ponti-pop .4s cubic-bezier(.3,1.5,.5,1)',
-            }}
-          >
-            <Check color="var(--accent)" size={26} />
+        <div style={{ ...innerPadding, paddingTop: 4 }}>
+          <div className="flow-kind">Add funds · 3 of 3</div>
+          <div className="flow-center">
+            <KnotDone />
+            <div className="flow-title">Funds landed</div>
+            <div className="flow-sub">They're in your balance and ready to settle.</div>
+            {/* fstrip — null-safe: omitted if balance read never resolved */}
+            {newBal !== null && (
+              <div className="fstrip" style={{ marginTop: 16, width: '100%' }}>
+                <div>
+                  <div className="fe">Funds available</div>
+                  <div className="fv tnum">
+                    {money(newBal)}<span className="u">USDC</span>
+                  </div>
+                </div>
+                {/* Inline sage chip — no check glyph, unlike DirChip dir="settled" */}
+                {delta !== null && delta > 0n && (
+                  <span
+                    className="font-ui"
+                    style={{
+                      fontSize: 10.5, fontWeight: 600, padding: '3px 8px',
+                      background: 'var(--sage-soft)', color: 'var(--sage)',
+                      borderRadius: 'var(--radius-pill)', whiteSpace: 'nowrap',
+                    }}
+                  >
+                    +{money(delta)}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
-
-          <span
-            className="font-display"
-            style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}
-          >
-            Funds received
-          </span>
-
-          {/* Delta line — null-safe: if baseline was never read, show new balance only */}
-          {newBal !== null && (
-            <span
-              className="tnum font-ui"
-              style={{ fontSize: 14, fontWeight: 600, color: 'var(--muted)' }}
-            >
-              {delta !== null && delta > 0n
-                ? `+${money(delta)} USDC added to your balance`
-                : `${money(newBal)} USDC now in your balance`}
-            </span>
-          )}
-
-          {/* New balance box */}
-          {newBal !== null && (
-            <div
-              style={{
-                marginTop: 4, padding: '10px 16px',
-                background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)',
-                display: 'flex', alignItems: 'baseline', gap: 8,
-              }}
-            >
-              <span className="font-ui" style={{ fontSize: 13, color: 'var(--muted)' }}>
-                New balance
-              </span>
-              <span
-                className="tnum font-display"
-                style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}
-              >
-                {money(newBal)}{' '}
-                <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>USDC</span>
-              </span>
-            </div>
-          )}
-
-          <Button variant="primary" full onClick={close} style={{ marginTop: 8 }}>
-            Done
-          </Button>
+          <div className="flow-actions" style={{ marginTop: 18 }}>
+            <Button variant="primary" full onClick={close}>Done</Button>
+          </div>
         </div>
       )}
     </Sheet>

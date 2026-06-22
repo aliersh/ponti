@@ -1,4 +1,4 @@
-// GroupDetail.tsx — Group detail screen: header, person hero, balance hero, activity.
+// GroupDetail.tsx — Group detail screen: backbar, balance hero, timeline, settle gate.
 
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -13,13 +13,13 @@ import { publicClient } from '../lib/client'
 import { waitForSubgraphBlock } from '../lib/subgraph'
 import { getIdentity } from '../lib/identity'
 import {
-  Avatar, Button, Num, money, DirChip, SectionLabel, Skeleton, Spinner,
-  Left, Right, Dots, Plus,
+  Avatar, Button, money, DirChip, Skeleton, Spinner,
 } from '../ui'
 import { SettleSection } from './SettleSection'
 import { ExpenseFormScreen } from './ExpenseFormScreen'
 import { ExpenseList } from './ExpenseList'
 import { AddFundsPanel } from './AddFundsPanel'
+import { EmptyState } from './EmptyState'
 
 type SendUserOperation = (req: { to: Address; data: Hex }) => Promise<Hex>
 type SendBatch = (calls: { to: Address; data: Hex }[]) => Promise<Hex>
@@ -36,6 +36,15 @@ type FormState =
   | { mode: 'add' }
   | { mode: 'edit'; expense: ExpenseEntry }
   | null
+
+// Broken-line SVG used for the cold-load error estate — mirrors HomeView's error icon.
+const BrokenLineIcon = (
+  <svg width="22" height="10" viewBox="0 0 22 10" fill="none">
+    <line x1="3" y1="5" x2="10" y2="5" stroke="var(--ink-3)" strokeWidth="1.8" />
+    <line x1="13" y1="5" x2="19" y2="5" stroke="var(--ink-3)" strokeWidth="1.8" strokeDasharray="2 2" />
+    <circle cx="3" cy="5" r="2.4" fill="var(--ink-3)" />
+  </svg>
+)
 
 // Fetches all four reads concurrently, committing whichever succeed.
 // Uses allSettled so one failing read (e.g. subgraph overload) never blanks
@@ -143,7 +152,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
   // happy path); any retries run in the background.
   async function pollUntilChanged() {
     if (!resolvedGroup) return
-    setPostWriteStatus('Saved — updating…')
+    setPostWriteStatus('Saved — updating the list…')
     if (await attemptRefresh()) {
       setPostWriteStatus(null)
       return
@@ -190,17 +199,44 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
     loadDetail()
   }, [resolvedGroup])
 
+  // ── Cold-load error: group address unresolvable ───────────────────────────
   if (groupError) {
     return (
-      <main style={{ background: 'var(--bg)', padding: '0 18px 30px', minHeight: '100%' }}>
-        <p className="font-ui" style={{ color: 'var(--muted)', fontSize: 14 }}>Group not found.</p>
+      <main style={{ background: 'var(--surface)', minHeight: '100%' }}>
+        <div className="backbar">
+          <button
+            onClick={() => navigate('/')}
+            aria-label="Back to groups"
+            style={{ all: 'unset', cursor: 'pointer', width: 30, height: 30, borderRadius: 9, border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: 'var(--ink-2)', fontSize: 16, background: 'var(--surface)', flexShrink: 0, boxSizing: 'border-box' }}
+          >
+            ‹
+          </button>
+        </div>
+        <EmptyState
+          icon={BrokenLineIcon}
+          title="Couldn't load this tab"
+          body="Nothing's lost — the balance is safe. This is a display hiccup, not a funds issue."
+          cta="Try again"
+          onCta={() => navigate('/')}
+          tone="error"
+        />
       </main>
     )
   }
+
+  // Group address resolved; still bootstrapping member data.
   if (!resolvedGroup) {
     return (
-      <main style={{ background: 'var(--bg)', padding: '0 18px 30px', minHeight: '100%' }}>
-        <p className="font-ui" style={{ color: 'var(--muted)', fontSize: 14 }}>Loading…</p>
+      <main style={{ background: 'var(--surface)', minHeight: '100%' }}>
+        <div className="backbar">
+          <button
+            onClick={() => navigate('/')}
+            aria-label="Back to groups"
+            style={{ all: 'unset', cursor: 'pointer', width: 30, height: 30, borderRadius: 9, border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: 'var(--ink-2)', fontSize: 16, background: 'var(--surface)', flexShrink: 0, boxSizing: 'border-box' }}
+          >
+            ‹
+          </button>
+        </div>
       </main>
     )
   }
@@ -209,10 +245,10 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
 
   // Form screen replaces the detail body while add or edit is in progress.
   // onComplete: clear formState first so the detail body mounts and shows the
-  // "Saved — updating…" post-write status while the reload runs.
+  // "Saved — updating the list…" post-write status while the reload runs.
   if (formState !== null) {
     return (
-      <main style={{ background: 'var(--bg)', minHeight: '100%' }}>
+      <main style={{ background: 'var(--surface)', minHeight: '100%' }}>
         <ExpenseFormScreen
           mode={formState.mode}
           initial={formState.mode === 'edit' ? formState.expense : undefined}
@@ -233,173 +269,226 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
   // Counterparty identity — nickname (if set) or truncated address.
   const identity = getIdentity(resolvedGroup.counterparty)
 
-  // DirChip label mapped from display direction and counterparty name.
-  function chipLabel(): string {
-    if (!display) return 'All settled up'
-    if (display.direction === 'settled') return 'All settled up'
-    if (display.direction === 'counterparty_owes_me') return `${identity.label} owes you`
-    return `You owe ${identity.label}`
+  // Self identity — own nickname or truncated; lilac tone per contract for self.
+  const selfIdentity = getIdentity(smartAccount)
+
+  // isDebtor and isCreditor drive action zone emphasis.
+  const isDebtor   = display?.direction === 'i_owe_counterparty'
+  const isCreditor = display?.direction === 'counterparty_owes_me'
+
+  // ── Cold-load error: balance never arrived after loads completed ──────────
+  const isHardError = balance === null && !loadingDetail && detailError !== null
+
+  // ── Hero render helpers ───────────────────────────────────────────────────
+
+  // Avatar column used in you-owe / you're-owed heroes.
+  function AvatarCol({ initial, tone, label }: { initial: string; tone: 'lilac' | 'accent' | 'neutral' | 's'; label: string }) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, width: 56 }}>
+        <Avatar initial={initial} tone={tone} size={36} />
+        <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600, fontFamily: 'var(--font-ui)' }}>{label}</span>
+      </div>
+    )
   }
-  function chipDir(): 'in' | 'out' | 'settled' {
-    if (!display) return 'settled'
-    if (display.direction === 'counterparty_owes_me') return 'in'
-    if (display.direction === 'i_owe_counterparty') return 'out'
-    return 'settled'
+
+  // Amount row shared by you-owe and you're-owed: 30px display font per contract.
+  function AmountRow({ bal }: { bal: bigint }) {
+    return (
+      <div style={{ textAlign: 'center' }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 30, letterSpacing: '-.02em', color: 'var(--ink)', fontFeatureSettings: '"tnum" 1,"lnum" 1' }}>
+          {money(bal)}
+          <span style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 600, marginLeft: 5, fontFamily: 'var(--font-ui)' }}>USDC</span>
+        </span>
+      </div>
+    )
   }
+
+  // ── Hero variants ─────────────────────────────────────────────────────────
+
+  function renderHero() {
+    // Loading: two avatar-column skeletons flanking a line skeleton, amount below.
+    if (balance === null && loadingDetail) {
+      return (
+        <div className="balhero">
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0, padding: '26px 0 6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, width: 56 }}>
+              <Skeleton w={36} h={36} r={18} />
+              <Skeleton w={26} h={9} r={4} />
+            </div>
+            <Skeleton w={96} h={6} r={3} />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, width: 56 }}>
+              <Skeleton w={36} h={36} r={18} />
+              <Skeleton w={26} h={9} r={4} />
+            </div>
+          </div>
+          <Skeleton w={130} h={14} r={5} />
+        </div>
+      )
+    }
+
+    // Hard error: balance never arrived — full estate card replaces hero.
+    if (isHardError) {
+      return (
+        <EmptyState
+          icon={BrokenLineIcon}
+          title="Couldn't load this tab"
+          body="Nothing's lost — the balance is safe. This is a display hiccup, not a funds issue."
+          cta="Try again"
+          onCta={reload}
+          tone="error"
+        />
+      )
+    }
+
+    if (!display) return null
+
+    // You-owe: gradient line with right arrowhead; chip floats on the line.
+    if (display.direction === 'i_owe_counterparty') {
+      return (
+        <div className="balhero">
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
+              <AvatarCol initial={selfIdentity.initial} tone="lilac" label="You" />
+              {/* 160px line container: gradient + right arrowhead + chip halo */}
+              <div style={{ position: 'relative', width: 160, height: 36, display: 'flex', alignItems: 'center' }}>
+                <span style={{ flex: 1, height: 1.5, borderRadius: 2, background: 'linear-gradient(90deg,var(--ink),var(--accent-strong))', display: 'block' }} />
+                {/* Right-pointing arrowhead (border triangle) */}
+                <span style={{ position: 'absolute', right: -1, top: '50%', transform: 'translateY(-50%)', width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderLeft: '6px solid var(--accent-strong)' }} />
+                {/* Chip centered on the line; surface halo punches it out of the line */}
+                <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', boxShadow: '0 1px 0 var(--surface),0 0 0 4px var(--surface)' }}>
+                  <DirChip dir="out" size="lg" label={`You owe ${identity.label}`} />
+                </span>
+              </div>
+              <AvatarCol initial={identity.initial} tone={identity.tone} label={identity.label} />
+            </div>
+          </div>
+          <AmountRow bal={balance!} />
+          {/* Partial-read note: balance loaded but some reads failed — muted, not alarming */}
+          {detailError && (
+            <p className="font-ui" style={{ fontSize: 12.5, color: 'var(--ink-3)', marginTop: 10, textAlign: 'center' }}>
+              {detailError}
+            </p>
+          )}
+        </div>
+      )
+    }
+
+    // You're-owed: mirror — left arrowhead, chip between two line segments.
+    if (display.direction === 'counterparty_owes_me') {
+      return (
+        <div className="balhero">
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
+              <AvatarCol initial={selfIdentity.initial} tone="lilac" label="You" />
+              {/* 196px line container: left arrowhead + two segments flanking the chip */}
+              <div style={{ width: 196, height: 36, display: 'flex', alignItems: 'center', gap: 0 }}>
+                {/* Left-pointing arrowhead */}
+                <span style={{ flexShrink: 0, width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderRight: '6px solid var(--accent-strong)' }} />
+                <span style={{ flex: 1, minWidth: 8, height: 1.5, borderRadius: 2, background: 'linear-gradient(90deg,var(--accent-strong),var(--ink))', display: 'block' }} />
+                {/* Chip sits between the two segments; raised bg per contract */}
+                <span style={{ flexShrink: 0, margin: '0 3px', background: 'var(--raised)', borderRadius: 999 }}>
+                  <DirChip dir="in" size="lg" label={`${identity.label} owes you`} />
+                </span>
+                <span style={{ flex: 1, minWidth: 8, height: 1.5, borderRadius: 2, background: 'var(--ink)', display: 'block' }} />
+              </div>
+              <AvatarCol initial={identity.initial} tone={identity.tone} label={identity.label} />
+            </div>
+          </div>
+          <AmountRow bal={balance!} />
+          {detailError && (
+            <p className="font-ui" style={{ fontSize: 12.5, color: 'var(--ink-3)', marginTop: 10, textAlign: 'center' }}>
+              {detailError}
+            </p>
+          )}
+        </div>
+      )
+    }
+
+    // Settled / empty — both have direction === 'settled'.
+    // Distinguish by expenses.length: zero = connected but no activity yet.
+    if (display.direction === 'settled') {
+      if (expenses.length === 0) {
+        // Empty: plain line-2 line connecting the two avatars; no chip.
+        return (
+          <div className="balhero">
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '22px 0 10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                <Avatar initial={selfIdentity.initial} tone="lilac" size={36} />
+                <span style={{ width: 48, height: 1.5, background: 'var(--line-2)', display: 'block' }} />
+                <Avatar initial={identity.initial} tone={identity.tone} size={36} />
+              </div>
+            </div>
+            <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--ink-2)', fontWeight: 600 }}>
+              You're connected with {identity.label}
+            </div>
+          </div>
+        )
+      }
+
+      // Settled with history: sage lines + knot circle + chip + sub copy.
+      return (
+        <div className="balhero">
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '22px 0 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+              <Avatar initial={selfIdentity.initial} tone="lilac" size={36} />
+              <span style={{ width: 38, height: 1.5, background: 'var(--sage)', display: 'block' }} />
+              {/* Knot circle: sage check that visually closes the thread */}
+              <span style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--sage-soft)', border: '1.5px solid var(--sage)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                <svg width="11" height="11" viewBox="0 0 22 22" fill="none">
+                  <path d="M5 11.5l4 4 8-9" stroke="var(--sage)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <span style={{ width: 38, height: 1.5, background: 'var(--sage)', display: 'block' }} />
+              <Avatar initial={identity.initial} tone={identity.tone} size={36} />
+            </div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <DirChip dir="settled" size="lg" label="All settled up" />
+          </div>
+          <div style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--ink-3)', marginTop: 12 }}>
+            Nothing owed either way. The thread's tied.
+          </div>
+        </div>
+      )
+    }
+
+    return null
+  }
+
+  // isUpdating: the "Saved — updating the list…" top banner (transient, blocks renders behind it).
+  // isExhausted: the "Saved — reload to see the latest." bottom banner (persistent prompt).
+  const isUpdating  = postWriteStatus === 'Saved — updating the list…'
+  const isExhausted = postWriteStatus === 'Saved — reload to see the latest.'
 
   return (
-    <main style={{ background: 'var(--bg)', padding: '0 18px 30px', minHeight: '100%' }}>
+    <main style={{ background: 'var(--surface)', minHeight: '100%' }}>
 
-      {/* Header row — back nav + overflow stub */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0 12px' }}>
+      {/* Backbar — ‹ chip affordance + counterparty name */}
+      <div className="backbar">
         <button
           onClick={() => navigate('/')}
-          style={{ all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 3 }}
-          className="font-ui"
           aria-label="Back to groups"
+          style={{ all: 'unset', cursor: 'pointer', width: 30, height: 30, borderRadius: 9, border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: 'var(--ink-2)', fontSize: 16, background: 'var(--surface)', flexShrink: 0, boxSizing: 'border-box' }}
         >
-          <span style={{ color: 'var(--ink)', fontWeight: 600, fontSize: 15, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-            <Left color="var(--ink)" size={18} /> Groups
-          </span>
+          ‹
         </button>
-        {/* Dots menu — not yet functional */}
-        <button
-          style={{ all: 'unset', cursor: 'pointer', color: 'var(--muted)', padding: 6 }}
-          aria-label="More options"
-        >
-          <Dots color="var(--muted)" size={20} />
-        </button>
+        <span className="ttl">{identity.label}</span>
       </div>
 
-      {/* Person hero — avatar + name */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '2px 0 18px' }}>
-        <Avatar initial={identity.initial} tone={identity.tone} size={48} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span
-            className="font-display"
-            style={{ fontSize: 21, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}
-          >
-            {identity.label}
-          </span>
-          {/* Details disclosure — not yet functional; TODO: wire the details disclosure */}
-          <button
-            style={{ all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 3 }}
-            className="font-ui"
-          >
-            <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
-              Shared account · details
-            </span>
-            <Right color="var(--muted)" size={13} />
-          </button>
+      {/* Top post-write banner: "Saved — updating the list…" — above hero while indexer catches up */}
+      {isUpdating && (
+        <div className="home-banner" style={{ margin: '0 18px' }}>
+          <Spinner size={13} />
+          Saved — updating the list…
         </div>
-      </div>
+      )}
 
-      {/* Balance hero card — balance direction, amount, post-write status, action row */}
-      <div
-        className="bg-surface border border-border"
-        style={{ borderRadius: 'var(--radius)', padding: '20px 18px', boxShadow: 'var(--shadow)' }}
-      >
-        {/* Loading skeletons while initial fetch is in flight */}
-        {balance === null && loadingDetail ? (
-          <>
-            <div style={{ marginBottom: 11 }}><Skeleton w={100} h={22} r={11} /></div>
-            <Skeleton w={160} h={44} r={8} />
-          </>
-        ) : (
-          <>
-            {/* Direction chip — lg, personalized label */}
-            {display && (
-              <div style={{ marginBottom: 11 }}>
-                <DirChip dir={chipDir()} size="lg" label={chipLabel()} />
-              </div>
-            )}
+      <div style={{ padding: '0 18px 30px' }}>
 
-            {/* Amount — absolute value, no sign; "Settled" text when balance is zero */}
-            {display && (
-              balance === 0n
-                ? (
-                  <span
-                    className="pnum font-display"
-                    style={{ fontSize: 44, fontWeight: 700, letterSpacing: '-0.045em', color: 'var(--ink)', lineHeight: 1.05 }}
-                  >
-                    Settled
-                  </span>
-                )
-                : (
-                  <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 4 }}>
-                    <Num display size={44}>{money(balance!)}</Num>
-                    <span
-                      className="font-ui"
-                      style={{ fontSize: 18, color: 'var(--muted)', fontWeight: 600, letterSpacing: '0.02em' }}
-                    >
-                      USDC
-                    </span>
-                  </span>
-                )
-            )}
+        {/* Balance hero — varies by state (loading / error / empty / settled / you-owe / you're-owed) */}
+        {renderHero()}
 
-            {/* Detail error — cold-load failure note, muted not red (§5.7) */}
-            {detailError && (
-              <p
-                className="font-ui"
-                style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 10 }}
-              >
-                {detailError}
-              </p>
-            )}
-
-            {/* Post-write reassurance — spinner + status text, grey never red */}
-            {postWriteStatus && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, color: 'var(--muted)' }}>
-                <Spinner size={15} />
-                <span className="font-ui" style={{ fontSize: 12.5 }}>{postWriteStatus}</span>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Action row + low-USDC callout — rendered by SettleSection render prop.
-            SettleSection owns the settle button and callout; GroupDetail owns the row.
-            SettleSection.renderLayout is always called (even for non-debtor) so Add
-            expense always appears. balance !== null gates render so the row appears
-            only after the initial load. */}
-        {balance !== null && display && (
-          <SettleSection
-            balance={balance}
-            usdcBalance={usdcBalance}
-            display={display}
-            sendBatch={sendBatch}
-            groupAddress={resolvedGroup.address}
-            smartAccount={smartAccount}
-            counterparty={resolvedGroup.counterparty}
-            onSettled={reload}
-            onAddFunds={() => setFundsOpen(true)}
-            renderLayout={(settleBtn, callout) => (
-              <>
-                {/* Two-up action row: Add expense always present; Settle when debtor */}
-                <div style={{ display: 'flex', gap: 9, marginTop: 16 }}>
-                  <div style={{ flex: 1 }}>
-                    <Button
-                      variant="primary"
-                      full
-                      onClick={() => setFormState({ mode: 'add' })}
-                    >
-                      <Plus color="var(--accent-ink)" size={16} /> Add expense
-                    </Button>
-                  </div>
-                  {settleBtn && <div style={{ flex: 1 }}>{settleBtn}</div>}
-                </div>
-                {/* Low-USDC callout — full-width below the action row */}
-                {callout}
-              </>
-            )}
-          />
-        )}
-      </div>
-
-      {/* Activity section — SectionLabel + ExpenseList */}
-      <div style={{ marginTop: 22 }}>
-        <SectionLabel>Activity</SectionLabel>
+        {/* Activity timeline */}
         <ExpenseList
           expenses={expenses}
           settlements={settlements}
@@ -411,6 +500,55 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
           onMutated={reload}
           onEdit={(expense) => setFormState({ mode: 'edit', expense })}
         />
+
+        {/* Bottom post-write banner: exhausted retry — quiet "Reload" CTA */}
+        {isExhausted && (
+          <div className="home-banner" style={{ marginTop: 18, justifyContent: 'space-between' }}>
+            <span>Saved — reload to see the latest.</span>
+            <Button variant="quiet" onClick={reload}>Reload</Button>
+          </div>
+        )}
+
+        {/* Action zone — settle gate (debtor-only) + Add expense.
+            One primary at most: settle takes primary when debtor; creditor gets a note instead;
+            settled/empty shows Add expense as primary. */}
+        {balance !== null && display && !isHardError && (
+          <div className="settle">
+            <SettleSection
+              balance={balance}
+              usdcBalance={usdcBalance}
+              display={display}
+              sendBatch={sendBatch}
+              groupAddress={resolvedGroup.address}
+              smartAccount={smartAccount}
+              counterparty={resolvedGroup.counterparty}
+              onSettled={reload}
+              onAddFunds={() => setFundsOpen(true)}
+              renderLayout={(settleBtn, callout) => (
+                <>
+                  {callout}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                    {settleBtn}
+                    {/* Creditor note: settle is debtor-only; creditor sees a passive reassurance */}
+                    {isCreditor && !settleBtn && (
+                      <div style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--ink-3)' }}>
+                        {identity.label} settles from their side — it'll land here on its own.
+                      </div>
+                    )}
+                    <Button
+                      variant={isDebtor ? 'outline' : 'primary'}
+                      full
+                      onClick={() => setFormState({ mode: 'add' })}
+                    >
+                      Add {isDebtor ? 'expense' : 'an expense'}
+                    </Button>
+                  </div>
+                </>
+              )}
+            />
+          </div>
+        )}
+
       </div>
 
       {/* AddFundsPanel — opened by SettleSection's onAddFunds; onBalance updates the

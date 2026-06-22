@@ -3,49 +3,104 @@
 /* Dark mode keys off [data-theme="dark"] on any ancestor, not prefers-color-scheme. */
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
-/* ── Canonical color + shadow tokens (single source of truth; EXACT handoff names) ──
-   These flip light→dark at runtime, and the handoff names (--bg) differ from Tailwind's
-   color namespace (--color-bg), so they use the :root layer + @theme inline bridge:
-   utilities resolve through var(--bg), which [data-theme="dark"] re-points. */
+/* ── Cal color tokens (single source of truth; EXACT handoff names)
+   These flip light→dark at runtime. Bridged into Tailwind's color namespace
+   via @theme inline below; utilities resolve through the var(), which
+   [data-theme="dark"] re-points. ── */
 :root {
-  --bg:#FBF7F4; --surface:#FFFFFF; --surface-2:#F4EEEA;
-  --ink:#241F22; --muted:#786E72; --border:#ECE2DD;
-  --accent:#B23A6B; --accent-strong:#A1305F; --accent-soft:#F8E4ED; --accent-ink:#FFFFFF;
-  --shadow: 0 1px 2px rgba(36,31,34,.05), 0 10px 26px -14px rgba(36,31,34,.18);
+  --bg:#ECEDE8;          /* plaster / lime ground */
+  --surface:#F4F4EF;     /* card */
+  --raised:#FBFBF7;      /* sheets, dialogs, overlays */
+  --ink:#221C1B;         /* warm near-black */
+  --ink-2:#6B625C;       /* secondary */
+  --ink-3:#988F89;       /* tertiary / faint */
+  --line:#D6D6CD;        /* structural hairline (the tie) */
+  --line-2:#C7C7BD;      /* stronger structural line */
+  --hairline:#DEDED7;    /* dividers */
+  --accent:#D1486A;      /* rosa — the saturated plane */
+  --accent-strong:#C23A5C;
+  --accent-soft:#F4E3E8; /* rosa tint surface */
+  --accent-soft-ink:#B23553;
+  --lilac:#6E4F94;       /* secondary plane, sparingly */
+  --lilac-soft:#ECE6F2;
+  --lilac-ink:#5A3E7E;
+  --sage:#5B7060;        /* settled / even — calm, not money-green */
+  --sage-soft:#E5E8E2;
+  --on-accent:#FFFFFF;
+  --skel:#E3E3DB;
+  --skel-sheen:#EEEEE7;
+  --shadow-card:0 1px 2px rgba(34,28,27,.05),0 10px 24px -16px rgba(34,28,27,.18);
+  --shadow-overlay:0 -1px 6px rgba(34,28,27,.05),0 26px 60px -24px rgba(34,28,27,.34);
+  --scrim:rgba(34,28,27,.32);
 }
 [data-theme="dark"] {
-  --bg:#1A171A; --surface:#221D21; --surface-2:#2A242A;
-  --ink:#F1EAEE; --muted:#A99FA5; --border:#382F36;
-  --accent:#E36796; --accent-strong:#E36796; --accent-soft:#36202B; --accent-ink:#1A1115;
-  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 30px -14px rgba(0,0,0,.6);
+  --bg:#191613;          /* warm near-black (dusk concrete) */
+  --surface:#221E19;
+  --raised:#2A2620;
+  --ink:#F0ECE5;
+  --ink-2:#ABA39B;
+  --ink-3:#79716A;
+  --line:#38322B;
+  --line-2:#4A4239;
+  --hairline:#322C25;
+  --accent:#DA5774;      /* rosa plane, lifted to hold on dark */
+  --accent-strong:#C23A5C;
+  --accent-soft:#3A2127;
+  --accent-soft-ink:#EC8AA0;
+  --lilac:#9B7DC0;
+  --lilac-soft:#2E2638;
+  --lilac-ink:#B79BD8;
+  --sage:#8AA593;
+  --sage-soft:#24302A;
+  --on-accent:#FFFFFF;
+  --skel:#2A2620;
+  --skel-sheen:#332D26;
+  --shadow-card:0 1px 2px rgba(0,0,0,.40),0 12px 28px -16px rgba(0,0,0,.60);
+  --shadow-overlay:0 26px 64px -22px rgba(0,0,0,.78);
+  --scrim:rgba(0,0,0,.55);
 }
 
 @theme inline {
-  --color-bg:            var(--bg);
-  --color-surface:       var(--surface);
-  --color-surface-2:     var(--surface-2);
-  --color-ink:           var(--ink);
-  --color-muted:         var(--muted);
-  --color-border:        var(--border);
-  --color-accent:        var(--accent);
-  --color-accent-strong: var(--accent-strong);
-  --color-accent-soft:   var(--accent-soft);
-  --color-accent-ink:    var(--accent-ink);
-  /* Shadow bridge: --shadow-card (distinct from the :root --shadow var) generates the
-     shadow-card utility; value is var(--shadow) so it flips with [data-theme="dark"]. */
-  --shadow-card:         var(--shadow);
+  /* Cal color bridges — every token gets a --color-* entry so utilities exist. */
+  --color-bg:              var(--bg);
+  --color-surface:         var(--surface);
+  --color-raised:          var(--raised);
+  --color-ink:             var(--ink);
+  --color-ink-2:           var(--ink-2);
+  --color-ink-3:           var(--ink-3);
+  --color-line:            var(--line);
+  --color-line-2:          var(--line-2);
+  --color-hairline:        var(--hairline);
+  --color-accent:          var(--accent);
+  --color-accent-strong:   var(--accent-strong);
+  --color-accent-soft:     var(--accent-soft);
+  --color-accent-soft-ink: var(--accent-soft-ink);
+  --color-lilac:           var(--lilac);
+  --color-lilac-soft:      var(--lilac-soft);
+  --color-lilac-ink:       var(--lilac-ink);
+  --color-sage:            var(--sage);
+  --color-sage-soft:       var(--sage-soft);
+  --color-on-accent:       var(--on-accent);
+  --color-skel:            var(--skel);
+  --color-skel-sheen:      var(--skel-sheen);
+  --color-scrim:           var(--scrim);
+  /* Shadow bridges — generates shadow-card and shadow-overlay utilities. */
+  --shadow-card:           var(--shadow-card);
+  --shadow-overlay:        var(--shadow-overlay);
 }
 
-/* ── Static tokens — defined directly in @theme so the EXACT names are emitted as
-   :root vars AND generate utilities. No runtime flip. ── */
+/* ── Static tokens — emitted as :root vars AND generate utilities. No runtime flip. ── */
 @theme {
-  --font-display: "Schibsted Grotesk", system-ui, sans-serif;  /* → font-display */
-  --font-ui:      "Hanken Grotesk", system-ui, sans-serif;     /* → font-ui */
+  --font-display: "Cabinet Grotesk", ui-sans-serif, system-ui, sans-serif;  /* → font-display */
+  --font-ui:      "Switzer", ui-sans-serif, system-ui, -apple-system, sans-serif; /* → font-ui */
 
-  --radius:        6px;    /* sharp (locked) → rounded */
-  --radius-sm:     4px;    /* sharp (locked) → rounded-sm */
+  --radius:        12px;   /* Cal r-md (workhorse) → rounded */
+  --radius-sm:     8px;    /* → rounded-sm */
+  --radius-md:     12px;   /* → rounded-md */
+  --radius-lg:     16px;   /* → rounded-lg */
+  --radius-xl:     20px;   /* → rounded-xl */
   --radius-pill:   999px;  /* → rounded-pill */
-  --radius-sheet:  22px;   /* → rounded-sheet (bottom-sheet top radius) */
+  --radius-sheet:  24px;   /* → rounded-sheet (bottom-sheet top radius) */
   --radius-modal:  20px;   /* → rounded-modal (desktop modal) */
 
   --spacing-18: 18px;      /* px-valued tokens → p-18 / gap-18 / px-18 … (NOT 18×base) */
@@ -58,6 +113,14 @@ html, body, #root {
 }
 body {
   background: var(--bg);
+  /* Inherited text color must resolve to the runtime --ink so headings that set
+     no color of their own (.ttl, .balhero .amt) flip light↔dark. Without this,
+     inherited text falls through to the UA default (black) — invisible on dark. */
+  color: var(--ink);
+  font-family: var(--font-ui);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /* Numeric figures (mirrors the design's .tnum/.pnum). */
@@ -71,9 +134,7 @@ body {
 
 /* ── Skeleton shimmer ────────────────────────────────────────────────────────
    Uses design tokens so the gradient flips automatically in light + dark.
-   background-size: 400% 100% gives the shimmer room to slide across.
-   Animation name must match @keyframes below. Build verifies the class is
-   emitted; visual animation requires a running app to confirm. */
+   background-size: 400% 100% gives the shimmer room to slide across. */
 @keyframes skel-shimmer {
   0%   { background-position: 100% 0; }
   100% { background-position: -100% 0; }
@@ -81,9 +142,9 @@ body {
 @utility skel {
   background: linear-gradient(
     90deg,
-    var(--surface-2) 25%,
-    var(--border)    50%,
-    var(--surface-2) 75%
+    var(--skel)       25%,
+    var(--skel-sheen) 50%,
+    var(--skel)       75%
   );
   background-size: 400% 100%;
   animation: skel-shimmer 1.6s linear infinite;
@@ -109,3 +170,199 @@ body {
 /* ── Modal content ─────────────────────────────────────────────────────────── */
 @keyframes modal-in  { from { opacity: 0; transform: translate(-50%,-50%) scale(.96); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
 @keyframes modal-out { from { opacity: 1; transform: translate(-50%,-50%) scale(1);   } to { opacity: 0; transform: translate(-50%,-50%) scale(.96); } }
+
+/* ── Cal line-grammar — node / pair atoms (design contract §216–230) ─────────
+   The brand mark: two points joined by one line. These are the base atoms;
+   screens compose them into signatures, heroes, and widget states. */
+.node { width: 7px; height: 7px; border-radius: 50%; flex: none }
+.node--ink  { background: var(--ink) }
+.node--mut  { background: var(--ink-3) }
+.node--out  { background: var(--accent-strong) }
+.node--sage { background: var(--sage) }
+.node--open { background: transparent; border: 1.5px solid var(--line-2) }
+
+/* pair: inline two-endpoint row; seg-line fills the gap */
+.pair { display: inline-flex; align-items: center; gap: 0 }
+.pair .seg-line { height: 1.5px; background: var(--line) }
+.pair .seg-line.dash { background: repeating-linear-gradient(90deg, var(--line-2) 0 4px, transparent 4px 8px) }
+.pair .seg-line.hot  { background: linear-gradient(90deg, var(--ink), var(--accent-strong)) }
+
+/* ── DrawLine — running-state animation (design contract §402–408) ────────── */
+.drawline { position: relative; width: 170px; height: 18px; margin: 14px 0 }
+.drawline .track  { position: absolute; top: 8px; left: 0; right: 0; height: 1.5px; background: var(--line) }
+.drawline .dotL   { position: absolute; top: 5px; left: 0;  width: 8px; height: 8px; border-radius: 50%; background: var(--ink) }
+.drawline .dotR   { position: absolute; top: 5px; right: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3) }
+.drawline .runner { position: absolute; top: 7.5px; left: 0; width: 34px; height: 3px; border-radius: 3px; background: var(--accent-strong); animation: run 1.25s ease-in-out infinite }
+@keyframes run { 0% { left: 4px } 100% { left: calc(100% - 38px) } }
+
+/* ── GapLine — error-state dashed line (design contract §412–415) ────────── */
+.gapline { position: relative; width: 170px; height: 18px; margin: 6px 0 2px }
+.gapline .track { position: absolute; top: 8px; left: 0; right: 0; height: 1.5px; background: repeating-linear-gradient(90deg, var(--line-2) 0 5px, transparent 5px 11px) }
+.gapline .dotL  { position: absolute; top: 5px; left: 0;  width: 8px; height: 8px; border-radius: 50%; background: var(--ink) }
+/* dotR default: reached (write landed, confirmation lagging) — accent halo signals pending, not lost */
+.gapline .dotR        { position: absolute; top: 5px; right: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-strong); box-shadow: 0 0 0 4px var(--accent-soft) }
+/* dotR--muted: never reached (write never sent) — muted, no halo */
+.gapline .dotR--muted { background: var(--ink-3); box-shadow: none }
+
+/* ── KnotDone — settled circle (design contract §411) ──────────────────────── */
+.knot-done { width: 52px; height: 52px; border-radius: 50%; background: var(--sage-soft); display: grid; place-items: center; color: var(--sage) }
+
+/* ── Home tie-spine — continuous rounded spine; each .grow row is a node on it ─ */
+/* .glist::before is the spine line; .grow::before is the hollow circle per row.  */
+/* Math: padding-left 22px, node at left:-18px — circle center lands on spine at left:3px. */
+.glist { position: relative; padding-left: 22px; padding-top: 6px }
+.glist::before { content: ""; position: absolute; left: 3px; top: 6px; bottom: 24px; width: 2px; border-radius: 2px; background: var(--line) }
+.grow { display: flex; align-items: center; gap: 11px; padding: 13px 0; border-top: 1px solid var(--hairline); position: relative }
+.grow:first-child { border-top: none }
+/* hollow circle centered on the spine — same node grammar as the activity timeline */
+.grow::before { content: ""; position: absolute; left: -18px; top: 50%; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: var(--bg); border: 1.5px solid var(--line-2) }
+
+/* ── Home banner — loading state strip below the skeleton .glist ────────────── */
+.home-banner { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--hairline); border-radius: var(--radius-md); padding: 9px 12px; font-size: 12px; color: var(--ink-2); margin-top: 12px }
+
+/* ── Add-funds done strip — balance + delta chip row ────────────────────────── */
+.fstrip { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 9px; background: var(--bg); border: 1px solid var(--hairline); border-radius: var(--radius-md); padding: 11px 13px }
+.fstrip .fe { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600 }
+.fstrip .fv { font-family: var(--font-display); font-weight: 700; font-size: 17px; margin-top: 2px; font-feature-settings: "tnum" 1 }
+.fstrip .fv .u { font-size: 11px; color: var(--ink-3); font-weight: 600; margin-left: 3px; font-family: var(--font-ui) }
+
+/* ── Group detail — backbar, balance hero, timeline-as-line, settle gate ─────
+   The screen body sits on --bg; .backbar is a plain row with a back chip (.x).
+   The timeline IS the activity list: a vertical --line axis with node circles.
+   Each .exp gets an open hollow node; each .knot (settlement) gets a filled
+   sage circle that visually closes the thread of expenses above it. */
+.backbar { display: flex; align-items: center; gap: 12px; padding: 16px 18px; flex: none }
+.backbar .x { width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--line); display: grid; place-items: center; color: var(--ink-2); font-size: 16px; background: var(--surface); cursor: pointer; font-family: inherit }
+.backbar .ttl { font-family: var(--font-display); font-weight: 700; font-size: 17px }
+
+.balhero { padding: 6px 0 4px }
+.balhero .pairline { margin: 4px 0 12px }
+.balhero .amt { font-family: var(--font-display); font-weight: 700; font-size: 44px; line-height: .92; letter-spacing: -.025em; font-feature-settings: "tnum" 1 }
+.balhero .amt .u { font-size: 13px; color: var(--ink-3); font-weight: 600; margin-left: 6px; font-family: var(--font-ui) }
+.disc { font-size: 12px; color: var(--ink-3); text-decoration: underline; text-underline-offset: 2px; margin-top: 10px; display: inline-block; cursor: pointer; background: none; border: none; padding: 0; font-family: inherit }
+
+/* Timeline vertical axis — 2px rounded spine, node-circles centered on the line */
+.tl { position: relative; margin-top: 12px; padding-left: 22px }
+.tl::before { content: ""; position: absolute; left: 3px; top: 6px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--line) }
+
+/* Expense row: open hollow node centered on the spine */
+.exp { position: relative; padding: 15px 0; border-bottom: 1px solid var(--hairline) }
+.exp::before { content: ""; position: absolute; left: -18px; top: 50%; transform: translate(-50%,-50%); width: 10px; height: 10px; border-radius: 50%; background: var(--surface); border: 1.5px solid var(--line-2) }
+.exp .top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px }
+.exp .for { font-size: 15px; font-weight: 600 }
+.exp .amt { font-size: 15px; font-weight: 600; font-feature-settings: "tnum" 1 }
+.exp .meta { font-size: 12px; color: var(--ink-3); margin-top: 3px }
+
+/* Settlement knot: filled sage circle — visually closes expenses above it */
+.knot { position: relative; padding: 14px 0; margin: 4px 0 }
+.knot::before { content: ""; position: absolute; left: -18px; top: 50%; transform: translate(-50%,-50%); width: 12px; height: 12px; border-radius: 50%; background: var(--sage-soft); border: 1.5px solid var(--sage) }
+.knot .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; background: none; border: none; padding: 0; font-family: inherit; cursor: pointer; text-align: left }
+.knot .lbl { font-size: 12.5px; font-weight: 600; color: var(--sage) }
+.knot .cnt { font-size: 11.5px; color: var(--ink-3) }
+.knot .chev { color: var(--ink-3); font-size: 12px }
+
+/* Settle gate: sits below the timeline */
+.settle { margin-top: 20px; border-top: 1px solid var(--hairline); padding-top: 16px }
+.callout { display: flex; flex-direction: column; gap: 8px; background: var(--accent-soft); border: 1px solid rgba(194,58,92,.16); border-radius: var(--radius-md); padding: 13px 14px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(34,28,27,.05) }
+.callout .ct { font-size: 13px; font-weight: 700; color: var(--accent-soft-ink) }
+.callout .cs { font-size: 11.5px; color: var(--ink-2); line-height: 1.45 }
+.callout--funds { flex-direction: row; gap: 12px; align-items: flex-start; padding: 14px }
+.callout--funds .ic { width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--surface); color: var(--accent-strong); box-shadow: 0 1px 2px rgba(34,28,27,.10) }
+.callout--funds .body { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0 }
+.callout--funds .add { align-self: flex-start; margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; background: var(--accent-strong); color: var(--on-accent); font-family: var(--font-ui); font-weight: 600; font-size: 12.5px; border: none; border-radius: var(--radius-md); padding: 9px 14px 9px 12px; cursor: pointer; box-shadow: 0 1px 2px rgba(194,58,92,.30),0 3px 8px rgba(194,58,92,.20); transition: transform .08s ease, filter .15s ease }
+.callout--funds .add:hover { filter: brightness(1.05) }
+.callout--funds .add:active { transform: translateY(1px) }
+.callout--funds .add svg { opacity: .95 }
+
+/* ── Add / edit expense ───────────────────────────────────────────────────────
+   Amount: boxed centered card — eyebrow label, 48px display input.
+   .stack gaps the fields; .payframe wraps the Seg payer toggle. */
+.subtitle { font-size: 13px; color: var(--ink-2); margin: -4px 0 18px }
+.stack { display: flex; flex-direction: column; gap: 16px }
+.amount-field { margin-bottom: 18px; background: var(--bg); border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: 22px 18px 20px; text-align: center }
+.amount-field .l { display: block; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 14px }
+.amount-box { display: flex; align-items: baseline; justify-content: center; gap: 8px }
+.amount-box .big { font-family: var(--font-display); font-weight: 700; font-size: 48px; letter-spacing: -.025em; color: var(--ink); font-feature-settings: "tnum" 1; background: none; border: none; width: 150px; text-align: center; outline: none; caret-color: var(--accent) }
+.amount-box .big::placeholder { color: var(--ink-3) }
+.amount-box .big:focus::placeholder { color: transparent }
+.amount-box .u { font-size: 16px; font-weight: 600; color: var(--ink-3) }
+.payframe { position: relative }
+
+/* ── Seg — segmented toggle group (design contract §206–209) ─────────────────
+   One selected button at a time; active = accent-strong plane.
+   Avatar inside selected button tints white via the .ava override. */
+.seg { display: flex; gap: 8px }
+.seg button {
+  flex: 1;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 11px 10px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.seg button[aria-selected="true"] {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: var(--on-accent);
+}
+/* Avatar inside a selected seg button tints to white (§209) */
+.seg button[aria-selected="true"] .ava { background: rgba(255,255,255,.22); color: #fff }
+
+/* ── FlowWidget content — confirm, running, done, and error states ──────────
+   .flow-center: centered column for running/done/error; uses the line primitives.
+   .consent: single-row payment card in confirm; money rule — display font, tnum. */
+.flow-kind    { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); text-align: center }
+.consent      { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg); border: 1px solid var(--hairline); border-radius: var(--radius-md); padding: 14px; margin: 12px 0 }
+.consent .ck  { font-size: 12px; color: var(--ink-3) }
+.consent .camt { font-family: var(--font-display); font-weight: 700; font-size: 22px; font-feature-settings: "tnum" 1 }
+.consent .camt .u { font-size: 12px; color: var(--ink-3); font-weight: 600; margin-left: 3px; font-family: var(--font-ui) }
+.reassure     { text-align: center; font-size: 12.5px; color: var(--ink-2); margin-bottom: 16px; max-width: 32ch; margin-left: auto; margin-right: auto }
+.flow-actions { display: flex; flex-direction: column; gap: 8px }
+.flow-center  { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 8px 0 4px }
+.flow-title   { font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: -.01em }
+.flow-sub     { font-size: 13px; color: var(--ink-2); max-width: 30ch }
+.receipt      { display: inline-block; margin-top: 12px; font-size: 12.5px; color: var(--ink-2); text-decoration: underline; text-underline-offset: 2px }
+.note         { font-size: 12px; color: var(--ink-3); font-style: italic; margin-top: 6px; text-align: center }
+
+/* ── Your Ponti — account screen identity block, invite ID, advanced details ─
+   .profile-top: centered identity column (avatar, editable name, email).
+   .idbox: Ponti ID address display row.
+   .adv: Advanced details collapsible section.
+   .logout: bottom log-out action zone. */
+.profile-top { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 8px 0 4px }
+.profile-top .nm { font-family: var(--font-display); font-weight: 700; font-size: 20px; display: flex; align-items: center; gap: 7px }
+.profile-top .nm .pen { font-size: 13px; color: var(--ink-3) }
+.profile-top .em { font-size: 12.5px; color: var(--ink-3) }
+
+.idbox { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--bg); border: 1px solid var(--hairline); border-radius: var(--radius-md); padding: 11px 13px; margin-bottom: 12px }
+.idbox .id { font-size: 13px; font-weight: 600; font-feature-settings: "tnum" 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.idbox .cp { font-size: 11px; color: var(--ink-3); flex: none }
+
+.adv { margin-top: 18px; border-top: 1px solid var(--hairline); padding-top: 14px }
+/* Disclosure header — the button carries only a narrow UA reset, so the layout +
+   type treatment live here (contract §380): title left, chevron pushed right. */
+.adv .ah { display: flex; align-items: center; justify-content: space-between; padding: 2px 0; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--ink-2) }
+.adv .arow { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--hairline); font-size: 12px }
+.adv .arow:first-of-type { margin-top: 10px }
+.adv .ak { color: var(--ink-3) }
+.adv .av { color: var(--ink); font-weight: 500; text-align: right; font-feature-settings: "tnum" 1 }
+
+.logout { margin-top: 18px; text-align: center }
+
+/* ── reveal-in — enter-only soft reveal for disclosure/dropdown panels ───── */
+@keyframes reveal-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { animation: reveal-in .18s ease-out both; }
+
+/* ── Reduced-motion guard ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .drawline .runner { animation: none }
+  .reveal { animation: none }
+}

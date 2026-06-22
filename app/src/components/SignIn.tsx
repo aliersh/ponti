@@ -1,16 +1,10 @@
-// SignIn.tsx — Branded sign-in screen (headless email LOGIN via Privy).
-//
-// State machine → view:
-//   initial | sending-code         → idle   (email entry)
-//   awaiting-code-input | submitting-code → code    (OTP entry)
-//   error                          → stays on the current view with inline message
-//   done                           → nothing (App's auth gate falls through)
-//
-// Does NOT touch providers.tsx or wallet-headless config (those are F4).
+// SignIn.tsx — Email + OTP sign-in via Privy (headless useLoginWithEmail).
+// Two views: email entry (idle) → code entry (code). Auth logic drives forward;
+// "Use a different email" resets to idle locally without fighting Privy's state.
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, CSSProperties } from 'react'
 import { useLoginWithEmail } from '@privy-io/react-auth'
-import { Mark, Wordmark, Input, Button, Shield } from '../ui'
+import { Mark, Wordmark, Input, Button } from '../ui'
 
 // Simple email sanity check — not RFC-exhaustive, enough to gate the button.
 function looksLikeEmail(s: string): boolean {
@@ -18,6 +12,57 @@ function looksLikeEmail(s: string): boolean {
 }
 
 const RESEND_COOLDOWN_S = 30
+
+// Six individual refs for OTP cell focus management.
+type CellRefs = React.RefObject<HTMLInputElement | null>[]
+
+// --- OTP cell styles (contract `.cell`, `.cell.on`, `.cell.err`; --radius-md maps --r-md) ---
+
+const cellBase: CSSProperties = {
+  width: 42,
+  height: 54,
+  border: '1.5px solid var(--line)',
+  borderRadius: 'var(--radius-md)',
+  background: 'var(--surface)',
+  display: 'grid',
+  placeItems: 'center',
+  fontFamily: 'var(--font-display)',
+  fontWeight: 700,
+  fontSize: 23,
+  color: 'var(--ink)',
+  fontFeatureSettings: '"tnum" 1',
+  outline: 'none',
+  textAlign: 'center',
+  cursor: 'text',
+}
+
+// Focused: accent-strong border + accent-soft ring (contract `.cell.on`)
+const cellOn: CSSProperties = {
+  borderColor: 'var(--accent-strong)',
+  boxShadow: '0 0 0 3px var(--accent-soft)',
+}
+
+// Error: accent-soft-ink border + accent-soft fill (contract `.cell.err`)
+const cellErr: CSSProperties = {
+  borderColor: 'var(--accent-soft-ink)',
+  background: 'var(--accent-soft)',
+}
+
+// Button-loading spinner: animate-spin (Tailwind built-in, no custom keyframe needed).
+function ButtonSpinner() {
+  return (
+    <span
+      className="inline-block animate-spin rounded-full border-2 shrink-0 opacity-60"
+      style={{
+        width: 14,
+        height: 14,
+        borderColor: 'currentColor',
+        borderTopColor: 'transparent',
+      }}
+      aria-hidden="true"
+    />
+  )
+}
 
 export function SignIn() {
   const { sendCode, loginWithCode, state } = useLoginWithEmail()
@@ -29,6 +74,9 @@ export function SignIn() {
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
 
+  // Tracks which OTP cell index has focus — drives the .on visual state.
+  const [focusedCell, setFocusedCell] = useState<number | null>(null)
+
   // Resend cooldown: seconds remaining; 0 = resend enabled.
   const [cooldown, setCooldown] = useState(0)
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -36,6 +84,16 @@ export function SignIn() {
   // Rate-limit error from resend (separate from Privy's state.error so it
   // persists across state transitions without touching the main error slot).
   const [resendError, setResendError] = useState(false)
+
+  // One ref per OTP cell for programmatic focus control.
+  const cellRefs: CellRefs = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+  ]
 
   // Sync view with Privy status on forward transitions (Privy drives forward;
   // backward is local via "Use a different email").
@@ -92,7 +150,7 @@ export function SignIn() {
     try {
       await sendCode({ email: email.trim() })
       startCooldown()
-    } catch (err) {
+    } catch {
       // Rate-limit or network error: show calm inline message, keep resend disabled.
       setResendError(true)
     }
@@ -115,57 +173,99 @@ export function SignIn() {
   const isSubmitting = state.status === 'submitting-code'
   const hasError = state.status === 'error'
 
-  // Error copy: never raw, never alarm-red — interpret into friendly text.
-  function friendlyError(forView: 'idle' | 'code'): string | null {
-    if (!hasError) return null
-    if (forView === 'code') {
-      return "That code didn't match — try again or resend."
+  // --- OTP cell handlers -----------------------------------------------------
+
+  // Splices one digit into `code` at position i; returns the updated string.
+  function spliceDigit(current: string, i: number, digit: string): string {
+    const chars = current.padEnd(6, '').split('')
+    chars[i] = digit
+    // Trim trailing empty slots so code.length reflects actual entry.
+    const joined = chars.join('').replace(/\s+$/, '')
+    return joined.slice(0, 6)
+  }
+
+  function handleCellChange(i: number, raw: string) {
+    const digit = raw.replace(/\D/g, '').slice(-1)
+    if (!digit) return
+    const next = spliceDigit(code, i, digit)
+    setCode(next)
+    // Auto-advance to the next empty cell.
+    if (i < 5) cellRefs[i + 1].current?.focus()
+  }
+
+  function handleCellKeyDown(i: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      void handleConfirmCode()
+      return
     }
-    return "Something went sideways — check your email address and try again."
+    if (e.key === 'Backspace') {
+      if (code[i]) {
+        // Clear this cell's digit.
+        const chars = code.padEnd(6, '').split('')
+        chars[i] = ''
+        setCode(chars.join('').trimEnd())
+      } else if (i > 0) {
+        // Cell already empty — move focus back and clear previous.
+        const chars = code.padEnd(6, '').split('')
+        chars[i - 1] = ''
+        setCode(chars.join('').trimEnd())
+        cellRefs[i - 1].current?.focus()
+      }
+      e.preventDefault()
+    }
+  }
+
+  // Paste on the first cell splits a 6-digit string across all cells.
+  function handleCellPaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    if (!text) return
+    e.preventDefault()
+    setCode(text)
+    const focusIndex = Math.min(text.length, 5)
+    cellRefs[focusIndex].current?.focus()
+  }
+
+  // --- cooldown display ------------------------------------------------------
+
+  // Formats remaining seconds as m:ss (e.g. 30 → "0:30", 9 → "0:09").
+  function fmtCooldown(s: number): string {
+    const m = Math.floor(s / 60)
+    const sec = String(s % 60).padStart(2, '0')
+    return `${m}:${sec}`
   }
 
   // --- render ----------------------------------------------------------------
 
   return (
-    <div
-      className="min-h-screen flex flex-col bg-bg px-[24px]" /* 24px — prototype screens.jsx §8.1 */
-    >
-      {/* ── Centered content column ── */}
-      <div className="flex-1 flex flex-col justify-center gap-[26px]"> {/* 26px gap — prototype screens.jsx §8.1 */}
+    <div className="min-h-screen flex flex-col bg-surface px-[22px]">
+      {/* Centered content column */}
+      <div className="flex-1 flex flex-col justify-center gap-[22px]">
 
         {view === 'idle' ? (
-          /* ── Screen 1: Email entry ── */
+          /* State: email / sending */
           <>
-            {/* Brand block */}
-            <div className="flex flex-col gap-[18px]"> {/* 18px gap — prototype screens.jsx §8.1 */}
-              <Mark s={44} /> {/* 44px — prototype screens.jsx §8.1 */}
-              <Wordmark size={40} /> {/* 40px — prototype screens.jsx §8.1 */}
-              <h1
-                className="m-0 text-ink"
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: 27,          /* 27px — prototype screens.jsx §8.1 */
-                  fontWeight: 700,
-                  lineHeight: 1.12,
-                  letterSpacing: '-0.02em',
-                  textWrap: 'balance',
-                } as React.CSSProperties}
+            {/* Brand block: mark + wordmark */}
+            <div className="flex flex-col items-center gap-[11px]">
+              <Mark s={48} />
+              <Wordmark size={25} />
+            </div>
+
+            <div className="flex flex-col items-center gap-[8px]">
+              <h2
+                className="m-0 font-display text-ink text-center"
+                style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.12, letterSpacing: '-0.015em' }}
               >
-                For people who share expenses, but not the same place.
-              </h1>
+                Two people, one balance, wherever you live
+              </h2>
               <p
-                className="m-0 text-muted"
-                style={{
-                  fontFamily: 'var(--font-ui)',
-                  fontSize: 15,          /* 15px — prototype screens.jsx §8.1 */
-                  lineHeight: 1.5,
-                }}
+                className="m-0 font-ui text-ink-2 text-center"
+                style={{ fontSize: 13, lineHeight: 1.5, maxWidth: '32ch' }}
               >
-                One balance, wherever you live. Settle directly, in USDC.
+                Sign in with your email — we'll send you a code. No password to remember.
               </p>
             </div>
 
-            {/* Input + CTA */}
+            {/* Email field + CTA */}
             <div className="flex flex-col gap-[10px]">
               <Input
                 type="email"
@@ -173,152 +273,208 @@ export function SignIn() {
                 autoComplete="email"
                 placeholder="you@email.com"
                 value={email}
+                disabled={isSending}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') void handleSendCode()
                 }}
+                style={isSending ? { opacity: 0.6 } : undefined}
               />
               <Button
                 variant="primary"
                 full
                 disabled={!looksLikeEmail(email) || isSending}
                 onClick={() => void handleSendCode()}
+                style={{ marginTop: 16 }}
               >
-                {isSending ? 'Sending…' : 'Continue with email'}
+                {isSending ? <><ButtonSpinner /> Sending…</> : 'Send me a code'}
               </Button>
-            </div>
 
-            {/* Inline error (idle view) */}
-            {hasError && view === 'idle' && (
+              {/* Reassurance line — never an alarm, just trust-building copy */}
               <p
-                className="m-0 text-muted text-center"
-                style={{ fontFamily: 'var(--font-ui)', fontSize: 13 }}
+                className="m-0 font-ui text-ink-3 text-center"
+                style={{ fontSize: 11.5, marginTop: 16 }}
               >
-                {friendlyError('idle')}
+                We'll never post anything or share your email.
               </p>
-            )}
+            </div>
           </>
         ) : (
-          /* ── Screen 2: Code entry ── */
+          /* State: code / confirming / error */
           <>
             {/* Brand block */}
-            <div className="flex flex-col gap-[18px]">
-              <Mark s={44} />
-              <Wordmark size={40} />
-              <h1
-                className="m-0 text-ink"
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: 27,          /* 27px — prototype screens.jsx §8.1 */
-                  fontWeight: 700,
-                  lineHeight: 1.12,
-                  letterSpacing: '-0.02em',
-                  textWrap: 'balance',
-                } as React.CSSProperties}
-              >
-                Check your email
-              </h1>
-              <p
-                className="m-0 text-muted"
-                style={{
-                  fontFamily: 'var(--font-ui)',
-                  fontSize: 15,
-                  lineHeight: 1.5,
-                }}
-              >
-                We sent a 6-digit code to {email}. Pop it in below.
-              </p>
+            <div className="flex flex-col items-center gap-[11px]">
+              <Mark s={48} />
+              <Wordmark size={25} />
             </div>
 
-            {/* Code input + actions */}
-            <div className="flex flex-col gap-[10px]">
-              <Input
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                placeholder="000000"
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') void handleConfirmCode()
-                }}
-                // tnum: tabular figures so digits don't jitter; centered + spaced for legibility.
-                className="tnum text-center tracking-[0.18em]"
-              />
-
-              {/* Inline error — sits directly below the code input; accent for contrast, never red */}
-              {hasError && (
-                <div className="bg-accent-soft text-accent rounded-sm px-3 py-2 font-ui font-medium text-sm">
-                  {friendlyError('code')}
-                </div>
-              )}
-
-              <Button
-                variant="primary"
-                full
-                disabled={code.length !== 6 || isSubmitting}
-                onClick={() => void handleConfirmCode()}
+            <div className="flex flex-col items-center gap-[8px]">
+              <h2
+                className="m-0 font-display text-ink text-center"
+                style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.12, letterSpacing: '-0.015em' }}
               >
-                {isSubmitting ? 'Confirming…' : 'Confirm code'}
-              </Button>
+                Enter your code
+              </h2>
 
+              {/* Sub shown in code + confirming; omitted in error (callout replaces it) */}
+              {!hasError && (
+                <p
+                  className="m-0 font-ui text-ink-2 text-center"
+                  style={{ fontSize: 13, lineHeight: 1.5, maxWidth: '32ch' }}
+                >
+                  We sent a 6-digit code to <strong style={{ color: 'var(--ink)' }}>{email}</strong>.
+                </p>
+              )}
+            </div>
+
+            {/* Error callout — accent-soft two-part callout (contract `.callout` + `.ct`/`.cs`) */}
+            {hasError && (
+              <div
+                className="flex flex-col gap-[10px] rounded-md"
+                style={{
+                  background: 'var(--accent-soft)',
+                  padding: '13px 14px',
+                  margin: '4px 0 0',
+                }}
+              >
+                <span
+                  className="font-ui font-semibold"
+                  style={{ fontSize: 13, color: 'var(--accent-soft-ink)' }}
+                >
+                  That code didn't match
+                </span>
+                <span
+                  className="font-ui"
+                  style={{ fontSize: 11.5, color: 'var(--ink-2)' }}
+                >
+                  Check the 6 digits, or get a fresh code — they expire after 10 minutes.
+                </span>
+              </div>
+            )}
+
+            {/* 6-cell OTP: assembles into `code` string; opacity dims while confirming */}
+            <div
+              style={{
+                display: 'flex', gap: 8, justifyContent: 'center',
+                opacity: isSubmitting ? 0.65 : 1,
+                marginBottom: 6,
+              }}
+            >
+              {Array.from({ length: 6 }, (_, i) => {
+                const isFocused = focusedCell === i
+                const isErr = hasError
+
+                return (
+                  <input
+                    key={i}
+                    ref={cellRefs[i]}
+                    type="text"
+                    inputMode="numeric"
+                    // iOS OTP autofill targets the first field with one-time-code.
+                    autoComplete={i === 0 ? 'one-time-code' : 'off'}
+                    maxLength={1}
+                    value={code[i] ?? ''}
+                    disabled={isSubmitting}
+                    style={{
+                      ...cellBase,
+                      ...(isFocused && !isErr ? cellOn : {}),
+                      ...(isErr ? cellErr : {}),
+                    }}
+                    onChange={(e) => handleCellChange(i, e.target.value)}
+                    onKeyDown={(e) => handleCellKeyDown(i, e)}
+                    onPaste={i === 0 ? handleCellPaste : undefined}
+                    onFocus={() => setFocusedCell(i)}
+                    onBlur={() => setFocusedCell(null)}
+                    aria-label={`Code digit ${i + 1}`}
+                  />
+                )
+              })}
+            </div>
+
+            {/* Resend row — copy and right-side action differ by error state */}
+            <div
+              className="flex items-center justify-between font-ui"
+              style={{ marginTop: 14, fontSize: 12.5, color: 'var(--ink-3)' }}
+            >
+              {hasError ? (
+                // Error resend row: "Need a new one?" + "Resend code" button
+                <>
+                  <span>Need a new one?</span>
+                  <button
+                    type="button"
+                    onClick={() => void handleResend()}
+                    disabled={cooldown > 0}
+                    className="font-ui font-medium"
+                    style={{
+                      fontSize: 12.5, background: 'none', border: 'none',
+                      padding: 0, cursor: cooldown > 0 ? 'default' : 'pointer',
+                      color: 'var(--accent-soft-ink)',
+                      opacity: cooldown > 0 ? 0.5 : 1,
+                    }}
+                  >
+                    {cooldown > 0 ? `Resend in ${fmtCooldown(cooldown)}` : 'Resend code'}
+                  </button>
+                </>
+              ) : cooldown > 0 ? (
+                // Cooldown active: "Didn't get it? / Resend in m:ss"
+                <>
+                  <span>Didn't get it?</span>
+                  <span>Resend in {fmtCooldown(cooldown)}</span>
+                </>
+              ) : (
+                // Cooldown expired: "Didn't get it? / Resend code" button
+                <>
+                  <span>Didn't get it?</span>
+                  <button
+                    type="button"
+                    onClick={() => void handleResend()}
+                    className="font-ui font-medium"
+                    style={{
+                      fontSize: 12.5, background: 'none', border: 'none',
+                      padding: 0, cursor: 'pointer',
+                      color: 'var(--accent-soft-ink)',
+                    }}
+                  >
+                    Resend code
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Rate-limit / network calm message — never alarm-red */}
+            {resendError && (
+              <span
+                className="font-ui text-ink-2 text-center"
+                style={{ fontSize: 12 }}
+              >
+                Give it a moment, then try again.
+              </span>
+            )}
+
+            {/* Confirm / Try again button */}
+            <Button
+              variant="primary"
+              full
+              disabled={code.length !== 6 || isSubmitting}
+              onClick={() => void handleConfirmCode()}
+              style={{ marginTop: 18 }}
+            >
+              {isSubmitting ? <><ButtonSpinner /> Confirming…</> : hasError ? 'Try again' : 'Confirm'}
+            </Button>
+
+            {/* Use a different email — disabled while confirming */}
+            <div style={{ textAlign: 'center', marginTop: 12 }}>
               <Button
                 variant="quiet"
+                disabled={isSubmitting}
                 onClick={handleUseDifferentEmail}
+                style={isSubmitting ? { opacity: 0.5 } : undefined}
               >
                 Use a different email
               </Button>
             </div>
-
-            {/* Resend row */}
-            <div className="flex flex-col items-center gap-[6px]">
-              {cooldown > 0 ? (
-                <span
-                  className="text-muted"
-                  style={{ fontFamily: 'var(--font-ui)', fontSize: 13 }}
-                >
-                  Resend in {cooldown}s
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => void handleResend()}
-                  className="text-muted underline-offset-2 hover:text-ink transition-colors"
-                  style={{ fontFamily: 'var(--font-ui)', fontSize: 13, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                >
-                  Resend code
-                </button>
-              )}
-
-              {/* Rate-limit / network calm message — never red */}
-              {resendError && (
-                <span
-                  className="text-muted text-center"
-                  style={{ fontFamily: 'var(--font-ui)', fontSize: 12 }}
-                >
-                  Give it a moment, then try again.
-                </span>
-              )}
-            </div>
-
           </>
         )}
-      </div>
-
-      {/* ── Footer reassurance ── */}
-      <div
-        className="flex items-center gap-[8px] justify-center text-muted"
-        style={{ padding: '20px 0 26px' }} /* 20/26px — prototype screens.jsx §8.1 */
-      >
-        <span className="inline-flex">
-          <Shield color="var(--muted)" size={15} />
-        </span>
-        <span
-          style={{ fontFamily: 'var(--font-ui)', fontSize: 12.5 }} /* 12.5px — prototype screens.jsx §8.1 */
-        >
-          Ponti never holds your money. It only keeps the count.
-        </span>
       </div>
     </div>
   )

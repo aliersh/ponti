@@ -1,9 +1,7 @@
-// pill.tsx — Status/label pill primitive
+// pill.tsx — Label pill primitive
 //
-// Tones:
-//   neutral → bg-surface-2 / text-muted  (default)
-//   accent  → bg-accent-soft / text-accent
-//   ok      → same as neutral (settled-up state)
+// Cal: single flavor — lilac-soft bg / lilac-ink text, 10px uppercase (§187).
+// The tone prop is kept for API stability; all tones render as lilac in Cal.
 
 import type { ReactNode } from 'react'
 
@@ -12,22 +10,16 @@ interface PillProps {
   tone?: 'neutral' | 'accent' | 'ok'
 }
 
-const toneClasses: Record<NonNullable<PillProps['tone']>, string> = {
-  neutral: 'bg-surface-2 text-muted',
-  accent:  'bg-accent-soft text-accent',
-  ok:      'bg-surface-2 text-muted',
-}
-
-export function Pill({ children, tone = 'neutral' }: PillProps) {
+export function Pill({ children }: PillProps) {
   return (
     <span
       className={[
-        'inline-flex items-center font-ui font-semibold rounded-pill',
-        'text-xs',     /* 12px = text-xs */
-        'px-[9px] py-[4px]', /* prototype components.jsx */
-        'gap-[5px]',   /* 5px gap — prototype components.jsx */
-        toneClasses[tone],
+        'inline-flex items-center font-ui font-semibold',
+        'text-[10px] uppercase tracking-[.04em]', /* §187 */
+        'px-[7px] py-[2px]',                      /* §187 */
+        'bg-lilac-soft text-lilac-ink',
       ].join(' ')}
+      style={{ borderRadius: 6 }}
     >
       {children}
     </span>

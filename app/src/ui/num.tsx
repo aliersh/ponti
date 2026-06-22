@@ -27,9 +27,9 @@ export function money(base: bigint): string {
 //   size      — font-size in px; applied as inline style (dynamic, not a Tailwind scale)
 //   weight    — font-weight; defaults to 700
 //   color     — CSS color value; defaults to var(--ink). Do NOT pass a hex literal —
-//               always pass a design token (var(--ink), var(--muted), etc.).
-//   display   — when true, uses proportional figures + Schibsted Grotesk (big hero
-//               amounts); when false (default), tabular figures + Hanken Grotesk (rows)
+//               always pass a design token (var(--ink), var(--ink-2), etc.).
+//   display   — when true, uses proportional figures + the display font (big hero
+//               amounts); when false (default), tabular figures + the UI font (rows)
 
 interface NumProps {
   children: ReactNode
@@ -54,7 +54,8 @@ export function Num({
         fontWeight: weight,
         fontSize: size,
         color,
-        letterSpacing: display ? '-0.02em' : '-0.012em',
+        letterSpacing: display ? '-0.025em' : '-0.012em',
+        ...(display && { lineHeight: 0.92 }),
       }}
     >
       {children}

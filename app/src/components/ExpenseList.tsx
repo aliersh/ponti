@@ -1,11 +1,9 @@
 // ExpenseList.tsx — Activity timeline for the Group-detail screen.
 //
-// Renders a vertical timeline where settlements act as dividers and the
-// expenses before each settle collapse into an expandable segment. Uses
-// buildTimeline() (pure, from fetchGroup.ts) to partition expenses into an
-// open window and closed segments; sub-components are defined at module scope
-// (not nested) to prevent remounting on every parent state update, which would
-// drop each row's local `open` state.
+// The timeline IS a vertical line (.tl): each expense is an open node (.exp),
+// each settlement is a filled sage knot (.knot) that closes the thread above it.
+// buildTimeline() partitions expenses into an open window and closed segments;
+// sub-components are at module scope to prevent remounting on parent state updates.
 
 import { useState, useMemo } from 'react'
 import { getAddress } from 'viem'
@@ -15,10 +13,11 @@ import { buildTimeline } from '../lib/fetchGroup'
 import type { ExpenseEntry, SettlementEntry } from '../lib/fetchGroup'
 import { getIdentity } from '../lib/identity'
 import {
-  Button, Num, money, Pill, Skeleton,
-  Pencil, Trash, Check, Right,
+  Button, money, Pill,
+  Pencil, Trash, Skeleton,
 } from '../ui'
 import { useFlow } from '../flow/FlowContext'
+import { EmptyState } from './EmptyState'
 
 type SendUserOperation = (req: { to: Address; data: Hex }) => Promise<Hex>
 
@@ -46,8 +45,10 @@ function fmtDate(unixSec: number): string {
 
 // ── ExpenseRow ─────────────────────────────────────────────────────────────────
 
-// Pure display row — no local state, no interactions.
-// Amount always in --ink (money rule §5.3), tabular figures.
+// Inner row content — description, edited pill, amount, and meta line.
+// Amount always in --ink (money rule §5.3), no sign, tabular figures.
+// .exp and position:relative live on the outer ExpenseRowWrap so the action strip
+// sits inside the same border-bottom boundary.
 function ExpenseRow({
   e,
   smartAccount,
@@ -59,55 +60,33 @@ function ExpenseRow({
 }) {
   const mine = getAddress(e.payer) === getAddress(smartAccount)
   const identity = getIdentity(counterparty)
-  const initial = mine ? 'Y' : identity.initial
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 2px' }}>
-      {/* Payer avatar circle — 34px */}
-      <div
-        style={{
-          width: 34, height: 34, borderRadius: '50%',
-          flex: '0 0 auto',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: mine ? 'var(--accent-soft)' : 'var(--surface-2)',
-          color: mine ? 'var(--accent)' : 'var(--muted)',
-          fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 13,
-        }}
-      >
-        {initial}
-      </div>
-
-      {/* Description + sub-line */}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <span
-            className="font-ui"
-            style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-          >
-            {e.description}
-          </span>
+    <>
+      <div className="top">
+        <span className="for">
+          {e.description}
           {e.edited && (
-            <Pill tone="neutral">
-              <Pencil color="var(--muted)" size={11} /> edited
-            </Pill>
+            <span style={{ marginLeft: 6 }}>
+              <Pill>edited</Pill>
+            </span>
           )}
-        </div>
-        <span className="font-ui" style={{ fontSize: 12.5, color: 'var(--muted)' }}>
-          {mine ? 'You paid' : `${identity.label} paid`} · {fmtDate(e.createdAt)}
         </span>
+        <span className="amt">{money(e.amount)}</span>
       </div>
-
-      {/* Amount — tabular figures, always ink */}
-      <Num size={15} weight={700}>{money(e.amount)}</Num>
-    </div>
+      <div className="meta">
+        {mine ? 'You paid' : `${identity.label} paid`} · {fmtDate(e.createdAt)}
+      </div>
+    </>
   )
 }
 
 // ── ExpenseRowWrap ─────────────────────────────────────────────────────────────
 
-// Tappable wrapper around ExpenseRow. Click toggles the local `open` state,
-// which lifts the row background and reveals Edit / Delete actions.
-// muted prop → opacity 0.92 for collapsed-segment items.
+// .exp is on this wrapper so the border-bottom and the open hollow axis node
+// enclose both the row content and the action strip — the strip sits inside
+// the row boundary, not floating between two hairlines.
+// muted prop → opacity 0.85 for collapsed-segment items.
 function ExpenseRowWrap({
   e,
   smartAccount,
@@ -127,28 +106,29 @@ function ExpenseRowWrap({
 
   return (
     <div
-      style={{
-        borderBottom: '1px solid var(--border)',
-        opacity: muted ? 0.92 : 1,
-        background: open ? 'var(--surface-2)' : 'transparent',
-        borderRadius: open ? 'var(--radius-sm)' : 0,
-        transition: 'background .15s',
-      }}
+      className="exp"
+      style={{ opacity: muted ? 0.85 : 1 }}
     >
-      {/* Row — click toggles action strip */}
+      {/* Row tap target — toggles the action strip */}
       <div
         onClick={() => setOpen((o) => !o)}
-        style={{ cursor: 'pointer', padding: open ? '0 8px' : 0 }}
+        style={{
+          cursor: 'pointer',
+          background: open ? 'var(--surface)' : 'transparent',
+          borderRadius: open ? 'var(--radius-sm)' : 0,
+          transition: 'background .15s',
+          padding: '0 8px',
+          margin: '0 -8px',
+        }}
       >
         <ExpenseRow e={e} smartAccount={smartAccount} counterparty={counterparty} />
       </div>
 
-      {/* Action strip — Edit + Delete, revealed on tap */}
+      {/* Action strip — Edit + Delete, inside .exp's border boundary */}
       {open && (
-        <div style={{ display: 'flex', gap: 8, padding: '2px 10px 12px' }}>
+        <div className="reveal" style={{ display: 'flex', gap: 8, padding: '6px 0 4px' }}>
           <Button
             variant="soft"
-            // bubbles to GroupDetail — edit opens FormScreen
             onClick={() => onEdit(e)}
             style={{ padding: '8px 12px', fontSize: 13 }}
           >
@@ -159,7 +139,7 @@ function ExpenseRowWrap({
             onClick={() => onDeleteExpense(e)}
             style={{ padding: '8px 12px', fontSize: 13 }}
           >
-            <Trash color="var(--muted)" size={14} /> Delete
+            <Trash color="var(--ink-3)" size={14} /> Delete
           </Button>
         </div>
       )}
@@ -169,74 +149,51 @@ function ExpenseRowWrap({
 
 // ── SettleDivider ──────────────────────────────────────────────────────────────
 
-// Collapsed-by-default segment header. Click toggles the segment open/closed.
-// Chevron rotates 0°→90° on expand. whoSettled = "You" when the smart account
-// initiated the settlement, else the counterparty's identity label.
+// Settlement knot (.knot): a filled sage node that closes the thread above it.
+// The .row strips browser button defaults with all:unset; layout props added back explicitly.
+// Chevron rotates 0°→90° when the segment expands.
 function SettleDivider({
   s,
-  smartAccount,
-  counterparty,
   collapsed,
   onToggle,
   count,
 }: {
   s: SettlementEntry
-  smartAccount: Address
-  counterparty: Address
   collapsed: boolean
   onToggle: () => void
   count: number
 }) {
-  const whoSettled =
-    getAddress(s.payer) === getAddress(smartAccount)
-      ? 'You'
-      : getIdentity(counterparty).label
-
   return (
-    <button
-      onClick={onToggle}
-      style={{
-        all: 'unset', cursor: 'pointer',
-        display: 'flex', alignItems: 'center',
-        gap: 10, padding: '10px 2px',
-        width: '100%', boxSizing: 'border-box',
-      }}
-    >
-      {/* Check circle — 26px, muted */}
-      <div style={{ width: 34, display: 'flex', justifyContent: 'center' }}>
-        <div
-          style={{
-            width: 26, height: 26, borderRadius: '50%',
-            background: 'var(--surface-2)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >
-          <Check color="var(--muted)" size={14} />
-        </div>
-      </div>
-
-      {/* Labels */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <span className="font-ui" style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--muted)' }}>
-          Settled up · {fmtDate(s.timestamp)}
-        </span>
-        <span className="font-ui" style={{ fontSize: 12, color: 'var(--muted)' }}>
-          {whoSettled} settled {money(s.amount)} USDC · {count} item{count !== 1 ? 's' : ''}
-        </span>
-      </div>
-
-      {/* Chevron — rotates 90° when expanded */}
-      <span
+    <div className="knot">
+      <button
+        onClick={onToggle}
         style={{
-          color: 'var(--muted)',
-          transform: collapsed ? 'rotate(0deg)' : 'rotate(90deg)',
-          transition: 'transform .2s',
-          display: 'inline-flex',
+          all: 'unset',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          width: '100%',
+          cursor: 'pointer',
+          boxSizing: 'border-box',
         }}
       >
-        <Right color="var(--muted)" size={16} />
-      </span>
-    </button>
+        <span className="lbl">Settled up · {fmtDate(s.timestamp)}</span>
+        <span className="cnt">
+          {count} expense{count !== 1 ? 's' : ''} squared away{' '}
+          <span
+            className="chev"
+            style={{
+              display: 'inline-block',
+              transform: collapsed ? 'rotate(0deg)' : 'rotate(90deg)',
+              transition: 'transform .2s',
+            }}
+          >
+            ›
+          </span>
+        </span>
+      </button>
+    </div>
   )
 }
 
@@ -285,21 +242,35 @@ export function ExpenseList({
 
   const isEmpty = open.length === 0 && segments.length === 0
 
+  // Empty after load — estate block stands alone, outside the timeline spine
+  if (!loadingDetail && isEmpty) {
+    return (
+      <EmptyState
+        icon={
+          <svg width="22" height="10" viewBox="0 0 22 10" fill="none">
+            <line x1="3" y1="5" x2="19" y2="5" stroke="var(--accent-strong)" strokeWidth="1.8" />
+            <circle cx="3" cy="5" r="2.6" fill="var(--accent-strong)" />
+            <circle cx="19" cy="5" r="2.6" fill="var(--accent-strong)" />
+          </svg>
+        }
+        title="No expenses yet"
+        body="Add the first thing you two split and Ponti starts keeping the count."
+      />
+    )
+  }
+
   return (
-    <div style={{ marginTop: 6 }}>
+    <div className="tl">
       {/* Loading skeletons — two rows while initial fetch is in flight */}
       {loadingDetail && isEmpty && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '8px 0' }}>
-          <Skeleton w="90%" h={14} r={7} />
-          <Skeleton w="70%" h={14} r={7} />
-        </div>
-      )}
-
-      {/* Empty state — only after load completes */}
-      {!loadingDetail && isEmpty && (
-        <p className="font-ui" style={{ fontSize: 14, color: 'var(--muted)', padding: '8px 2px' }}>
-          No expenses yet.
-        </p>
+        <>
+          <div className="exp">
+            <Skeleton w="90%" h={14} r={7} />
+          </div>
+          <div className="exp">
+            <Skeleton w="70%" h={14} r={7} />
+          </div>
+        </>
       )}
 
       {/* Open (active) expenses — newest-first */}
@@ -314,19 +285,14 @@ export function ExpenseList({
         />
       ))}
 
-      {/* Closed segments — newest-first; each starts with a SettleDivider.
-          Items within a segment are muted (opacity 0.92) to signal they're settled. */}
+      {/* Closed segments — newest-first; each starts with a knot divider.
+          Items within a segment are muted (opacity 0.85) to signal they're settled. */}
       {segments.slice().reverse().map((seg) => {
         const isOpen = !!openSeg[seg.settle.timestamp]
         return (
-          <div
-            key={seg.settle.timestamp}
-            style={{ borderTop: '1px solid var(--border)', marginTop: 6 }}
-          >
+          <div key={seg.settle.timestamp}>
             <SettleDivider
               s={seg.settle}
-              smartAccount={smartAccount}
-              counterparty={counterparty}
               collapsed={!isOpen}
               count={seg.items.length}
               onToggle={() =>
@@ -334,7 +300,7 @@ export function ExpenseList({
               }
             />
             {isOpen && (
-              <div style={{ paddingLeft: 6, opacity: 0.85 }}>
+              <div className="reveal" style={{ paddingLeft: 6 }}>
                 {seg.items.slice().reverse().map((e) => (
                   <ExpenseRowWrap
                     key={String(e.id)}

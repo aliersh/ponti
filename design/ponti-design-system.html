@@ -9,7 +9,7 @@
 <x-dc>
 <helmet>
 <link rel="preconnect" href="https://api.fontshare.com">
-<link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@500,700,800&f[]=switzer@400,500,600,700&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@500,600,700,800&f[]=switzer@400,500,600,700&display=swap" rel="stylesheet">
 <style>
 /* =================================================================
    PONTI · CAL  — design tokens
@@ -279,14 +279,15 @@ a{color:inherit}
 .netrow .cap{font-size:12px;color:var(--ink-3)}
 
 /* group rows with tie spine */
-.relblock{margin-top:18px}
-.relblock .lbl{margin-bottom:6px}
-.glist{position:relative;padding-left:14px}
-.glist:before{content:"";position:absolute;left:3px;top:-2px;bottom:18px;width:1.5px;background:var(--line)}
-.glist:after{content:"";position:absolute;left:3px;top:-8px;width:7px;height:7px;border-radius:50%;background:var(--ink-3);transform:translateX(-2.7px)}
-.grow{display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--hairline)}
+.relblock{margin-top:22px}
+.relblock .lbl{margin-bottom:18px}
+.glist{position:relative;padding-left:22px;padding-top:6px}
+/* the tie — one continuous spine, rounded caps */
+.glist:before{content:"";position:absolute;left:3px;top:6px;bottom:24px;width:2px;border-radius:2px;background:var(--line)}
+.grow{position:relative;display:flex;align-items:center;gap:11px;padding:13px 0;border-top:1px solid var(--hairline)}
 .grow:first-child{border-top:none}
-.grow:before{content:"";position:absolute;margin-left:-14px;width:8px;height:1.5px;background:var(--line)}
+/* each person is a node ON the spine — same language as the activity timeline; every circle centred on the line */
+.grow:before{content:"";position:absolute;left:-18px;top:50%;transform:translate(-50%,-50%);width:9px;height:9px;border-radius:50%;background:var(--bg);border:1.5px solid var(--line-2)}
 .grow .who{flex:1;min-width:0}
 .grow .nick{font-size:14px;font-weight:600}
 .grow .sub{font-size:11px;color:var(--ink-3);margin-top:1px}
@@ -317,39 +318,51 @@ a{color:inherit}
 
 /* group detail */
 .balhero{padding:6px 0 4px}
-.balhero .pairline{margin:4px 0 12px}
-.balhero .amt{font-family:var(--font-display);font-weight:700;font-size:44px;line-height:.92;letter-spacing:-.025em;font-feature-settings:"tnum" 1}
+.balhero .amt{font-family:var(--font-display);font-weight:700;font-size:44px;line-height:.92;letter-spacing:-.025em;font-feature-settings:"tnum" 1;margin-top:12px}
 .balhero .amt .u{font-size:13px;color:var(--ink-3);font-weight:600;margin-left:6px;font-family:var(--font-ui)}
-.disc{font-size:12px;color:var(--ink-3);text-decoration:underline;text-underline-offset:2px;margin-top:10px;display:inline-block}
+/* directional tie — two parties, one line; the amount is what sits in tension between them */
+.tieflow{display:flex;width:max-content;align-items:center;gap:11px;margin-top:14px}
+.tieflow .ava{flex:none}
+.tieflow .span{width:58px;height:1.5px;border-radius:2px;background:var(--line)}
+.tieflow .span.hot{background:linear-gradient(90deg,var(--ink),var(--accent-strong))}
+.tieflow .span.in{background:linear-gradient(90deg,var(--accent-strong),var(--ink))}
+.disc{font-size:12px;color:var(--ink-3);text-decoration:underline;text-underline-offset:2px;margin-top:14px;display:inline-block}
 
-.tl{position:relative;margin-top:20px;padding-left:20px}
-.tl:before{content:"";position:absolute;left:4px;top:4px;bottom:6px;width:1.5px;background:var(--line)}
-.exp{position:relative;padding:11px 0;border-bottom:1px solid var(--hairline)}
-.exp:before{content:"";position:absolute;left:-19px;top:17px;width:9px;height:9px;border-radius:50%;background:var(--surface);border:1.5px solid var(--line-2)}
+.tl{position:relative;margin-top:12px;padding-left:22px}
+.tl:before{content:"";position:absolute;left:3px;top:6px;bottom:8px;width:2px;border-radius:2px;background:var(--line)}
+.exp{position:relative;padding:15px 0;border-bottom:1px solid var(--hairline)}
+.exp:before{content:"";position:absolute;left:-18px;top:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:var(--surface);border:1.5px solid var(--line-2)}
 .exp .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.exp .for{font-size:13.5px;font-weight:600}
-.exp .amt{font-size:13.5px;font-weight:600;font-feature-settings:"tnum" 1}
-.exp .meta{font-size:11px;color:var(--ink-3);margin-top:2px}
+.exp .for{font-size:15px;font-weight:600}
+.exp .amt{font-size:15px;font-weight:600;font-feature-settings:"tnum" 1}
+.exp .meta{font-size:12px;color:var(--ink-3);margin-top:3px}
 /* settlement divider = a knot where the thread closes */
-.knot{position:relative;padding:12px 0;margin:4px 0}
-.knot:before{content:"";position:absolute;left:-20.5px;top:14px;width:12px;height:12px;border-radius:50%;background:var(--sage-soft);border:1.5px solid var(--sage)}
+.knot{position:relative;padding:14px 0;margin:4px 0}
+.knot:before{content:"";position:absolute;left:-18px;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:var(--sage-soft);border:1.5px solid var(--sage)}
 .knot .row{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
 .knot .lbl{font-size:12.5px;font-weight:600;color:var(--sage)}
 .knot .cnt{font-size:11.5px;color:var(--ink-3)}
 .knot .chev{color:var(--ink-3);font-size:12px}
 
 .settle{margin-top:20px;border-top:1px solid var(--hairline);padding-top:16px}
-.callout{display:flex;flex-direction:column;gap:10px;background:var(--accent-soft);border-radius:var(--r-md);padding:13px 14px;margin-bottom:12px}
-.callout .ct{font-size:13px;font-weight:600;color:var(--accent-soft-ink)}
-.callout .cs{font-size:11.5px;color:var(--ink-2)}
+.callout{display:flex;flex-direction:column;gap:8px;background:var(--accent-soft);border:1px solid rgba(194,58,92,.16);border-radius:var(--r-md);padding:13px 14px;margin-bottom:12px;box-shadow:0 1px 2px rgba(34,28,27,.05)}
+.callout .ct{font-size:13px;font-weight:700;color:var(--accent-soft-ink)}
+.callout .cs{font-size:11.5px;color:var(--ink-2);line-height:1.45}
+.callout--funds{flex-direction:row;gap:12px;align-items:flex-start;padding:14px}
+.callout--funds .ic{width:34px;height:34px;flex:none;border-radius:50%;display:grid;place-items:center;background:var(--surface);color:var(--accent-strong);box-shadow:0 1px 2px rgba(34,28,27,.10)}
+.callout--funds .body{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.callout--funds .add{align-self:flex-start;margin-top:10px;display:inline-flex;align-items:center;gap:6px;background:var(--accent-strong);color:var(--on-accent);font-family:var(--font-ui);font-weight:600;font-size:12.5px;border:none;border-radius:var(--r-md);padding:9px 14px 9px 12px;cursor:pointer;box-shadow:0 1px 2px rgba(194,58,92,.30),0 3px 8px rgba(194,58,92,.20);transition:transform .08s ease,filter .15s ease}
+.callout--funds .add:hover{filter:brightness(1.05)}
+.callout--funds .add:active{transform:translateY(1px)}
+.callout--funds .add svg{opacity:.95}
 
 /* add / edit expense */
-.amount-field{margin-bottom:18px}
-.amount-field .l{display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:8px}
-.amount-box{display:flex;align-items:baseline;gap:8px;border-bottom:2px solid var(--line-2);padding-bottom:8px}
-.amount-box .big{font-family:var(--font-display);font-weight:700;font-size:42px;letter-spacing:-.025em;color:var(--ink);font-feature-settings:"tnum" 1;background:none;border:none;width:100%;outline:none}
+.amount-field{margin-bottom:18px;background:var(--bg);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:22px 18px 20px;text-align:center}
+.amount-field .l{display:block;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px}
+.amount-box{display:flex;align-items:baseline;justify-content:center;gap:8px}
+.amount-box .big{font-family:var(--font-display);font-weight:700;font-size:48px;letter-spacing:-.025em;color:var(--ink);font-feature-settings:"tnum" 1;background:none;border:none;width:150px;text-align:center;outline:none}
 .amount-box .big::placeholder{color:var(--ink-3)}
-.amount-box .u{font-size:15px;font-weight:600;color:var(--ink-3)}
+.amount-box .u{font-size:16px;font-weight:600;color:var(--ink-3)}
 .subtitle{font-size:13px;color:var(--ink-2);margin:-4px 0 18px}
 .stack{display:flex;flex-direction:column;gap:16px}
 
@@ -376,13 +389,13 @@ a{color:inherit}
 .idbox .cp{font-size:11px;color:var(--ink-3);flex:none}
 .btn-pair{display:flex;gap:10px}
 .btn-pair .btn{flex:1;text-align:center}
-.adv{margin-top:18px;border-top:1px solid var(--hairline);padding-top:14px}
+.adv{margin-top:18px;border-top:1px solid var(--hairline);padding-top:22px}
 .adv .ah{display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink-2)}
 .adv .arow{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--hairline);font-size:12px}
 .adv .arow:first-of-type{margin-top:10px}
 .adv .ak{color:var(--ink-3)}
 .adv .av{color:var(--ink);font-weight:500;text-align:right;font-feature-settings:"tnum" 1}
-.logout{margin-top:18px;text-align:center}
+.logout{margin-top:30px;text-align:center}
 
 /* ---------- sheet / FlowWidget ---------- */
 .scrim-screen{position:relative}
@@ -416,6 +429,19 @@ a{color:inherit}
 .receipt{display:inline-block;margin-top:12px;font-size:12.5px;color:var(--ink-2);text-decoration:underline;text-underline-offset:2px}
 
 .note{font-size:12px;color:var(--ink-3);font-style:italic;margin-top:6px}
+
+/* ---------- sign in (auth) ---------- */
+.auth{flex:1;display:flex;flex-direction:column;justify-content:center;padding:26px 22px 32px}
+.auth .brand{display:flex;flex-direction:column;align-items:center;gap:11px;margin-bottom:22px}
+.auth .brand .name{font-family:var(--font-display);font-weight:800;font-size:25px;letter-spacing:-.02em}
+.auth h2{font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:-.015em;text-align:center;margin-bottom:8px;line-height:1.12}
+.auth .sub{font-size:13px;color:var(--ink-2);text-align:center;max-width:32ch;margin:0 auto 22px;line-height:1.5}
+.auth .resend{display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:12.5px;color:var(--ink-3)}
+.otp{display:flex;gap:8px;justify-content:center;margin-bottom:6px}
+.otp .cell{width:42px;height:54px;border:1.5px solid var(--line);border-radius:var(--r-md);background:var(--surface);display:grid;place-items:center;font-family:var(--font-display);font-weight:700;font-size:23px;color:var(--ink);font-feature-settings:"tnum" 1}
+.otp .cell.on{border-color:var(--accent-strong);box-shadow:0 0 0 3px var(--accent-soft)}
+.otp .cell.err{border-color:var(--accent-soft-ink);background:var(--accent-soft)}
+.spinw{width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;opacity:.6;animation:spin 1s linear infinite;flex:none}
 .foot{margin-top:64px;padding-top:var(--s5);border-top:1px solid var(--hairline);font-size:12.5px;color:var(--ink-3);text-align:center}
 </style>
 </helmet>
@@ -430,7 +456,7 @@ a{color:inherit}
         <circle cx="5" cy="7" r="3.4" fill="currentColor"/>
         <circle cx="35" cy="7" r="3.4" fill="#D1486A"/>
       </svg>
-      <span class="name">Ponti</span>
+      <span class="name">ponti</span>
     </div>
     <div class="kick">Design system · direction “Cal”</div>
     <h1>Architectural warmth, tied by a single line.</h1>
@@ -540,6 +566,7 @@ a{color:inherit}
           <button class="btn btn--primary">Add someone</button>
           <button class="btn btn--outline">Settle up</button>
           <button class="btn btn--soft">Add funds</button>
+          <button class="btn btn--ghost">Try again</button>
           <button class="btn btn--quiet">Reload</button>
         </div>
         <div class="dd"><div class="do"><b>Do</b><span>one primary per screen; rosa = the decisive action.</span></div><div class="dont"><b>Don’t</b><span>colour a destructive action red — nothing alarms.</span></div></div>
@@ -651,6 +678,105 @@ a{color:inherit}
     <h2>Applied</h2>
     <p class="lede">The system on the real screens. Flip the theme (top-right) to see light and dark — and whether the planes hold as the surface area grows.</p>
 
+    <div class="sub" style="margin-top:8px">Sign in — the entry, before Home</div>
+    <p class="note" style="margin:-6px 0 18px;font-style:normal">The first screen anyone sees. Email-code auth — no password. On success it hands off to Home. A wrong or expired code stays warm; never an alarm.</p>
+    <div class="screens">
+
+      <!-- ===== SIGN IN — email ===== -->
+      <div class="scd">
+        <div class="screen short">
+          <div class="scr-body"><div class="auth">
+            <div class="brand">
+              <svg class="mk" width="48" height="17" viewBox="0 0 40 14"><line x1="5" y1="7" x2="35" y2="7" stroke="currentColor" stroke-width="2"></line><circle cx="5" cy="7" r="3.4" fill="currentColor"></circle><circle cx="35" cy="7" r="3.4" fill="#D1486A"></circle></svg>
+              <span class="name">ponti</span>
+            </div>
+            <h2>Two people, one balance, wherever you live</h2>
+            <p class="sub">Sign in with your email — we’ll send you a code. No password to remember.</p>
+            <label class="field"><span class="l">Email</span><input class="inp" value="ariel@ponti.money"></label>
+            <button class="btn btn--primary btn--block" style="margin-top:16px">Send me a code</button>
+            <p style="text-align:center;margin-top:16px;font-size:11.5px;color:var(--ink-3)">We’ll never post anything or share your email.</p>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Sign in — email</span><span class="s">no password · a code by email</span></div>
+      </div>
+
+      <!-- ===== SIGN IN — sending ===== -->
+      <div class="scd">
+        <div class="screen short">
+          <div class="scr-body"><div class="auth">
+            <div class="brand">
+              <svg class="mk" width="48" height="17" viewBox="0 0 40 14"><line x1="5" y1="7" x2="35" y2="7" stroke="currentColor" stroke-width="2"></line><circle cx="5" cy="7" r="3.4" fill="currentColor"></circle><circle cx="35" cy="7" r="3.4" fill="#D1486A"></circle></svg>
+              <span class="name">ponti</span>
+            </div>
+            <h2>Two people, one balance, wherever you live</h2>
+            <p class="sub">Sign in with your email — we’ll send you a code. No password to remember.</p>
+            <label class="field"><span class="l">Email</span><input class="inp" value="ariel@ponti.money" disabled="disabled" style="opacity:.6"></label>
+            <button class="btn btn--primary btn--block" disabled="disabled" style="margin-top:16px;display:flex;align-items:center;justify-content:center;gap:9px"><span class="spinw"></span>Sending…</button>
+            <p style="text-align:center;margin-top:16px;font-size:11.5px;color:var(--ink-3)">We’ll never post anything or share your email.</p>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Sign in — sending</span><span class="s">primary in its loading state</span></div>
+      </div>
+
+      <!-- ===== SIGN IN — code ===== -->
+      <div class="scd">
+        <div class="screen short">
+          <div class="scr-body"><div class="auth">
+            <div class="brand">
+              <svg class="mk" width="48" height="17" viewBox="0 0 40 14"><line x1="5" y1="7" x2="35" y2="7" stroke="currentColor" stroke-width="2"></line><circle cx="5" cy="7" r="3.4" fill="currentColor"></circle><circle cx="35" cy="7" r="3.4" fill="#D1486A"></circle></svg>
+              <span class="name">ponti</span>
+            </div>
+            <h2>Enter your code</h2>
+            <p class="sub">We sent a 6-digit code to <strong style="color:var(--ink)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a2c3d0cbc7cee2d2cdccd6cb8ccfcdccc7db">[email&#160;protected]</a></strong>.</p>
+            <div class="otp"><span class="cell">4</span><span class="cell">8</span><span class="cell">2</span><span class="cell on"></span><span class="cell"></span><span class="cell"></span></div>
+            <div class="resend"><span>Didn’t get it?</span><span style="color:var(--ink-3)">Resend in 0:24</span></div>
+            <button class="btn btn--primary btn--block" style="margin-top:18px">Confirm</button>
+            <div style="text-align:center;margin-top:12px"><button class="btn btn--quiet">Use a different email</button></div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Sign in — code</span><span class="s">OTP · resend on cooldown</span></div>
+      </div>
+
+      <!-- ===== SIGN IN — confirming ===== -->
+      <div class="scd">
+        <div class="screen short">
+          <div class="scr-body"><div class="auth">
+            <div class="brand">
+              <svg class="mk" width="48" height="17" viewBox="0 0 40 14"><line x1="5" y1="7" x2="35" y2="7" stroke="currentColor" stroke-width="2"></line><circle cx="5" cy="7" r="3.4" fill="currentColor"></circle><circle cx="35" cy="7" r="3.4" fill="#D1486A"></circle></svg>
+              <span class="name">ponti</span>
+            </div>
+            <h2>Enter your code</h2>
+            <p class="sub">We sent a 6-digit code to <strong style="color:var(--ink)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3253405b575e72425d5c465b1c5f5d5c574b">[email&#160;protected]</a></strong>.</p>
+            <div class="otp" style="opacity:.65"><span class="cell">4</span><span class="cell">8</span><span class="cell">2</span><span class="cell">9</span><span class="cell">1</span><span class="cell">7</span></div>
+            <button class="btn btn--primary btn--block" disabled="disabled" style="margin-top:18px;display:flex;align-items:center;justify-content:center;gap:9px"><span class="spinw"></span>Confirming…</button>
+            <div style="text-align:center;margin-top:12px"><button class="btn btn--quiet" disabled="disabled" style="opacity:.5">Use a different email</button></div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Sign in — confirming</span><span class="s">code full · verifying</span></div>
+      </div>
+
+      <!-- ===== SIGN IN — error ===== -->
+      <div class="scd">
+        <div class="screen short">
+          <div class="scr-body"><div class="auth">
+            <div class="brand">
+              <svg class="mk" width="48" height="17" viewBox="0 0 40 14"><line x1="5" y1="7" x2="35" y2="7" stroke="currentColor" stroke-width="2"></line><circle cx="5" cy="7" r="3.4" fill="currentColor"></circle><circle cx="35" cy="7" r="3.4" fill="#D1486A"></circle></svg>
+              <span class="name">ponti</span>
+            </div>
+            <h2>Enter your code</h2>
+            <div class="callout" style="margin:4px 0 16px"><span class="ct">That code didn’t match</span><span class="cs">Check the 6 digits, or get a fresh code — they expire after 10 minutes.</span></div>
+            <div class="otp"><span class="cell err">4</span><span class="cell err">8</span><span class="cell err">2</span><span class="cell err">9</span><span class="cell err">1</span><span class="cell err">0</span></div>
+            <div class="resend"><span>Need a new one?</span><button class="btn btn--quiet" style="padding:0;color:var(--accent-soft-ink)">Resend code</button></div>
+            <button class="btn btn--primary btn--block" style="margin-top:18px">Try again</button>
+            <div style="text-align:center;margin-top:12px"><button class="btn btn--quiet">Use a different email</button></div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Sign in — error</span><span class="s">accent-soft callout · never red</span></div>
+      </div>
+
+    </div>
+
+    <div class="sub">The app — primary screens</div>
     <div class="screens">
 
       <!-- ===== HOME — normal ===== -->
@@ -659,21 +785,21 @@ a{color:inherit}
           <div class="appbar plane">
             <div class="b">
               <svg class="mk" width="34" height="12" viewBox="0 0 34 12"><line x1="4" y1="6" x2="30" y2="6" stroke="#fff" stroke-width="2"/><circle cx="4" cy="6" r="3" fill="#fff"/><circle cx="30" cy="6" r="3" fill="#fff" fill-opacity=".55"/></svg>
-              <span class="name">Ponti</span>
+              <span class="name">ponti</span>
             </div>
             <div class="ig"><span>Your Ponti</span><span class="ava s" style="background:rgba(255,255,255,.2);color:#fff">A</span></div>
           </div>
           <div class="scr-body"><div class="pad">
             <div class="eyebrow net-eye">Net</div>
             <div class="net"><span class="amt">180.00</span><span class="u">USDC</span></div>
-            <div class="netrow"><span class="chip chip--in lg"><span class="d"></span>you’re owed</span><span class="cap">across everyone</span></div>
+            <div class="netrow"><span class="chip chip--in lg">You’re owed</span><span class="cap">across everyone</span></div>
 
             <div class="relblock">
               <div class="eyebrow lbl">People you share with</div>
               <div class="glist">
-                <div class="grow"><span class="ava m ava--c">C</span><span class="who"><span class="nick">Camila</span><div class="sub">she owes you</div></span><span class="r"><span class="ramt">240.00</span><span class="chip chip--in sm"><span class="d"></span>in</span></span></div>
-                <div class="grow"><span class="ava m ava--n">M</span><span class="who"><span class="nick">Mateo</span><div class="sub">you owe</div></span><span class="r"><span class="ramt">60.00</span><span class="chip chip--out sm">you owe</span></span></div>
-                <div class="grow"><span class="ava m ava--s">S</span><span class="who"><span class="nick">Sofía</span><div class="sub">all settled</div></span><span class="r"><span class="chip chip--settled sm">✓ settled</span></span></div>
+                <div class="grow"><span class="ava m ava--c">C</span><span class="who"><span class="nick">Camila</span></span><span class="r"><span class="ramt">240.00</span><span class="chip chip--in sm">owes you</span></span></div>
+                <div class="grow"><span class="ava m ava--n">M</span><span class="who"><span class="nick">Mateo</span></span><span class="r"><span class="ramt">60.00</span><span class="chip chip--out sm">you owe</span></span></div>
+                <div class="grow"><span class="ava m ava--s">S</span><span class="who"><span class="nick">Sofía</span></span><span class="r"><span class="chip chip--settled sm">settled</span></span></div>
               </div>
             </div>
 
@@ -683,7 +809,7 @@ a{color:inherit}
             </div>
 
             <div class="cta-foot"><button class="btn btn--primary btn--block">Add someone</button></div>
-            <div class="wink">One balance, wherever you live.</div>
+            <div class="wink">Two people, one balance, wherever you live.</div>
           </div></div>
         </div>
         <div class="cap"><span class="t">Home</span><span class="s">normal · the rosa front door</span></div>
@@ -693,7 +819,7 @@ a{color:inherit}
       <div class="scd">
         <div class="screen">
           <div class="appbar plane">
-            <div class="b"><svg class="mk" width="34" height="12" viewBox="0 0 34 12"><line x1="4" y1="6" x2="30" y2="6" stroke="#fff" stroke-width="2"/><circle cx="4" cy="6" r="3" fill="#fff"/><circle cx="30" cy="6" r="3" fill="#fff" fill-opacity=".55"/></svg><span class="name">Ponti</span></div>
+            <div class="b"><svg class="mk" width="34" height="12" viewBox="0 0 34 12"><line x1="4" y1="6" x2="30" y2="6" stroke="#fff" stroke-width="2"/><circle cx="4" cy="6" r="3" fill="#fff"/><circle cx="30" cy="6" r="3" fill="#fff" fill-opacity=".55"/></svg><span class="name">ponti</span></div>
             <div class="ig"><span>Your Ponti</span><span class="ava s" style="background:rgba(255,255,255,.2);color:#fff">A</span></div>
           </div>
           <div class="scr-body"><div class="pad">
@@ -717,7 +843,7 @@ a{color:inherit}
       <div class="scd">
         <div class="screen short">
           <div class="appbar plane">
-            <div class="b"><svg class="mk" width="34" height="12" viewBox="0 0 34 12"><line x1="4" y1="6" x2="30" y2="6" stroke="#fff" stroke-width="2"/><circle cx="4" cy="6" r="3" fill="#fff"/><circle cx="30" cy="6" r="3" fill="#fff" fill-opacity=".55"/></svg><span class="name">Ponti</span></div>
+            <div class="b"><svg class="mk" width="34" height="12" viewBox="0 0 34 12"><line x1="4" y1="6" x2="30" y2="6" stroke="#fff" stroke-width="2"/><circle cx="4" cy="6" r="3" fill="#fff"/><circle cx="30" cy="6" r="3" fill="#fff" fill-opacity=".55"/></svg><span class="name">ponti</span></div>
             <div class="ig"><span>Your Ponti</span><span class="ava s" style="background:rgba(255,255,255,.2);color:#fff">A</span></div>
           </div>
           <div class="scr-body">
@@ -744,14 +870,29 @@ a{color:inherit}
       <div class="scd">
         <div class="screen">
           <div class="backbar"><span class="x">‹</span><span class="ttl">Camila</span></div>
-          <div class="scr-body"><div class="pad">
+          <div class="scr-body"><div class="pad" style="padding-top:8px">
             <div class="balhero">
-              <span class="chip chip--out lg">You owe Cami</span>
-              <div class="pairline pair" style="margin-top:12px"><span class="ava s ava--lilac" style="width:22px;height:22px;font-size:10px">A</span><span class="seg-line hot" style="width:46px"></span><span class="ava s ava--c" style="width:22px;height:22px;font-size:10px">C</span></div>
-              <div class="amt">60.00<span class="u">USDC</span></div>
-              <a class="disc">Group details</a>
+              <div style="display:flex;justify-content:center;padding:20px 0 14px">
+                <div style="display:flex;align-items:flex-start;gap:0">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;width:56px">
+                    <span class="ava m ava--lilac">A</span>
+                    <span style="font-size:11px;color:var(--ink-3);font-weight:600">You</span>
+                  </div>
+                  <div style="position:relative;width:160px;height:36px;display:flex;align-items:center">
+                    <span style="flex:1;height:1.5px;border-radius:2px;background:linear-gradient(90deg,var(--ink),var(--accent-strong));display:block"></span>
+                    <span style="position:absolute;right:-1px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:6px solid var(--accent-strong)"></span>
+                    <span class="chip chip--out lg" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 1px 0 var(--surface),0 0 0 4px var(--surface)">You owe Camila</span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;width:56px">
+                    <span class="ava m ava--c">C</span>
+                    <span style="font-size:11px;color:var(--ink-3);font-weight:600">Cami</span>
+                  </div>
+                </div>
+              </div>
+              <div style="text-align:center"><span style="font-family:var(--font-display);font-weight:700;font-size:30px;letter-spacing:-.02em;color:var(--ink);font-feature-settings:'tnum' 1,'lnum' 1">60.00<span style="font-size:13px;color:var(--ink-3);font-weight:600;margin-left:5px;font-family:var(--font-ui)">USDC</span></span></div>
             </div>
 
+            <div class="eyebrow" style="margin-top:24px">Activity</div>
             <div class="tl">
               <div class="exp"><div class="top"><span class="for">Groceries</span><span class="amt">40.00</span></div><div class="meta">Cami paid · Jun 14</div></div>
               <div class="exp"><div class="top"><span class="for">Taxi <span class="pill">edited</span></span><span class="amt">20.00</span></div><div class="meta">Cami paid · Jun 12</div></div>
@@ -760,6 +901,7 @@ a{color:inherit}
 
             <div class="settle">
               <button class="btn btn--primary btn--block">Settle up</button>
+              <button class="btn btn--ghost btn--block" style="margin-top:8px">Add expense</button>
             </div>
           </div></div>
         </div>
@@ -770,23 +912,42 @@ a{color:inherit}
       <div class="scd">
         <div class="screen short">
           <div class="backbar"><span class="x">‹</span><span class="ttl">Camila</span></div>
-          <div class="scr-body"><div class="pad">
+          <div class="scr-body"><div class="pad" style="padding-top:8px">
             <div class="balhero">
-              <span class="chip chip--out lg">You owe Cami</span>
-              <div class="pairline pair" style="margin-top:12px"><span class="ava s ava--lilac" style="width:22px;height:22px;font-size:10px">A</span><span class="seg-line hot" style="width:46px"></span><span class="ava s ava--c" style="width:22px;height:22px;font-size:10px">C</span></div>
-              <div class="amt">60.00<span class="u">USDC</span></div>
+              <div style="display:flex;justify-content:center;padding:20px 0 14px">
+                <div style="display:flex;align-items:flex-start;gap:0">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;width:56px">
+                    <span class="ava m ava--lilac">A</span>
+                    <span style="font-size:11px;color:var(--ink-3);font-weight:600">You</span>
+                  </div>
+                  <div style="position:relative;width:160px;height:36px;display:flex;align-items:center">
+                    <span style="flex:1;height:1.5px;border-radius:2px;background:linear-gradient(90deg,var(--ink),var(--accent-strong));display:block"></span>
+                    <span style="position:absolute;right:-1px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:6px solid var(--accent-strong)"></span>
+                    <span class="chip chip--out lg" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 1px 0 var(--surface),0 0 0 4px var(--surface)">You owe Camila</span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;width:56px">
+                    <span class="ava m ava--c">C</span>
+                    <span style="font-size:11px;color:var(--ink-3);font-weight:600">Cami</span>
+                  </div>
+                </div>
+              </div>
+              <div style="text-align:center"><span style="font-family:var(--font-display);font-weight:700;font-size:30px;letter-spacing:-.02em;color:var(--ink);font-feature-settings:'tnum' 1,'lnum' 1">60.00<span style="font-size:13px;color:var(--ink-3);font-weight:600;margin-left:5px;font-family:var(--font-ui)">USDC</span></span></div>
             </div>
-            <div class="tl" style="margin-top:16px">
+            <div class="eyebrow" style="margin-top:22px">Activity</div>
+            <div class="tl">
               <div class="exp"><div class="top"><span class="for">Groceries</span><span class="amt">40.00</span></div><div class="meta">Cami paid · Jun 14</div></div>
               <div class="exp" style="border:none"><div class="top"><span class="for">Taxi</span><span class="amt">20.00</span></div><div class="meta">Cami paid · Jun 12</div></div>
             </div>
             <div class="settle">
-              <div class="callout">
-                <span class="ct">You need 25.00 more USDC</span>
-                <span class="cs">Add funds and the settle button unlocks on its own.</span>
-                <button class="btn btn--soft" style="align-self:flex-start">Add funds</button>
+              <div class="callout callout--funds">
+                <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h11A2.5 2.5 0 0 1 19 7.5V9h-3.2a3 3 0 0 0 0 6H19v1.5A2.5 2.5 0 0 1 16.5 19h-11A2.5 2.5 0 0 1 3 16.5v-9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="15.6" cy="12" r="1.15" fill="currentColor"/></svg></span>
+                <div class="body">
+                  <span class="ct">You need 25.00 more USDC</span>
+                  <span class="cs">Add funds and the settle button unlocks on its own.</span>
+                  <button class="add"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>Add funds</button>
+                </div>
               </div>
-              <button class="btn btn--primary btn--block" disabled>Settle up</button>
+              <button class="btn btn--primary btn--block" disabled="disabled">Settle up</button>
             </div>
           </div></div>
         </div>
@@ -828,7 +989,7 @@ a{color:inherit}
             </div>
             <div class="stack">
               <label class="field"><span class="l">What for?</span><input class="inp" value="Groceries"></label>
-              <div class="field"><span class="l">Who paid?</span><div class="seg"><button aria-selected="false">You</button><button aria-selected="true"><span class="ava s">C</span>Cami</button></div></div>
+              <div class="field"><span class="l">Who paid?</span><div class="seg"><button aria-selected="false">You</button><button aria-selected="true"><span class="ava s ava--c">C</span>Cami</button></div></div>
               <button class="btn btn--primary btn--block" style="margin-top:4px">Review changes</button>
               <button class="btn btn--quiet" style="align-self:center">Delete expense</button>
             </div>
@@ -842,14 +1003,20 @@ a{color:inherit}
         <div class="screen short">
           <div class="backbar"><span class="x">‹</span><span class="ttl">Add someone</span></div>
           <div class="scr-body"><div class="pad">
-            <div class="subtitle">Have someone’s Ponti ID? Paste their link or scan their QR to start a shared tab.</div>
-            <div class="pair" style="justify-content:center;margin:18px 0 22px"><span class="ava s ava--lilac">A</span><span class="seg-line dash" style="width:64px"></span><span class="node node--open" style="width:14px;height:14px"></span></div>
-            <label class="field"><span class="l">Their Ponti ID</span><input class="inp" placeholder="Paste their Ponti ID"></label>
+            <div class="subtitle">Paste the person’s Ponti ID to start a shared tab.</div>
+            <div class="pair" style="justify-content:center;margin:18px 0 22px">
+              <span class="ava s ava--lilac">A</span>
+              <span class="seg-line dash" style="width:64px"></span>
+              <sc-if value="{{ hasAddName }}" hint-placeholder-val="{{ false }}"><span class="ava s ava--c">{{ addInitial }}</span></sc-if>
+              <sc-if value="{{ noAddName }}" hint-placeholder-val="{{ true }}"><span class="node node--open" style="width:14px;height:14px"></span></sc-if>
+            </div>
+            <label class="field"><span class="l">Name</span><input class="inp" placeholder="What do you call them?" onInput="{{ onAddName }}"></label>
+            <label class="field" style="margin-top:14px"><span class="l">Their Ponti ID</span><input class="inp" placeholder="0x7a3f…9C2e"><span class="hint muted">They’ll find their Ponti ID in their own Your Ponti screen.</span></label>
             <button class="btn btn--primary btn--block" style="margin-top:18px">Add someone</button>
 
             <div style="margin-top:26px;border-top:1px dashed var(--line);padding-top:18px">
               <span class="eyebrow">Unresolved input</span>
-              <label class="field" style="margin-top:10px"><span class="l">Their Ponti ID</span><input class="inp" value="ponti.mony/ax9" style="border-color:var(--line)"><span class="hint muted">That doesn’t look like a Ponti ID yet — check the link and try again.</span></label>
+              <label class="field" style="margin-top:10px"><span class="l">Their Ponti ID</span><input class="inp" value="0x7a3f" style="border-color:var(--line)"><span class="hint muted">That doesn’t look like a full Ponti ID yet — paste it complete.</span></label>
             </div>
           </div></div>
         </div>
@@ -864,7 +1031,7 @@ a{color:inherit}
             <div class="profile-top">
               <span class="ava l ava--lilac">A</span>
               <div class="nm">Ariel <span class="pen">✎</span></div>
-              <div class="em">ariel@ponti.money</div>
+              <div class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4f2e3d262a230f3f20213b26612220212a36">[email&#160;protected]</a></div>
             </div>
             <div class="card">
               <div class="ce">Funds available</div>
@@ -873,9 +1040,9 @@ a{color:inherit}
               <div class="crow"><button class="btn btn--soft">Add funds</button></div>
             </div>
             <div class="invite">
-              <div class="it">This is your Ponti ID — like a username. Share it so someone can start a shared tab with you.</div>
-              <div class="idbox"><span class="id">ponti.money/ariel</span><span class="cp">Copy</span></div>
-              <div class="btn-pair"><button class="btn btn--outline">Share link</button><button class="btn btn--outline">Show QR code</button></div>
+              <div class="eyebrow" style="margin-bottom:8px">Your Ponti ID</div>
+              <div class="it">Share it so someone can start a shared tab with you.</div>
+              <div class="idbox"><span class="id">0x7a3f…9C2e</span><span class="cp">Copy</span></div>
             </div>
             <div class="adv">
               <div class="ah">Advanced details <span>▾</span></div>
@@ -890,10 +1057,63 @@ a{color:inherit}
         <div class="cap"><span class="t">Your Ponti</span><span class="s">your point; the invite extends the line</span></div>
       </div>
 
+      <!-- ===== ADD FUNDS — sheet ===== -->
+      <div class="scd">
+        <div class="screen scrim-screen">
+          <div class="behind">
+            <div class="backbar"><span class="x">‹</span><span class="ttl">Your Ponti</span></div>
+            <div class="pad"><div class="card" style="margin-top:0"><div class="ce">Funds available</div><div class="cv">320.00<span class="u">USDC</span></div><div class="cap-line">Your balance to settle with — Ponti never holds it.</div></div></div>
+          </div>
+          <div class="scrim-fill"></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <!-- header row -->
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+              <span style="font-family:var(--font-display);font-weight:700;font-size:19px;letter-spacing:-.01em;flex:none">Add funds</span>
+              <span style="display:inline-flex;align-items:center;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:var(--r-pill);background:var(--surface);color:var(--ink-3);border:1px solid var(--line);flex:none">TESTNET</span>
+              <button style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--ink-3);font-size:20px;line-height:1;padding:2px 4px;flex:none">×</button>
+            </div>
+            <!-- description -->
+            <p style="font-size:13.5px;color:var(--ink-2);line-height:1.55;margin-bottom:18px">Add USDC to your balance so you're ready to settle up. For now it's free — you'll grab some test funds from a faucet. Takes about a minute.</p>
+            <!-- YOUR ADDRESS -->
+            <div class="eyebrow" style="margin-bottom:8px">Your address</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);border:1px solid var(--hairline);border-radius:var(--r-md);padding:11px 13px;margin-bottom:20px">
+              <span style="font-size:13.5px;font-weight:600;font-feature-settings:'tnum' 1;color:var(--ink)">0x7a3f…9C2e</span>
+              <button style="display:flex;align-items:center;gap:5px;background:none;border:none;cursor:pointer;color:var(--accent-strong);font-family:var(--font-ui);font-size:13px;font-weight:600;padding:0;flex:none">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"></rect><path d="M2.5 9H2a1 1 0 01-1-1V2a1 1 0 011-1h6a1 1 0 011 1v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>
+                Copy
+              </button>
+            </div>
+            <!-- ON THE FAUCET -->
+            <div class="eyebrow" style="margin-bottom:12px">On the faucet</div>
+            <div style="display:flex;flex-direction:column;gap:13px;margin-bottom:22px">
+              <div style="display:flex;align-items:flex-start;gap:12px">
+                <span style="width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent-strong);font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none">1</span>
+                <span style="font-size:13.5px;color:var(--ink);line-height:1.5;padding-top:4px">Choose <strong>USDC</strong> on the <strong>Base Sepolia</strong> network.</span>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:12px">
+                <span style="width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent-strong);font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none">2</span>
+                <span style="font-size:13.5px;color:var(--ink);line-height:1.5;padding-top:4px">Paste the address above.</span>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:12px">
+                <span style="width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent-strong);font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none">3</span>
+                <span style="font-size:13.5px;color:var(--ink);line-height:1.5;padding-top:4px">Request — you can get up to <strong>20 USDC every 2 hours</strong>.</span>
+              </div>
+            </div>
+            <!-- CTA -->
+            <button class="btn btn--primary btn--block" style="display:flex;align-items:center;justify-content:center;gap:8px">
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M10.5 2H13v2.5M13 2l-6.5 6.5M5.5 3H3a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              Open faucet
+            </button>
+          </div>
+        </div>
+        <div class="cap"><span class="t">Add funds</span><span class="s">sheet · amount + quick picks, numbers stay neutral</span></div>
+      </div>
+
       <!-- ===== FLOWWIDGET — CONFIRM ===== -->
       <div class="scd">
         <div class="screen scrim-screen">
-          <div class="behind"><div class="appbar"><div class="b"><span class="name">Ponti</span></div></div><div class="pad"><span class="chip chip--out lg">You owe Cami</span><div class="balhero"><div class="amt" style="margin-top:10px">60.00<span class="u">USDC</span></div></div></div></div>
+          <div class="behind"><div class="appbar"><div class="b"><span class="name">ponti</span></div></div><div class="pad"><span class="chip chip--out lg">You owe Cami</span><div class="balhero"><div class="amt" style="margin-top:10px">60.00<span class="u">USDC</span></div></div></div></div>
           <div class="scrim-fill"></div>
           <div class="sheet">
             <div class="grab"></div>
@@ -915,7 +1135,7 @@ a{color:inherit}
       <!-- ===== FLOWWIDGET — RUNNING ===== -->
       <div class="scd">
         <div class="screen scrim-screen">
-          <div class="behind"><div class="appbar"><div class="b"><span class="name">Ponti</span></div></div></div>
+          <div class="behind"><div class="appbar"><div class="b"><span class="name">ponti</span></div></div></div>
           <div class="scrim-fill"></div>
           <div class="sheet">
             <div class="grab"></div>
@@ -933,7 +1153,7 @@ a{color:inherit}
       <!-- ===== FLOWWIDGET — DONE ===== -->
       <div class="scd">
         <div class="screen scrim-screen">
-          <div class="behind"><div class="appbar"><div class="b"><span class="name">Ponti</span></div></div></div>
+          <div class="behind"><div class="appbar"><div class="b"><span class="name">ponti</span></div></div></div>
           <div class="scrim-fill"></div>
           <div class="sheet">
             <div class="grab"></div>
@@ -952,7 +1172,7 @@ a{color:inherit}
       <!-- ===== FLOWWIDGET — ERROR (never sent) ===== -->
       <div class="scd">
         <div class="screen scrim-screen">
-          <div class="behind"><div class="appbar"><div class="b"><span class="name">Ponti</span></div></div></div>
+          <div class="behind"><div class="appbar"><div class="b"><span class="name">ponti</span></div></div></div>
           <div class="scrim-fill"></div>
           <div class="sheet">
             <div class="grab"></div>
@@ -973,7 +1193,7 @@ a{color:inherit}
       <!-- ===== FLOWWIDGET — ERROR (catching up) ===== -->
       <div class="scd">
         <div class="screen scrim-screen">
-          <div class="behind"><div class="appbar"><div class="b"><span class="name">Ponti</span></div></div></div>
+          <div class="behind"><div class="appbar"><div class="b"><span class="name">ponti</span></div></div></div>
           <div class="scrim-fill"></div>
           <div class="sheet">
             <div class="grab"></div>
@@ -992,15 +1212,486 @@ a{color:inherit}
       </div>
 
     </div>
+
+    <!-- ===================== GROUP DETAIL — the full set ===================== -->
+    <div class="sub">Group detail — the full set</div>
+    <p class="note" style="margin:-6px 0 18px;font-style:normal">The most state-rich screen. “You owe” and the low-funds gate are above; here are the rest — the other balance direction, the empties, and the post-write story. Nothing turns red.</p>
+    <div class="screens">
+
+      <!-- you're owed -->
+      <div class="scd">
+        <div class="screen short">
+          <div class="backbar"><span class="x">‹</span><span class="ttl">Camila</span></div>
+          <div class="scr-body"><div class="pad" style="padding-top:8px">
+            <div class="balhero">
+              <div style="display:flex;justify-content:center;padding:20px 0 14px">
+                <div style="display:flex;align-items:flex-start;gap:0">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;width:56px"><span class="ava m ava--lilac">A</span><span style="font-size:11px;color:var(--ink-3);font-weight:600">You</span></div>
+                  <div style="width:196px;height:36px;display:flex;align-items:center;gap:0">
+                    <span style="flex:none;width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-right:6px solid var(--accent-strong)"></span>
+                    <span style="flex:1;min-width:8px;height:1.5px;border-radius:2px;background:linear-gradient(90deg,var(--accent-strong),var(--ink))"></span>
+                    <span class="chip chip--in lg" style="flex:none;margin:0 3px;background:var(--raised)"><span class="d"></span>Cami owes you</span>
+                    <span style="flex:1;min-width:8px;height:1.5px;border-radius:2px;background:var(--ink)"></span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;width:56px"><span class="ava m ava--c">C</span><span style="font-size:11px;color:var(--ink-3);font-weight:600">Cami</span></div>
+                </div>
+              </div>
+              <div style="text-align:center"><span style="font-family:var(--font-display);font-weight:700;font-size:30px;letter-spacing:-.02em;color:var(--ink);font-feature-settings:'tnum' 1,'lnum' 1">240.00<span style="font-size:13px;color:var(--ink-3);font-weight:600;margin-left:5px;font-family:var(--font-ui)">USDC</span></span></div>
+            </div>
+            <div class="eyebrow" style="margin-top:24px">Activity</div>
+            <div class="tl">
+              <div class="exp"><div class="top"><span class="for">Concert tickets</span><span class="amt">280.00</span></div><div class="meta">You paid · Jun 15</div></div>
+              <div class="exp" style="border:none"><div class="top"><span class="for">Lunch</span><span class="amt">40.00</span></div><div class="meta">Cami paid · Jun 13</div></div>
+            </div>
+            <div class="settle">
+              <div style="text-align:center;font-size:12.5px;color:var(--ink-3);margin-bottom:8px">Cami settles from their side — it'll land here on its own.</div>
+              <button class="btn btn--primary btn--block">Add an expense</button>
+            </div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Group detail — you’re owed</span><span class="s">mirror of “you owe” · line points to you</span></div>
+      </div>
+
+      <!-- loading -->
+      <div class="scd">
+        <div class="screen">
+          <div class="backbar"><span class="x">‹</span><span class="ttl">Camila</span></div>
+          <div class="scr-body"><div class="pad" style="padding-top:8px">
+            <div style="display:flex;justify-content:center;align-items:center;gap:0;padding:26px 0 6px">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:7px;width:56px"><span class="skel" style="width:36px;height:36px;border-radius:50%"></span><span class="skel" style="width:26px;height:9px"></span></div>
+              <span class="skel" style="width:96px;height:6px;margin:0 6px"></span>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:7px;width:56px"><span class="skel" style="width:36px;height:36px;border-radius:50%"></span><span class="skel" style="width:26px;height:9px"></span></div>
+            </div>
+            <span class="skel" style="width:130px;height:14px;display:block;margin:14px auto 0"></span>
+            <div class="eyebrow" style="margin-top:26px">Activity</div>
+            <div class="tl">
+              <div class="exp"><div class="top"><span class="skel" style="width:96px;height:13px"></span><span class="skel" style="width:46px;height:13px"></span></div><span class="skel" style="width:120px;height:9px;display:block;margin-top:8px"></span></div>
+              <div class="exp"><div class="top"><span class="skel" style="width:72px;height:13px"></span><span class="skel" style="width:46px;height:13px"></span></div><span class="skel" style="width:108px;height:9px;display:block;margin-top:8px"></span></div>
+              <div class="exp" style="border:none"><div class="top"><span class="skel" style="width:84px;height:13px"></span><span class="skel" style="width:46px;height:13px"></span></div><span class="skel" style="width:116px;height:9px;display:block;margin-top:8px"></span></div>
+            </div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Group detail — loading</span><span class="s">skeleton hero + timeline</span></div>
+      </div>
+
+      <!-- cold-load error -->
+      <div class="scd">
+        <div class="screen short">
+          <div class="backbar"><span class="x">‹</span><span class="ttl">Camila</span></div>
+          <div class="scr-body">
+            <div class="estate err">
+              <span class="ic"><svg width="22" height="10" viewBox="0 0 22 10"><line x1="3" y1="5" x2="10" y2="5" stroke="var(--ink-3)" stroke-width="1.8"></line><line x1="13" y1="5" x2="19" y2="5" stroke="var(--ink-3)" stroke-width="1.8" stroke-dasharray="2 2"></line><circle cx="3" cy="5" r="2.4" fill="var(--ink-3)"></circle></svg></span>
+              <h3>Couldn’t load this tab</h3>
+              <p>Nothing’s lost — the balance is safe. This is a display hiccup, not a funds issue.</p>
+              <button class="btn btn--ghost" style="margin-top:2px">Try again</button>
+            </div>
+          </div>
+        </div>
+        <div class="cap"><span class="t">Group detail — load error</span><span class="s">warm · quiet retry · never red</span></div>
+      </div>
+
+      <!-- settled / even -->
+      <div class="scd">
+        <div class="screen short">
+          <div class="backbar"><span class="x">‹</span><span class="ttl">Sofía</span></div>
+          <div class="scr-body"><div class="pad" style="padding-top:8px">
+            <div class="balhero">
+              <div style="display:flex;justify-content:center;padding:22px 0 14px">
+                <div style="display:flex;align-items:center;gap:0">
+                  <span class="ava m ava--lilac">A</span>
+                  <span style="width:38px;height:1.5px;background:var(--sage);display:block"></span>
+                  <span style="width:20px;height:20px;border-radius:50%;background:var(--sage-soft);border:1.5px solid var(--sage);display:grid;place-items:center"><svg width="11" height="11" viewBox="0 0 22 22" fill="none"><path d="M5 11.5l4 4 8-9" stroke="var(--sage)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                  <span style="width:38px;height:1.5px;background:var(--sage);display:block"></span>
+                  <span class="ava m ava--s">S</span>
+                </div>
+              </div>
+              <div style="text-align:center"><span class="chip chip--settled lg">✓ All settled up</span></div>
+              <div style="text-align:center;font-size:12.5px;color:var(--ink-3);margin-top:12px">Nothing owed either way. The thread’s tied.</div>
+            </div>
+            <div class="eyebrow" style="margin-top:24px">Activity</div>
+            <div class="tl">
+              <div class="knot"><div class="row"><span class="lbl">Settled up · Jun 16</span><span class="cnt">5 expenses squared away ›</span></div></div>
+            </div>
+            <div class="settle"><button class="btn btn--primary btn--block">Add an expense</button></div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Group detail — settled</span><span class="s">balance 0 · no Settle button · sage knot</span></div>
+      </div>
+
+      <!-- empty (connected, no expenses) -->
+      <div class="scd">
+        <div class="screen short">
+          <div class="backbar"><span class="x">‹</span><span class="ttl">Mateo</span></div>
+          <div class="scr-body"><div class="pad" style="padding-top:8px">
+            <div class="balhero">
+              <div style="display:flex;justify-content:center;padding:22px 0 10px">
+                <div style="display:flex;align-items:center;gap:0">
+                  <span class="ava m ava--lilac">A</span>
+                  <span style="width:48px;height:1.5px;background:var(--line-2);display:block"></span>
+                  <span class="ava m ava--n">M</span>
+                </div>
+              </div>
+              <div style="text-align:center;font-size:13px;color:var(--ink-2);font-weight:600">You’re connected with Mateo</div>
+            </div>
+            <div class="estate" style="padding:28px 18px 18px">
+              <span class="ic"><svg width="22" height="10" viewBox="0 0 22 10"><line x1="3" y1="5" x2="19" y2="5" stroke="var(--accent-strong)" stroke-width="1.8"></line><circle cx="3" cy="5" r="2.6" fill="var(--accent-strong)"></circle><circle cx="19" cy="5" r="2.6" fill="var(--accent-strong)"></circle></svg></span>
+              <h3>No expenses yet</h3>
+              <p>Add the first thing you two split and Ponti starts keeping the count.</p>
+              <button class="btn btn--primary" style="padding:11px 20px;margin-top:4px">Add an expense</button>
+            </div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Group detail — empty</span><span class="s">connected, no activity yet</span></div>
+      </div>
+
+      <!-- post-write refreshing -->
+      <div class="scd">
+        <div class="screen">
+          <div class="backbar"><span class="x">‹</span><span class="ttl">Camila</span></div>
+          <div class="scr-body"><div class="pad" style="padding-top:8px">
+            <div class="banner"><span class="sp"></span>Saved — updating the list…</div>
+            <div class="balhero" style="margin-top:14px">
+              <div style="display:flex;justify-content:center;padding:12px 0 8px">
+                <div style="display:flex;align-items:center;gap:0">
+                  <span class="ava m ava--lilac">A</span>
+                  <span style="width:48px;height:1.5px;background:linear-gradient(90deg,var(--ink),var(--accent-strong))"></span>
+                  <span class="ava m ava--c">C</span>
+                </div>
+              </div>
+              <div style="text-align:center;font-size:13px;color:var(--ink-2);font-weight:600">You owe Cami · 80.00 USDC</div>
+            </div>
+            <div class="eyebrow" style="margin-top:20px">Activity</div>
+            <div class="tl">
+              <div class="exp"><div class="top"><span class="for">Dinner <span class="pill">just added</span></span><span class="amt">20.00</span></div><div class="meta">You paid · just now</div></div>
+              <div class="exp" style="border:none"><div class="top"><span class="for">Groceries</span><span class="amt">40.00</span></div><div class="meta">Cami paid · Jun 14</div></div>
+            </div>
+            <div class="banner" style="margin-top:18px;justify-content:space-between"><span>Saved — reload to see the latest.</span><button class="btn btn--quiet" style="padding:0;color:var(--accent-soft-ink)">Reload</button></div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Group detail — post-write</span><span class="s">calm grey “Saved”; a slow refresh is never a write failure</span></div>
+      </div>
+
+    </div>
+
+    <!-- ===================== ADD FUNDS — three phases ===================== -->
+    <div class="sub">Add funds — the three phases</div>
+    <p class="note" style="margin:-6px 0 18px;font-style:normal">One sheet, three phases. Phase 1 (the faucet guide) is above. Then it watches for the deposit and confirms — the watch can’t be dismissed, and a wait is never shown as an error.</p>
+    <div class="screens">
+
+      <!-- waiting -->
+      <div class="scd">
+        <div class="screen scrim-screen">
+          <div class="behind"><div class="backbar"><span class="x">‹</span><span class="ttl">Your Ponti</span></div><div class="pad"><div class="card" style="margin-top:0"><div class="ce">Funds available</div><div class="cv">320.00<span class="u">USDC</span></div></div></div></div>
+          <div class="scrim-fill"></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="flow-kind">Add funds · 2 of 3</div>
+            <div class="flow-center">
+              <div class="drawline"><div class="track"></div><div class="dotL"></div><div class="dotR"></div><div class="runner"></div></div>
+              <div class="flow-title">Watching for your funds</div>
+              <div class="flow-sub">This usually lands in under a minute. We'll keep watching in the background even after you close this.</div>
+            </div>
+            <div class="banner" style="justify-content:center;margin-top:18px"><span class="sp"></span>Checking the network…</div>
+            <div class="note" style="text-align:center;margin-top:12px">You can close this panel — Ponti keeps watching in the background.
+            <button class="btn btn--ghost btn--block" style="margin-top:16px">Close — keep watching</button></div>
+          </div>
+        </div>
+        <div class="cap"><span class="t">Add funds — waiting</span><span class="s">polling · dismiss locked · never red</span></div>
+      </div>
+
+      <!-- done -->
+      <div class="scd">
+        <div class="screen scrim-screen">
+          <div class="behind"><div class="backbar"><span class="x">‹</span><span class="ttl">Your Ponti</span></div><div class="pad"><div class="card" style="margin-top:0"><div class="ce">Funds available</div><div class="cv">340.00<span class="u">USDC</span></div></div></div></div>
+          <div class="scrim-fill"></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="flow-kind">Add funds · 3 of 3</div>
+            <div class="flow-center">
+              <div class="knot-done"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M5 11.5l4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+              <div class="flow-title">Funds landed</div>
+              <div class="flow-sub">They’re in your balance and ready to settle.</div>
+              <div class="fstrip" style="margin-top:16px;width:100%"><div><div class="fe">Funds available</div><div class="fv tnum">340.00<span class="u">USDC</span></div></div><span class="chip chip--settled">+20.00</span></div>
+            </div>
+            <div class="flow-actions" style="margin-top:18px"><button class="btn btn--primary btn--block">Done</button></div>
+          </div>
+        </div>
+        <div class="cap"><span class="t">Add funds — done</span><span class="s">balance updated · the knot closes</span></div>
+      </div>
+
+    </div>
+
+    <!-- ===================== YOUR PONTI — states ===================== -->
+    <div class="sub">Your Ponti — states</div>
+    <p class="note" style="margin:-6px 0 18px;font-style:normal">The funds card loads as a skeleton; advanced details collapse by default. The expanded version is the main Your Ponti screen above.</p>
+    <div class="screens">
+
+      <!-- funds loading -->
+      <div class="scd">
+        <div class="screen">
+          <div class="backbar"><span class="x">‹</span><span class="ttl">Your Ponti</span></div>
+          <div class="scr-body"><div class="pad">
+            <div class="profile-top">
+              <span class="ava l ava--lilac">A</span>
+              <div class="nm">Ariel <span class="pen">✎</span></div>
+              <div class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="2243504b474e62524d4c564b0c4f4d4c475b">[email&#160;protected]</a></div>
+            </div>
+            <div class="card">
+              <div class="ce">Funds available</div>
+              <span class="skel" style="width:150px;height:30px;display:block;margin:8px 0 8px"></span>
+              <span class="skel" style="width:210px;height:11px;display:block"></span>
+              <div class="crow"><span class="skel" style="width:96px;height:32px;border-radius:10px"></span></div>
+            </div>
+            <div class="invite">
+              <div class="eyebrow" style="margin-bottom:8px">Your Ponti ID</div>
+              <div class="it">Share it so someone can start a shared tab with you.</div>
+              <div class="idbox"><span class="id">0x7a3f…9C2e</span><span class="cp">Copy</span></div>
+            </div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Your Ponti — loading</span><span class="s">funds card as skeleton</span></div>
+      </div>
+
+      <!-- advanced collapsed -->
+      <div class="scd">
+        <div class="screen">
+          <div class="backbar"><span class="x">‹</span><span class="ttl">Your Ponti</span></div>
+          <div class="scr-body"><div class="pad">
+            <div class="profile-top">
+              <span class="ava l ava--lilac">A</span>
+              <div class="nm">Ariel <span class="pen">✎</span></div>
+              <div class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="1b7a69727e775b6b74756f72357674757e62">[email&#160;protected]</a></div>
+            </div>
+            <div class="card">
+              <div class="ce">Funds available</div>
+              <div class="cv">320.00<span class="u">USDC</span></div>
+              <div class="cap-line">Your balance to settle with — Ponti never holds it.</div>
+              <div class="crow"><button class="btn btn--soft">Add funds</button></div>
+            </div>
+            <div class="invite">
+              <div class="eyebrow" style="margin-bottom:8px">Your Ponti ID</div>
+              <div class="it">Share it so someone can start a shared tab with you.</div>
+              <div class="idbox"><span class="id">0x7a3f…9C2e</span><span class="cp">Copy</span></div>
+            </div>
+            <div class="adv">
+              <div class="ah">Advanced details <span>▸</span></div>
+            </div>
+            <div class="logout"><button class="btn btn--quiet">Log out</button></div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Your Ponti — advanced collapsed</span><span class="s">crypto detail tucked away by default</span></div>
+      </div>
+
+    </div>
+
+    <!-- ===================== FORMS — validation ===================== -->
+    <div class="sub">Forms — validation</div>
+    <p class="note" style="margin:-6px 0 18px;font-style:normal">Add and edit share one form. The primary stays disabled until the amount is valid — calmly, with a hint, never an alarm. Edit behaves the same.</p>
+    <div class="screens">
+
+      <div class="scd">
+        <div class="screen short">
+          <div class="backbar"><span class="x">‹</span><span class="ttl">Add an expense</span></div>
+          <div class="scr-body"><div class="pad">
+            <div class="subtitle">Add what you paid for — Ponti keeps the count.</div>
+            <div class="amount-field">
+              <span class="l">Amount</span>
+              <div class="amount-box"><input class="big" placeholder="0.00"><span class="u">USDC</span></div>
+            </div>
+            <div class="stack">
+              <label class="field"><span class="l">What for?</span><input class="inp" placeholder="e.g. Groceries"></label>
+              <div class="field"><span class="l">Who paid?</span><div class="seg"><button aria-selected="true">You</button><button aria-selected="false"><span class="ava s ava--c">C</span>Cami</button></div></div>
+              <button class="btn btn--primary btn--block" disabled="disabled" style="margin-top:4px">Review &amp; add</button>
+              <div style="text-align:center;margin-top:6px;font-size:11.5px;color:var(--ink-3)">Enter an amount to continue.</div>
+            </div>
+          </div></div>
+        </div>
+        <div class="cap"><span class="t">Add / edit — invalid</span><span class="s">submit disabled until the amount is valid</span></div>
+      </div>
+
+    </div>
+
+    <!-- ===================== FLOWWIDGET — confirm variants ===================== -->
+    <div class="sub">FlowWidget — confirm variants</div>
+    <p class="note" style="margin:-6px 0 18px;font-style:normal">Same sheet structure as the Settle up confirm above. Four different payloads — add expense, edit expense, delete expense (the only destructive write), and connect with someone. Nothing turns red; the broken line is the only destructive signal.</p>
+    <div class="screens">
+
+      <!-- ===== FLOWWIDGET — add expense ===== -->
+      <div class="scd">
+        <div class="screen scrim-screen">
+          <div class="behind">
+            <div class="backbar"><span class="x">‹</span><span class="ttl">Camila</span></div>
+            <div class="pad" style="padding-top:8px">
+              <div style="display:flex;justify-content:center;padding:18px 0 10px">
+                <div style="display:flex;align-items:flex-start;gap:0">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;width:52px"><span class="ava m ava--lilac">A</span><span style="font-size:11px;color:var(--ink-3);font-weight:600">You</span></div>
+                  <span style="width:80px;height:1.5px;background:var(--line-2);display:block;margin-top:17px"></span>
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;width:52px"><span class="ava m ava--c">C</span><span style="font-size:11px;color:var(--ink-3);font-weight:600">Cami</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="scrim-fill"></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="flow-kind">Add expense</div>
+            <div class="consent">
+              <div>
+                <div class="ck">Adding to your tab with Cami</div>
+                <div style="font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--ink);margin-top:4px">Dinner</div>
+                <div style="font-size:11.5px;color:var(--ink-3);margin-top:2px">You paid</div>
+              </div>
+              <div class="camt">42.50<span class="u">USDC</span></div>
+            </div>
+            <div class="reassure">The balance between you updates straight away.</div>
+            <div class="flow-actions">
+              <button class="btn btn--primary btn--block">Confirm</button>
+              <button class="btn btn--ghost" style="align-self:center">Cancel</button>
+            </div>
+          </div>
+        </div>
+        <div class="cap"><span class="t">FlowWidget — add expense</span><span class="s">item + who paid · amount stays neutral</span></div>
+      </div>
+
+      <!-- ===== FLOWWIDGET — edit expense (delta) ===== -->
+      <div class="scd">
+        <div class="screen scrim-screen">
+          <div class="behind">
+            <div class="backbar"><span class="x">‹</span><span class="ttl">Edit expense</span></div>
+            <div class="pad">
+              <div class="amount-field" style="margin-top:10px">
+                <span class="l">Amount</span>
+                <div class="amount-box"><input class="big" value="45.00" readonly="readonly"><span class="u">USDC</span></div>
+              </div>
+              <div class="stack" style="margin-top:10px">
+                <label class="field"><span class="l">What for?</span><input class="inp" value="Groceries" readonly="readonly"></label>
+              </div>
+            </div>
+          </div>
+          <div class="scrim-fill"></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="flow-kind">Save changes</div>
+            <div class="consent">
+              <div>
+                <div class="ck">Editing Groceries · Cami paid</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+                  <span style="font-size:13px;color:var(--ink-3);text-decoration:line-through;font-feature-settings:'tnum' 1">40.00</span>
+                  <span style="font-size:11px;color:var(--ink-3)">→</span>
+                  <span style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--ink);font-feature-settings:'tnum' 1">45.00</span>
+                  <span style="font-size:11px;color:var(--ink-3)">USDC</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+                <div class="camt" style="font-size:18px">45.00<span class="u">USDC</span></div>
+                <span class="chip chip--settled sm">+5.00</span>
+              </div>
+            </div>
+            <div class="reassure">Only the balance between you two changes — nothing else moves.</div>
+            <div class="flow-actions">
+              <button class="btn btn--primary btn--block">Save changes</button>
+              <button class="btn btn--ghost" style="align-self:center">Cancel</button>
+            </div>
+          </div>
+        </div>
+        <div class="cap"><span class="t">FlowWidget — edit expense</span><span class="s">before → after delta · strikethrough old amount</span></div>
+      </div>
+
+      <!-- ===== FLOWWIDGET — delete expense (destructive, no red) ===== -->
+      <div class="scd">
+        <div class="screen scrim-screen">
+          <div class="behind">
+            <div class="backbar"><span class="x">‹</span><span class="ttl">Edit expense</span></div>
+            <div class="pad">
+              <div class="amount-field" style="margin-top:10px">
+                <span class="l">Amount</span>
+                <div class="amount-box"><input class="big" value="40.00" readonly="readonly"><span class="u">USDC</span></div>
+              </div>
+              <div class="stack" style="margin-top:18px">
+                <button class="btn btn--primary btn--block">Review changes</button>
+                <button class="btn btn--quiet" style="align-self:center">Delete expense</button>
+              </div>
+            </div>
+          </div>
+          <div class="scrim-fill"></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="flow-kind">Delete expense</div>
+            <div class="consent" style="flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+                <div>
+                  <div class="ck">Removing from your tab with Cami</div>
+                  <div style="font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--ink);margin-top:4px">Groceries</div>
+                </div>
+                <div style="display:flex;align-items:center;flex:none;margin-left:10px">
+                  <span style="width:6px;height:6px;border-radius:50%;background:var(--ink)"></span>
+                  <span style="width:14px;height:1.5px;background:var(--line-2)"></span>
+                  <span style="width:14px;height:0;border-top:1.5px dashed var(--ink-3)"></span>
+                  <span style="width:6px;height:6px;border-radius:50%;background:var(--ink-3);opacity:.4"></span>
+                </div>
+              </div>
+              <div style="font-size:12px;color:var(--ink-2);background:var(--surface);border-radius:8px;padding:7px 10px;width:100%">40.00 USDC comes off the count between you</div>
+            </div>
+            <div class="reassure">Nothing moves — this just updates the tally between you two.</div>
+            <div class="flow-actions">
+              <button class="btn btn--primary btn--block">Delete expense</button>
+              <button class="btn btn--ghost" style="align-self:center">Keep it</button>
+            </div>
+          </div>
+        </div>
+        <div class="cap"><span class="t">FlowWidget — delete expense</span><span class="s">destructive · no red · broken line is the only signal</span></div>
+      </div>
+
+      <!-- ===== FLOWWIDGET — add someone (relational, no amount) ===== -->
+      <div class="scd">
+        <div class="screen scrim-screen">
+          <div class="behind">
+            <div class="backbar"><span class="x">‹</span><span class="ttl">Add someone</span></div>
+            <div class="pad">
+              <div class="pair" style="justify-content:center;margin:16px 0 10px">
+                <span class="ava s ava--lilac">A</span>
+                <span class="seg-line dash" style="width:52px"></span>
+                <span class="ava s ava--c">C</span>
+              </div>
+              <label class="field"><span class="l">Their Ponti ID</span><input class="inp" value="0x4b9e…2F1a" readonly="readonly"></label>
+            </div>
+          </div>
+          <div class="scrim-fill"></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="flow-kind">Add someone</div>
+            <div class="consent" style="flex-direction:column;align-items:center;gap:12px;text-align:center">
+              <div class="pair" style="justify-content:center">
+                <span class="ava m ava--lilac">A</span>
+                <span class="seg-line" style="width:56px"></span>
+                <span class="ava m ava--c">C</span>
+              </div>
+              <div>
+                <div style="font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--ink)">Start a shared tab with Cami</div>
+                <div style="font-size:11.5px;color:var(--ink-3);margin-top:3px">They'll see you in their connections too.</div>
+              </div>
+            </div>
+            <div class="reassure">Your Ponti ID is how they find you — nothing else is shared.</div>
+            <div class="flow-actions">
+              <button class="btn btn--primary btn--block">Connect</button>
+              <button class="btn btn--ghost" style="align-self:center">Cancel</button>
+            </div>
+          </div>
+        </div>
+        <div class="cap"><span class="t">FlowWidget — add someone</span><span class="s">relational · no amount · dashed becomes solid</span></div>
+      </div>
+
+    </div>
+
   </section>
 
-  <div class="foot">Ponti · direction “Cal” — architectural warmth, tied by one line. Light + dark from day one · WCAG AA on load-bearing pairs · the accent never touches a number.</div>
+  <div class="foot">Ponti · direction “Cal” — architectural warmth, tied by one line. Sign in · Home · Group detail · Add / Edit expense · Add someone · Add funds · Your Ponti — with their loading, empty, error, validation &amp; post-write states. Light + dark from day one · WCAG AA on load-bearing pairs · the accent never touches a number.</div>
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;}}">
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;}}">
 class Component extends DCLogic {
-  state = { theme: null };
+  state = { theme: null, addName: '' };
   componentDidMount(){
     this.applyTheme(this.props.theme || 'light');
   }
@@ -1015,9 +1706,15 @@ class Component extends DCLogic {
   }
   renderVals(){
     const theme = this.state.theme || this.props.theme || 'light';
+    const addName = (this.state.addName || '').trim();
+    const hasAddName = addName.length > 0;
     return {
       themeLabel: theme === 'dark' ? 'Light' : 'Dark',
-      toggleTheme: () => this.applyTheme(theme === 'dark' ? 'light' : 'dark')
+      toggleTheme: () => this.applyTheme(theme === 'dark' ? 'light' : 'dark'),
+      hasAddName,
+      noAddName: !hasAddName,
+      addInitial: hasAddName ? addName[0].toUpperCase() : '',
+      onAddName: (e) => this.setState({ addName: e.target.value })
     };
   }
 }

@@ -1,58 +1,67 @@
-// WalletStrip.tsx — Compact USDC balance strip for the Home screen.
-// Reused on desktop later. Port of prototype wallet.jsx WalletStrip.
-//
-// Money rule (§5.3): amount is tabular (<Num> default), always --ink.
-// Coin badge: inline SVG ring+dot, colored via currentColor (text-muted context).
+// WalletStrip.tsx — Compact USDC balance strip for the Home screen (design contract §298–301).
+// Reads as set-apart utility — never a third balance. Sits inside the .acct zone below groups.
 
-import { Skeleton, Num, money, Button, Plus } from '../ui'
-
-// Inline SVG coin glyph — ring + center dot (port of wallet.jsx WI.coin).
-// Colored via currentColor so the wrapping span's text color applies.
-function CoinGlyph({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="6.3" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="8" cy="8" r="2" fill="currentColor" />
-    </svg>
-  )
-}
+import { Skeleton, Button, Plus } from '../ui'
+import { formatUnits } from 'viem'
 
 interface WalletStripProps {
   /** USDC balance in base units (6 decimals). null = still loading. */
   usdc: bigint | null
-  /** Stub handler for F2; AddFundsPanel wires in F3. */
   onAddFunds?: () => void
+}
+
+// Formats a USDC bigint to a tabular display string (e.g. "320.00").
+function fmtUsdc(base: bigint): string {
+  return Number(formatUnits(base, 6)).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 }
 
 export function WalletStrip({ usdc, onAddFunds }: WalletStripProps) {
   return (
     <div
-      className="flex items-center gap-3 bg-surface border border-border rounded-sm"
-      style={{ padding: '11px 14px' }} /* prototype wallet.jsx WalletStrip */
+      className="flex items-center justify-between gap-3"
+      style={{
+        background: 'var(--bg)',
+        border: '1px solid var(--hairline)',
+        borderRadius: 'var(--radius-md)',
+        padding: '11px 13px',
+      }}
     >
-      {/* Coin badge */}
-      <span
-        className="text-muted bg-surface-2 rounded-full shrink-0 flex items-center justify-center"
-        style={{ width: 34, height: 34 }} /* prototype wallet.jsx */
-      >
-        <CoinGlyph size={16} />
-      </span>
-
-      {/* Label + amount */}
-      <div className="flex-1 min-w-0 flex flex-col" style={{ gap: 1 }}>
+      {/* Eyebrow label + tabular amount */}
+      <div className="flex flex-col" style={{ gap: 2 }}>
         <span
-          className="font-ui font-semibold text-muted"
-          style={{ fontSize: 12 }} /* prototype wallet.jsx */
+          style={{
+            fontFamily: 'var(--font-ui)',
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: '.1em',
+            textTransform: 'uppercase' as const,
+            color: 'var(--ink-3)',
+          }}
         >
           Funds available
         </span>
-        <span>
+
+        <span className="flex items-baseline" style={{ gap: 3 }}>
           {usdc === null ? (
             <Skeleton w={64} h={14} />
           ) : (
             <>
-              <Num size={16}>{money(usdc)}</Num>{' '}
-              <span className="font-ui font-semibold text-muted" style={{ fontSize: 12 }}>
+              {/* .fv: display font, tabular figures, ink */}
+              <span
+                className="tnum"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 700,
+                  fontSize: 17,
+                  color: 'var(--ink)',
+                }}
+              >
+                {fmtUsdc(usdc)}
+              </span>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 600, color: 'var(--ink-3)' }}>
                 USDC
               </span>
             </>
@@ -60,12 +69,8 @@ export function WalletStrip({ usdc, onAddFunds }: WalletStripProps) {
         </span>
       </div>
 
-      {/* Add funds — stub for F2; AddFundsPanel lands in F3 */}
-      <Button
-        variant="soft"
-        onClick={onAddFunds}
-        className="px-[13px] py-[9px]" /* tighter strip padding — prototype wallet.jsx */
-      >
+      {/* Add funds — soft button, never reads as a balance action */}
+      <Button variant="soft" onClick={onAddFunds}>
         <Plus color="var(--accent)" size={14} />
         Add funds
       </Button>

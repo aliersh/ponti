@@ -1,5 +1,5 @@
-// YourPonti.tsx — Account screen: identity, email, wallet, theme, advanced details, logout.
-// Self-contained: owns the USDC fetch, AddFundsPanel state, and all six sections.
+// YourPonti.tsx — Account screen: identity, wallet, invite ID, theme, advanced, logout.
+// Owns the USDC fetch, AddFundsPanel state, and name-edit persistence.
 
 import { useEffect, useState } from 'react'
 import type { Address } from 'viem'
@@ -9,7 +9,7 @@ import type { Identity } from '../lib/identity'
 import { fetchUsdcBalance } from '../lib/settle'
 import { useTheme } from '../theme/ThemeProvider'
 import { CHAIN } from '../config'
-import { Avatar, Button, Field, Input, Left, Copy, External, Sun, Moon, Logout, SectionLabel } from '../ui'
+import { Avatar, Button, Input, Copy, External, Sun, Moon, Pencil, Logout, SectionLabel } from '../ui'
 import { WalletCard } from './WalletCard'
 import { AddFundsPanel } from './AddFundsPanel'
 
@@ -23,7 +23,7 @@ function truncateAddress(address: Address): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`
 }
 
-/** Account screen — name, email, wallet, theme toggle, advanced details, logout. */
+/** Account screen — identity, wallet, invite ID, theme toggle, advanced details, logout. */
 export function YourPonti({ smartAccount, onBack }: Props) {
   const { logout, user } = usePrivy()
   const { theme, setTheme } = useTheme()
@@ -31,6 +31,8 @@ export function YourPonti({ smartAccount, onBack }: Props) {
   // Identity and editable display name.
   const [identity, setIdentity] = useState<Identity>(() => getIdentity(smartAccount))
   const [name, setName] = useState(getNickname(smartAccount) ?? '')
+  // Inline name-edit toggle: pencil enters edit mode; blur/Enter saves; Esc cancels.
+  const [editing, setEditing] = useState(false)
 
   // USDC balance and AddFundsPanel visibility.
   const [usdc, setUsdc] = useState<bigint | null>(null)
@@ -39,7 +41,7 @@ export function YourPonti({ smartAccount, onBack }: Props) {
   // Advanced details section visibility.
   const [advancedOpen, setAdvancedOpen] = useState(false)
 
-  // Copy-to-clipboard confirmation state.
+  // Copy-to-clipboard confirmation state (shared by idbox and advanced copy).
   const [copied, setCopied] = useState(false)
 
   // Fetch USDC balance once on mount.
@@ -47,10 +49,17 @@ export function YourPonti({ smartAccount, onBack }: Props) {
     fetchUsdcBalance(smartAccount).then(setUsdc).catch(() => {})
   }, [smartAccount])
 
-  // Save name on blur: persist to localStorage, re-derive identity for avatar.
-  function handleNameBlur() {
+  // Save name: persist to localStorage, re-derive identity for avatar, exit edit mode.
+  function handleNameSave() {
     setNickname(smartAccount, name)
     setIdentity(getIdentity(smartAccount))
+    setEditing(false)
+  }
+
+  // Cancel edit: discard draft, restore persisted value, exit edit mode.
+  function handleNameCancel() {
+    setName(getNickname(smartAccount) ?? '')
+    setEditing(false)
   }
 
   // Copy the FULL smartAccount address to clipboard; show transient confirmation.
@@ -65,73 +74,83 @@ export function YourPonti({ smartAccount, onBack }: Props) {
   const explorerUrl = `${CHAIN.blockExplorers?.default.url}/address/${smartAccount}`
 
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', padding: '0 18px 30px' }}>
+    <div style={{ minHeight: '100%', background: 'var(--surface)' }}>
 
-      {/* Shell: Back affordance */}
-      <div style={{ padding: '6px 0 14px' }}>
-        <button
-          onClick={onBack}
-          style={{ all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 3 }}
-          className="font-ui"
-        >
-          <span style={{ color: 'var(--ink)', fontWeight: 600, fontSize: 15, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-            <Left color="var(--ink)" size={18} /> Back
-          </span>
-        </button>
+      {/* Backbar — ‹ chip affordance + display-font screen title */}
+      <div className="backbar" style={{ padding: '16px 18px' }}>
+        <button className="x" onClick={onBack} aria-label="Back">‹</button>
+        <span className="ttl">Your Ponti</span>
       </div>
 
-      <h1
-        className="font-display"
-        style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--ink)' }}
-      >
-        Your Ponti
-      </h1>
-      <p
-        className="font-ui"
-        style={{ margin: '0 0 22px', fontSize: 14, color: 'var(--muted)', lineHeight: 1.5 }}
-      >
-        Your name, your funds, your account.
-      </p>
+      <div style={{ padding: '0 18px 36px', display: 'flex', flexDirection: 'column', gap: 0 }}>
 
-      {/* Sections body */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-
-        {/* Section 1 — Identity: avatar + editable display name */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <Avatar initial={identity.initial} tone={identity.tone} size={52} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Field label="Display name">
+        {/* .profile-top — centered column: lilac avatar, display name + pen, email */}
+        <div className="profile-top">
+          <Avatar initial={identity.initial} tone="lilac" size={64} />
+          <div className="nm font-display">
+            {editing ? (
               <Input
+                autoFocus
                 placeholder="Your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                onBlur={handleNameBlur}
+                onBlur={handleNameSave}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { e.currentTarget.blur() }
+                  if (e.key === 'Escape') { e.preventDefault(); handleNameCancel() }
+                }}
+                style={{ fontSize: 'inherit', fontFamily: 'inherit', fontWeight: 'inherit' }}
               />
-            </Field>
+            ) : (
+              <>
+                {name || 'Your name'}
+                <button
+                  className="pen"
+                  onClick={() => setEditing(true)}
+                  style={{ all: 'unset', cursor: 'pointer' }}
+                  aria-label="Edit name"
+                >
+                  <Pencil color="var(--ink-3)" size={13} />
+                </button>
+              </>
+            )}
+          </div>
+          {email && (
+            <div className="em font-ui">{email}</div>
+          )}
+        </div>
+
+        {/* WalletCard — USDC balance + AddFundsPanel trigger */}
+        <div style={{ marginTop: 18 }}>
+          <WalletCard usdc={usdc} onAddFunds={() => setFundsOpen(true)} />
+        </div>
+
+        {/* .invite — Ponti ID (address) + Copy; no Share/QR */}
+        <div style={{ marginTop: 18 }}>
+          <SectionLabel>Your Ponti ID</SectionLabel>
+          <p
+            className="it font-ui"
+            style={{ fontSize: 12.5, color: 'var(--ink-2)', margin: '8px 0 10px', lineHeight: 1.5 }}
+          >
+            Share it so someone can start a shared tab with you.
+          </p>
+          <div className="idbox">
+            <span className="id font-ui">{truncateAddress(smartAccount)}</span>
+            <button
+              onClick={handleCopy}
+              className="cp font-ui"
+              style={{ all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+            >
+              <Copy color="var(--ink-3)" size={13} />
+              {copied ? 'Copied' : 'Copy'}
+            </button>
           </div>
         </div>
 
-        {/* Section 2 — Email: read-only display row */}
-        {email && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <SectionLabel>Email</SectionLabel>
-            <p
-              className="font-ui"
-              style={{ margin: 0, fontSize: 15, color: 'var(--ink)' }}
-            >
-              {email}
-            </p>
-          </div>
-        )}
-
-        {/* Section 3 — WalletCard + AddFundsPanel */}
-        <WalletCard usdc={usdc} onAddFunds={() => setFundsOpen(true)} />
-
-        {/* Section 4 — Theme toggle: segmented Light / Dark control */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {/* Appearance — segmented Light / Dark toggle (staging boundary #1: kept) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 18 }}>
           <SectionLabel>Appearance</SectionLabel>
           <div style={{ display: 'flex', gap: 8 }}>
-            {/* Light segment */}
             <button
               onClick={() => setTheme('light')}
               style={{
@@ -141,14 +160,13 @@ export function YourPonti({ smartAccount, onBack }: Props) {
                 borderRadius: 'var(--radius-sm)',
                 fontFamily: 'var(--font-ui)', fontSize: 15, fontWeight: 600,
                 background: theme === 'light' ? 'var(--accent-soft)' : 'var(--surface)',
-                color: theme === 'light' ? 'var(--accent)' : 'var(--muted)',
-                boxShadow: theme === 'light' ? 'inset 0 0 0 1.5px var(--accent)' : 'inset 0 0 0 1px var(--border)',
+                color: theme === 'light' ? 'var(--accent)' : 'var(--ink-3)',
+                boxShadow: theme === 'light' ? 'inset 0 0 0 1.5px var(--accent)' : 'inset 0 0 0 1px var(--hairline)',
               }}
             >
               <Sun color="currentColor" size={16} />
               Light
             </button>
-            {/* Dark segment */}
             <button
               onClick={() => setTheme('dark')}
               style={{
@@ -158,8 +176,8 @@ export function YourPonti({ smartAccount, onBack }: Props) {
                 borderRadius: 'var(--radius-sm)',
                 fontFamily: 'var(--font-ui)', fontSize: 15, fontWeight: 600,
                 background: theme === 'dark' ? 'var(--accent-soft)' : 'var(--surface)',
-                color: theme === 'dark' ? 'var(--accent)' : 'var(--muted)',
-                boxShadow: theme === 'dark' ? 'inset 0 0 0 1.5px var(--accent)' : 'inset 0 0 0 1px var(--border)',
+                color: theme === 'dark' ? 'var(--accent)' : 'var(--ink-3)',
+                boxShadow: theme === 'dark' ? 'inset 0 0 0 1.5px var(--accent)' : 'inset 0 0 0 1px var(--hairline)',
               }}
             >
               <Moon color="currentColor" size={16} />
@@ -168,105 +186,69 @@ export function YourPonti({ smartAccount, onBack }: Props) {
           </div>
         </div>
 
-        {/* Section 5 — Advanced details: collapsible disclosure */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        {/* .adv — Advanced details: hairline-top, collapsible row disclosure */}
+        <div className="adv">
           <button
+            className="ah font-ui"
             onClick={() => setAdvancedOpen((v) => !v)}
-            style={{
-              all: 'unset', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '10px 0',
-            }}
+            style={{ appearance: 'none', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
           >
-            <SectionLabel>Advanced</SectionLabel>
-            <span
-              className="font-ui text-muted"
-              style={{ fontSize: 12, fontWeight: 600 }}
-            >
-              {advancedOpen ? 'Hide' : 'Show'}
-            </span>
+            Advanced details
+            <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{advancedOpen ? '▾' : '▸'}</span>
           </button>
 
           {advancedOpen && (
-            <div
-              style={{
-                display: 'flex', flexDirection: 'column', gap: 14,
-                padding: '10px 14px 14px',
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-sm)',
-              }}
-            >
-              {/* Account address — truncated display, full value copied */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <SectionLabel>Account address</SectionLabel>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span
-                    className="font-ui"
-                    style={{ fontSize: 14, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', flex: 1, minWidth: 0 }}
-                  >
-                    {truncateAddress(smartAccount)}
-                  </span>
-                  {/* Copy button writes the FULL address — this is the staging share path */}
+            <div className="reveal">
+              {/* Account address — truncated; copy icon reuses handleCopy (no extra state) */}
+              <div className="arow">
+                <span className="ak font-ui">Account address</span>
+                <span className="av font-ui" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  {truncateAddress(smartAccount)}
                   <button
                     onClick={handleCopy}
-                    style={{
-                      all: 'unset', cursor: 'pointer',
-                      display: 'inline-flex', alignItems: 'center', gap: 5,
-                      padding: '8px 12px',
-                      borderRadius: 'var(--radius-sm)',
-                      background: 'var(--accent-soft)',
-                      color: 'var(--accent)',
-                      fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 600,
-                      flexShrink: 0,
-                    }}
+                    style={{ all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+                    aria-label="Copy address"
                   >
-                    <Copy color="var(--accent)" size={14} />
-                    {copied ? 'Copied' : 'Copy'}
+                    <Copy color="var(--ink-3)" size={12} />
                   </button>
-                </div>
+                </span>
               </div>
 
-              {/* Network */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <SectionLabel>Network</SectionLabel>
-                <p className="font-ui" style={{ margin: 0, fontSize: 14, color: 'var(--ink)' }}>
-                  Base — where USDC settles
-                </p>
+              <div className="arow">
+                <span className="ak font-ui">Network</span>
+                <span className="av font-ui">Base — where USDC settles</span>
               </div>
 
-              {/* Account type */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <SectionLabel>Account type</SectionLabel>
-                <p className="font-ui" style={{ margin: 0, fontSize: 14, color: 'var(--ink)' }}>
-                  Smart account · non-custodial
-                </p>
+              <div className="arow">
+                <span className="ak font-ui">Account type</span>
+                <span className="av font-ui">Smart account · non-custodial</span>
               </div>
 
-              {/* Explorer link */}
-              <a
-                href={explorerUrl}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                  fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 600,
-                  color: 'var(--accent)',
-                  textDecoration: 'none',
-                }}
-              >
-                <External color="var(--accent)" size={14} />
-                View on explorer
-              </a>
+              {/* Explorer link — lilac-ink per contract */}
+              <div className="arow">
+                <span className="ak font-ui">Explorer</span>
+                <a
+                  href={explorerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="av font-ui"
+                  style={{ color: 'var(--lilac-ink)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                >
+                  View on explorer
+                  <External color="var(--lilac-ink)" size={12} />
+                </a>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Section 6 — Log out */}
-        <Button variant="soft" full onClick={() => void logout()}>
-          <Logout color="var(--accent)" size={16} />
-          Log out
-        </Button>
+        {/* Log out — quiet text-action through Button */}
+        <div className="logout">
+          <Button variant="quiet" onClick={() => void logout()}>
+            <Logout color="var(--ink-3)" size={15} />
+            Log out
+          </Button>
+        </div>
 
       </div>
 

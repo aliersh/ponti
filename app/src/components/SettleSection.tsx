@@ -1,9 +1,7 @@
 // SettleSection.tsx — Settle gate: all settle logic lives here.
 //
-// Receives a renderLayout render prop so GroupDetail can place the Settle button
-// inside the hero action row and the low-USDC callout below it as full-width —
-// without pulling any settle logic out of this component.
-//
+// Receives a renderLayout render prop so GroupDetail can place the settle button
+// and low-USDC callout in the action zone without pulling logic out of this component.
 // When the viewer is NOT the debtor, renderLayout is called with (null, null) so
 // GroupDetail still renders its unconditional "Add expense" button.
 
@@ -12,7 +10,7 @@ import type { Address, Hex } from 'viem'
 import { USDC_ADDRESS } from '../config'
 import { buildSettleCalls } from '../lib/settle'
 import { getIdentity } from '../lib/identity'
-import { money } from '../ui'
+import { Button, Plus, money } from '../ui'
 import type { BalanceDisplay } from '../lib/fetchGroup'
 import { useFlow } from '../flow/FlowContext'
 
@@ -58,10 +56,9 @@ export function SettleSection({
     flow.start({
       kind: 'settle',
       title: 'Settle up',
-      confirmLabel: `Settle ${money(debt)} USDC`,
+      confirmLabel: 'Confirm',
       rows: [
-        { label: "You're paying", value: `${money(debt)} USDC`, strong: true },
-        { label: 'To', value: counterpartyLabel },
+        { label: `You'll pay ${counterpartyLabel}`, value: `${money(debt)} USDC`, strong: true },
       ],
       who: counterpartyLabel,
       submit: () => sendBatch(buildSettleCalls(USDC_ADDRESS, groupAddress, debt, groupAddress)),
@@ -74,51 +71,39 @@ export function SettleSection({
     return <>{renderLayout(null, null)}</>
   }
 
-  // Short on USDC: disabled button + callout; funded: outline button.
+  // Short on USDC: disabled settle button + warm callout.
   const isShort = localUsdcBalance !== null && localUsdcBalance < debt
 
-  // Settle button — ghost+disabled when short or no sendBatch, outline when funded.
+  // Settle button — primary when funded, disabled when short or no sendBatch.
   const settleButton = (
-    <button
-      type="button"
-      onClick={isShort || !sendBatch ? undefined : onSettle}
+    <Button
+      variant="primary"
+      full
       disabled={isShort || !sendBatch}
-      className={[
-        'font-ui font-semibold text-base rounded-sm w-full',
-        'inline-flex items-center justify-center gap-2 whitespace-nowrap',
-        'transition-[filter,opacity] duration-150',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
-        'px-18 py-[14px]',
-        isShort || !sendBatch
-          ? 'bg-surface-2 text-ink shadow-[inset_0_0_0_1px_var(--border)] opacity-50 cursor-default pointer-events-none'
-          : 'bg-transparent text-ink shadow-[inset_0_0_0_1.5px_var(--accent)] cursor-pointer hover:brightness-95',
-      ].filter(Boolean).join(' ')}
+      onClick={onSettle}
     >
-      {`Settle ${money(debt)} USDC`}
-    </button>
+      Settle up
+    </Button>
   )
 
-  // Low-USDC callout box — full-width, accent-soft background, Add funds link.
+  // Low-USDC callout — accent-soft background, never red (§5.7).
   const callout = isShort ? (
-    <div
-      className="bg-accent-soft"
-      style={{ marginTop: 12, padding: '11px 13px', borderRadius: 'var(--radius-sm)' }}
-    >
-      <span
-        className="font-ui"
-        style={{ fontSize: 12.5, color: 'var(--accent)', fontWeight: 600 }}
-      >
-        You need {money(debt - (localUsdcBalance ?? 0n))} more USDC to settle.{' '}
-        {onAddFunds && (
-          <a
-            href="#"
-            onClick={(e) => { e.preventDefault(); onAddFunds() }}
-            style={{ color: 'var(--accent)', textDecoration: 'underline' }}
-          >
-            Add funds
-          </a>
-        )}
+    <div className="callout callout--funds">
+      <span className="ic">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+          <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h11A2.5 2.5 0 0 1 19 7.5V9h-3.2a3 3 0 0 0 0 6H19v1.5A2.5 2.5 0 0 1 16.5 19h-11A2.5 2.5 0 0 1 3 16.5v-9Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+          <circle cx="15.6" cy="12" r="1.15" fill="currentColor" />
+        </svg>
       </span>
+      <div className="body">
+        <span className="ct">You need {money(debt - (localUsdcBalance ?? 0n))} more USDC</span>
+        <span className="cs">Add funds and the settle button unlocks on its own.</span>
+        {onAddFunds && (
+          <button className="add" onClick={onAddFunds}>
+            <Plus color="currentColor" size={13} /> Add funds
+          </button>
+        )}
+      </div>
     </div>
   ) : null
 
