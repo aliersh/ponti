@@ -52,13 +52,14 @@ export function SettleSection({
 
   function onSettle() {
     if (!sendBatch) return
-    const counterpartyLabel = getIdentity(counterparty).label
+    const cp = getIdentity(counterparty)
+    const counterpartyLabel = cp.named ? cp.label : 'them'
     flow.start({
       kind: 'settle',
       title: 'Settle up',
-      confirmLabel: 'Confirm',
+      confirmLabel: 'Settle up',
       rows: [
-        { label: `You'll pay ${counterpartyLabel}`, value: `${money(debt)} USDC`, strong: true },
+        { label: `You're paying ${counterpartyLabel}`, value: `${money(debt)} USDC`, strong: true },
       ],
       who: counterpartyLabel,
       submit: () => sendBatch(buildSettleCalls(USDC_ADDRESS, groupAddress, debt, groupAddress)),

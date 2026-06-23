@@ -75,7 +75,7 @@ function ExpenseRow({
         <span className="amt">{money(e.amount)}</span>
       </div>
       <div className="meta">
-        {mine ? 'You paid' : `${identity.label} paid`} · {fmtDate(e.createdAt)}
+        {mine ? 'You paid' : (identity.named ? `${identity.label} paid` : 'They paid')} · {fmtDate(e.createdAt)}
       </div>
     </>
   )
@@ -211,6 +211,7 @@ export function ExpenseList({
 }: Props) {
   const flow = useFlow()
   const identity = getIdentity(counterparty)
+  const cpLabel = identity.named ? identity.label : 'them'
 
   function onDeleteExpense(expense: ExpenseEntry) {
     if (!send) return
@@ -219,7 +220,7 @@ export function ExpenseList({
       kind: 'delete',
       title: 'Remove this expense?',
       confirmLabel: 'Remove expense',
-      who: identity.label,
+      who: cpLabel,
       rows: [
         { label: 'For', value: expense.description },
         { label: 'Amount', value: `${money(expense.amount)} USDC` },
@@ -237,13 +238,13 @@ export function ExpenseList({
 
     const initialPayer: 'me' | 'counterparty' =
       getAddress(expense.payer) === getAddress(smartAccount) ? 'me' : 'counterparty'
-    const payerLabel = initialPayer === 'me' ? 'You' : identity.label
+    const payerLabel = initialPayer === 'me' ? 'You' : cpLabel
 
     const deleteFlow = {
       kind: 'delete' as const,
       title: 'Delete expense',
       confirmLabel: 'Delete expense',
-      who: identity.label,
+      who: cpLabel,
       rows: [
         { label: 'For', value: expense.description },
         { label: 'Amount', value: `${money(expense.amount)} USDC`, strong: true },
@@ -256,7 +257,7 @@ export function ExpenseList({
       kind: 'edit',
       title: 'Edit expense',
       confirmLabel: 'Save changes',
-      who: identity.label,
+      who: cpLabel,
       // rows hold the confirmed values for the morph-target summary card;
       // they are populated by buildSubmit at confirm-time via the update below.
       // Initial rows use the expense's current values as a starting point;
@@ -276,7 +277,7 @@ export function ExpenseList({
       },
       buildSubmit: ({ amount, description, payer }) => {
         const payerAddress = payer === 'me' ? smartAccount : counterparty
-        const payerLbl = payer === 'me' ? 'You' : identity.label
+        const payerLbl = payer === 'me' ? 'You' : cpLabel
         return {
           submit: () => submitEditExpense(send, groupAddress, expense.id, payerAddress, amount, description),
           rows: [

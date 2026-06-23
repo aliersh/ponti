@@ -6,7 +6,7 @@ import type { Address, Hex } from 'viem'
 import { submitCreateGroup, fetchGroupAddress } from '../lib/createGroup'
 import { resolveInvite } from '../lib/inviteResolver'
 import { setNickname, getIdentity } from '../lib/identity'
-import { Button, Field, Input, Avatar, Pair } from '../ui'
+import { Button, Input, Avatar, Pair, Field } from '../ui'
 import { useFlow } from '../flow/FlowContext'
 
 // Narrow type: only the call shape this component makes, not the full Privy SDK type.
@@ -26,16 +26,29 @@ export function AddSomeone({ send, smartAccount, onBack, onCreated, asModal }: P
 
   const [nickname, setNicknameField] = useState('')
   const [id, setId] = useState('')
-  const [formError, setFormError] = useState<string | null>(null)
+  const [idError, setIdError] = useState<string | null>(null)
 
   // Live-derived: pure + cheap, no memoization needed.
   const resolved = resolveInvite(id)
-  const ok = resolved !== null && send !== undefined
+  const nameReady = nickname.trim().length > 0
+  const ok = nameReady && resolved !== null && send !== undefined
+
+  // Hint line — precedence: name missing → id invalid → ready → default helper.
+  let hint: string
+  if (!nameReady) {
+    hint = 'Add a name to continue.'
+  } else if (idError) {
+    hint = idError
+  } else if (ok) {
+    hint = `You’ll see them as “${nickname.trim()}” — just on this device.`
+  } else {
+    hint = 'They’ll find their Ponti ID in their own Your Ponti screen.'
+  }
 
   function onSubmit() {
-    if (!send || !resolved) return
+    if (!send || !resolved || !nameReady) return
 
-    // Persist nickname before the flow starts — deletes if empty (setNickname no-ops on '').
+    // Persist nickname before the flow starts.
     setNickname(resolved, nickname)
 
     // Consent row: prefer the human-readable nickname; fall back to truncated address.
@@ -99,9 +112,9 @@ export function AddSomeone({ send, smartAccount, onBack, onCreated, asModal }: P
       )}
 
       <div>
-        <p className="subtitle">Paste the person's Ponti ID to start a shared tab.</p>
+        <p className="subtitle">Name them and paste their Ponti ID to start a shared tab.</p>
 
-        {/* Dashed pair: self (lilac) → counterparty avatar once a name is entered, else open node */}
+        {/* Dashed pair while unconnected; solid once both a name and valid ID are in. */}
         <div style={{ display: 'flex', justifyContent: 'center', margin: '18px 0 22px' }}>
           <Pair
             left={<Avatar tone="lilac" initial="" size={36} />}
@@ -114,7 +127,7 @@ export function AddSomeone({ send, smartAccount, onBack, onCreated, asModal }: P
                   />
                 : 'open'
             }
-            line="dash"
+            line={ok ? 'solid' : 'dash'}
             lineWidth={64}
           />
         </div>
@@ -122,13 +135,18 @@ export function AddSomeone({ send, smartAccount, onBack, onCreated, asModal }: P
         {/* Form body */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
-          <Field label="Name">
+          {/* Name field — label rendered inline to support the styled "· required" treatment. */}
+          <label className="flex flex-col gap-[6px]">
+            <span className="font-ui text-[12px] font-semibold text-ink-2">
+              Name <span style={{ color: 'var(--accent-strong)' }}>·</span>{' '}
+              <span className="font-medium text-ink-3">required</span>
+            </span>
             <Input
               placeholder="What do you call them?"
               value={nickname}
               onChange={(e) => setNicknameField(e.target.value)}
             />
-          </Field>
+          </label>
 
           <Field label="Their Ponti ID">
             <Input
@@ -139,17 +157,17 @@ export function AddSomeone({ send, smartAccount, onBack, onCreated, asModal }: P
                 setId(v)
                 // Show the muted hint as soon as input is non-empty but unresolvable.
                 if (v.trim() && !resolveInvite(v)) {
-                  setFormError("That doesn't look like a full Ponti ID yet — paste it complete.")
+                  setIdError("That doesn’t look like a full Ponti ID yet — paste it complete.")
                 } else {
-                  setFormError(null)
+                  setIdError(null)
                 }
               }}
             />
           </Field>
 
-          {/* Muted, never-red: unresolved hint when input fails validation; default helper otherwise */}
+          {/* Single muted hint line — never red; precedence handled above. */}
           <p className="font-ui text-ink-3 text-[11.5px]" style={{ margin: '-8px 0 0' }}>
-            {formError ?? "They'll find their Ponti ID in their own Your Ponti screen."}
+            {hint}
           </p>
 
           <Button

@@ -204,6 +204,40 @@ body {
 .drawline .runner { position: absolute; top: 7.5px; left: 0; width: 34px; height: 3px; border-radius: 3px; background: var(--accent-strong); animation: run 1.25s ease-in-out infinite }
 @keyframes run { 0% { left: 4px } 100% { left: calc(100% - 38px) } }
 
+/* ── Non-directional inflight nodes — add/create (pop), edit (pulse), delete (fade) ──
+   Design contract: no left-right travel; each animates in place.
+   Keyframe names match the design's canonical list: popin, pulse, fadeout. */
+@keyframes popin {
+  0%   { transform: scale(0);    opacity: 0; }
+  62%  { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+@keyframes pulse {
+  0%   { transform: scale(1);    opacity: 1; }
+  42%  { transform: scale(1.32); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+@keyframes fadeout {
+  0%   { opacity: 1; }
+  60%  { opacity: 0.1; }
+  100% { opacity: 1; }
+}
+
+/* Node base: same dimensions as the design's demo nodes */
+.node-pop, .node-pulse, .node-fade {
+  display: block;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  margin: 14px 0;
+}
+/* add/create: hollow accent node pops onto the spine */
+.node-pop  { background: var(--raised); border: 1.5px solid var(--accent-strong); animation: popin   1.6s cubic-bezier(.34,1.4,.5,1) infinite }
+/* edit: filled accent-soft node pulses in place */
+.node-pulse { background: var(--accent-soft); border: 1.5px solid var(--accent-strong); animation: pulse   1.6s ease-in-out infinite }
+/* delete: muted node fades — the spine re-closes around it */
+.node-fade  { background: var(--surface); border: 1.5px solid var(--line-2); animation: fadeout 1.6s ease-in-out infinite }
+
 /* ── GapLine — error-state dashed line (design contract §412–415) ────────── */
 .gapline { position: relative; width: 170px; height: 18px; margin: 6px 0 2px }
 .gapline .track { position: absolute; top: 8px; left: 0; right: 0; height: 1.5px; background: repeating-linear-gradient(90deg, var(--line-2) 0 5px, transparent 5px 11px) }
@@ -373,6 +407,7 @@ body {
 /* ── Reduced-motion guard ─────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .drawline .runner { animation: none }
+  .node-pop, .node-pulse, .node-fade { animation: none }
   .reveal { animation: none }
 }
 

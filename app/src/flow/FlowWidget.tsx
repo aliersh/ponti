@@ -9,7 +9,7 @@ import { CHAIN } from '../config'
 import { Sheet } from '../ui/sheet'
 import { Button } from '../ui/button'
 import { Avatar } from '../ui/avatar'
-import { Pair, DrawLine, GapLine, KnotDone } from '../ui/line'
+import { Pair, DrawLine, GapLine, KnotDone, NodePop, NodePulse, NodeFade } from '../ui/line'
 import { Field, Input } from '../ui/input'
 import { Seg } from '../ui/seg'
 import type { PendingFlow, ConsentRow } from './types'
@@ -56,6 +56,18 @@ const WINK = {
 
 function rotPick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
+}
+
+// Accepts raw input (including locale commas) and returns a valid decimal string
+// with at most one dot and at most 6 fractional digits (USDC precision).
+function sanitizeAmount(raw: string): string {
+  const normalized = raw.replace(',', '.')
+  const digitsAndDots = normalized.replace(/[^\d.]/g, '')
+  const firstDot = digitsAndDots.indexOf('.')
+  if (firstDot === -1) return digitsAndDots
+  const integer = digitsAndDots.slice(0, firstDot)
+  const fraction = digitsAndDots.slice(firstDot + 1).replace(/\./g, '').slice(0, 6)
+  return `${integer}.${fraction}`
 }
 
 // ── ConsentRow — supplementary detail rows below the primary amount card ──────
@@ -169,7 +181,7 @@ function AddEditCard({
   const counterpartyInitial = whoLabel.charAt(0).toUpperCase()
 
   // Summary line shown in confirm phase inside the docked summary card.
-  const payerLabel = payer === 'me' ? 'you paid' : `${whoLabel} paid`
+  const payerLabel = payer === 'me' ? 'you paid' : whoLabel === 'them' ? 'they paid' : `${whoLabel} paid`
   const summaryLine = `${description.trim() || '…'} · ${payerLabel}`
 
   const contextLabel = editing
@@ -297,7 +309,7 @@ function AddEditCard({
                 inputMode="decimal"
                 autoComplete="off"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => setAmount(sanitizeAmount(e.target.value))}
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontWeight: 700,
@@ -474,6 +486,7 @@ export function FlowWidget({
   onClose,
 }: FlowWidgetProps) {
   // Rotation is picked once per widget mount and held stable across re-renders.
+  // Settle done uses verbatim design copy, not the rotated pool.
   const picked = useRef<{
     confirmSub: string
     runningNote: string
@@ -481,12 +494,21 @@ export function FlowWidget({
     doneSub: string
   } | null>(null)
   if (!picked.current) {
-    const rawDoneSub = rotPick(WINK.doneSub[pending.kind])
+    const isSettle = pending.kind === 'settle'
+    const settleAmt = isSettle
+      ? (pending.rows.find((r) => r.strong)?.value ?? '').replace(' USDC', '')
+      : ''
+    const settleName = pending.who && pending.who !== 'them' ? pending.who : null
+    const rawDoneSub = isSettle
+      ? settleName
+        ? `${settleName} has your ${settleAmt} — straight to them. Nothing left to do.`
+        : `They have your ${settleAmt} — straight to them. Nothing left to do.`
+      : rotPick(WINK.doneSub[pending.kind]).replace('{name}', pending.who ?? 'them')
     picked.current = {
       confirmSub: rotPick(WINK.confirmSub),
       runningNote: rotPick(WINK.runningNote),
-      doneTitle: rotPick(WINK.doneTitle),
-      doneSub: rawDoneSub.replace('{name}', pending.who ?? 'them'),
+      doneTitle: isSettle ? 'Squared away' : rotPick(WINK.doneTitle),
+      doneSub: rawDoneSub,
     }
   }
 
@@ -591,6 +613,62 @@ export function FlowWidget({
               )
             }
 
+            // Settle: directional avatar pair (You→counterparty), consent row, safety line.
+            if (pending.kind === 'settle') {
+              const name = pending.who ?? 'them'
+              const nameInitial = name.charAt(0).toUpperCase()
+              const selfId = pending.pair?.self
+              return (
+                <div>
+                  <div className="flow-kind">Settle up</div>
+
+                  {/* Directional pair: lilac (You) → accent (counterparty), gradient line + arrowhead */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 11, margin: '16px 0 14px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+                      {selfId
+                        ? <Avatar initial={selfId.initial} tone={selfId.tone} size={32} />
+                        : <Avatar initial="Y" tone="lilac" size={32} />}
+                      <span style={{ fontSize: 10, color: 'var(--ink-3)', fontWeight: 600 }}>You</span>
+                    </div>
+                    {/* Gradient line + right-arrowhead — the directional signal */}
+                    <div style={{ position: 'relative', width: 64, height: 32, display: 'flex', alignItems: 'center' }}>
+                      <span style={{ flex: 1, height: 1.5, background: 'linear-gradient(90deg,var(--ink),var(--accent-strong))' }} />
+                      <span style={{ position: 'absolute', right: -1, top: '50%', transform: 'translateY(-50%)', width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderLeft: '6px solid var(--accent-strong)' }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+                      <Avatar initial={nameInitial} tone="accent" size={32} />
+                      <span style={{ fontSize: 10, color: 'var(--ink-3)', fontWeight: 600 }}>{name}</span>
+                    </div>
+                  </div>
+
+                  {/* Consent row: left label + right strong amount */}
+                  {primaryRow && (
+                    <div className="consent">
+                      <div className="ck">{primaryRow.label}</div>
+                      <div className="camt">
+                        {primaryRow.value.replace(' USDC', '')}
+                        <span className="u">USDC</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Safety line — settle-specific, not the rotated wink copy */}
+                  <div className="reassure">
+                    {`Goes straight to ${name} — Ponti never touches it. One tap and you're square.`}
+                  </div>
+
+                  <div className="flow-actions">
+                    <Button variant="primary" full onClick={onConfirm}>
+                      {pending.confirmLabel}
+                    </Button>
+                    <Button variant="ghost" full onClick={() => onClose(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )
+            }
+
             // Create: centered avatar pair + relational copy, no amount.
             if (pending.kind === 'create') {
               const selfId = pending.pair?.self
@@ -657,10 +735,14 @@ export function FlowWidget({
             )
           })()}
 
-          {/* ── In-flight phase — dismiss-locked; DrawLine runner sweeps the track ── */}
+          {/* ── In-flight phase — dismiss-locked
+               Settle: directional DrawLine sweep. Others: non-directional node motion. ── */}
           {phase === 'inflight' && (
             <div className="flow-center">
-              <DrawLine />
+              {pending.kind === 'settle' && <DrawLine />}
+              {(pending.kind === 'add' || pending.kind === 'create') && <NodePop />}
+              {pending.kind === 'edit' && <NodePulse />}
+              {pending.kind === 'delete' && <NodeFade />}
               <div className="flow-title">{picked.current!.runningNote}</div>
               <div className="flow-sub">You can keep this open.</div>
               <div className="note">This view can&apos;t be dismissed while it runs.</div>

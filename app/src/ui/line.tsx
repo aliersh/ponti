@@ -87,6 +87,21 @@ export function GapLine({ reached = true, className }: GapLineProps) {
   )
 }
 
+// ── Non-directional inflight nodes — add/create (pop), edit (pulse), delete (fade) ──
+// No left-right travel; each plays in place so the motion doesn't claim a transfer happened.
+
+export function NodePop({ className }: { className?: string }) {
+  return <span className={['node-pop', className].filter(Boolean).join(' ')} />
+}
+
+export function NodePulse({ className }: { className?: string }) {
+  return <span className={['node-pulse', className].filter(Boolean).join(' ')} />
+}
+
+export function NodeFade({ className }: { className?: string }) {
+  return <span className={['node-fade', className].filter(Boolean).join(' ')} />
+}
+
 // ── KnotDone ─────────────────────────────────────────────────────────────────
 // Settled-state circle: sage-soft background, sage check mark.
 

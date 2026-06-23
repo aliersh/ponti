@@ -1,6 +1,6 @@
 import { getAddress, type Address } from 'viem'
 
-export type Identity = { label: string; initial: string; tone: 'accent' | 'neutral' }
+export type Identity = { label: string; initial: string; tone: 'accent' | 'neutral'; named: boolean }
 
 const STORAGE_KEY = 'ponti.nicknames.v1'
 
@@ -62,6 +62,7 @@ export function getIdentity(address: Address): Identity {
       label: nickname,
       initial: firstChar.toUpperCase(),
       tone,
+      named: true,
     }
   }
 
@@ -71,5 +72,6 @@ export function getIdentity(address: Address): Identity {
     label: truncate(checksummed),
     initial: '',
     tone,
+    named: false,
   }
 }

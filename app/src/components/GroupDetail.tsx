@@ -12,7 +12,7 @@ import type { GroupItem } from '../lib/fetchGroups'
 import { FACTORY_DEPLOY_BLOCK } from '../config'
 import { publicClient } from '../lib/client'
 import { waitForSubgraphBlock } from '../lib/subgraph'
-import { getIdentity } from '../lib/identity'
+import { getIdentity, getNickname } from '../lib/identity'
 import {
   Avatar, Button, money, DirChip, Skeleton, Spinner,
 } from '../ui'
@@ -21,6 +21,7 @@ import { SettleSection } from './SettleSection'
 import { ExpenseList } from './ExpenseList'
 import { AddFundsPanel } from './AddFundsPanel'
 import { EmptyState } from './EmptyState'
+import { NamingSheet } from './NamingSheet'
 
 type SendUserOperation = (req: { to: Address; data: Hex }) => Promise<Hex>
 type SendBatch = (calls: { to: Address; data: Hex }[]) => Promise<Hex>
@@ -85,6 +86,10 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
   const [usdcBalance, setUsdcBalance] = useState<bigint | null>(null)
   const [postWriteStatus, setPostWriteStatus] = useState<string | null>(null)
   const [fundsOpen, setFundsOpen] = useState(false)
+  const [namingOpen, setNamingOpen] = useState(false)
+  // Bumped after setNickname so getIdentity re-reads localStorage on the next render.
+  const [identityVersion, setIdentityVersion] = useState(0)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   async function loadDetail(opts?: { silent?: boolean }) {
     if (!resolvedGroup) return
@@ -247,10 +252,10 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
   const display: BalanceDisplay | null =
     balance !== null ? interpretBalance(balance, smartAccount, resolvedGroup.memberA) : null
 
-  // Counterparty identity — nickname (if set) or truncated address.
+  // identityVersion bump (via setIdentityVersion) forces a re-read of localStorage
+  // after setNickname writes — getIdentity is pure and reads localStorage at call time.
+  void identityVersion
   const identity = getIdentity(resolvedGroup.counterparty)
-
-  // Self identity — own nickname or truncated; lilac tone per contract for self.
   const selfIdentity = getIdentity(smartAccount)
 
   // isDebtor and isCreditor drive action zone emphasis.
@@ -263,10 +268,20 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
   // ── Hero render helpers ───────────────────────────────────────────────────
 
   // Avatar column used in you-owe / you're-owed heroes.
-  function AvatarCol({ initial, tone, label }: { initial: string; tone: 'lilac' | 'accent' | 'neutral' | 's'; label: string }) {
+  // unnamed=true: neutral person glyph on --line circle instead of the lettered avatar.
+  function AvatarCol({ initial, tone, label, unnamed }: { initial: string; tone: 'lilac' | 'accent' | 'neutral' | 's'; label: string; unnamed?: boolean }) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, width: 56 }}>
-        <Avatar initial={initial} tone={tone} size={36} />
+        {unnamed ? (
+          <span style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--line)', color: 'var(--ink-3)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="8" r="3.4" stroke="currentColor" strokeWidth="1.7" />
+              <path d="M5.5 19a6.5 6.5 0 0 1 13 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+            </svg>
+          </span>
+        ) : (
+          <Avatar initial={initial} tone={tone} size={36} />
+        )}
         <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600, fontFamily: 'var(--font-ui)' }}>{label}</span>
       </div>
     )
@@ -281,6 +296,39 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
           <span style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 600, marginLeft: 5, fontFamily: 'var(--font-ui)' }}>USDC</span>
         </span>
       </div>
+    )
+  }
+
+  // Accent-soft prompt shown in every non-loading, non-error hero when counterparty is unnamed.
+  // Opens the NamingSheet. Verbatim copy from the Group-Detail microcopy table.
+  function UnnamedPrompt() {
+    return (
+      <button
+        type="button"
+        onClick={() => setNamingOpen(true)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left',
+          marginTop: 12,
+          background: 'var(--accent-soft)',
+          border: '1px solid rgba(194,58,92,.18)',
+          borderRadius: 13, padding: '11px 12px', cursor: 'pointer',
+          appearance: 'none', font: 'inherit',
+        }}
+      >
+        <span style={{ width: 30, height: 30, flexShrink: 0, borderRadius: '50%', background: 'var(--raised)', color: 'var(--accent-strong)', display: 'grid', placeItems: 'center' }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+          </svg>
+        </span>
+        <span style={{ flex: 1 }}>
+          <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: 'var(--accent-soft-ink)' }}>
+            Who's this? Give them a name
+          </span>
+          <span style={{ display: 'block', fontSize: 11, color: 'var(--ink-2)', marginTop: 1 }}>
+            Only you'll see it — names stay on your phone.
+          </span>
+        </span>
+      </button>
     )
   }
 
@@ -337,10 +385,10 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
                 <span style={{ position: 'absolute', right: -1, top: '50%', transform: 'translateY(-50%)', width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderLeft: '6px solid var(--accent-strong)' }} />
                 {/* Chip centered on the line; surface halo punches it out of the line */}
                 <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', boxShadow: '0 1px 0 var(--surface),0 0 0 4px var(--surface)' }}>
-                  <DirChip dir="out" size="lg" label={`You owe ${identity.label}`} />
+                  <DirChip dir="out" size="lg" label={identity.named ? `You owe ${identity.label}` : 'You owe them'} />
                 </span>
               </div>
-              <AvatarCol initial={identity.initial} tone={identity.tone} label={identity.label} />
+              <AvatarCol initial={identity.initial} tone={identity.tone} label={identity.named ? identity.label : '?'} unnamed={!identity.named} />
             </div>
           </div>
           <AmountRow bal={balance!} />
@@ -350,6 +398,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
               {detailError}
             </p>
           )}
+          {!identity.named && <UnnamedPrompt />}
         </div>
       )
     }
@@ -368,11 +417,11 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
                 <span style={{ flex: 1, minWidth: 8, height: 1.5, borderRadius: 2, background: 'linear-gradient(90deg,var(--accent-strong),var(--ink))', display: 'block' }} />
                 {/* Chip sits between the two segments; raised bg per contract */}
                 <span style={{ flexShrink: 0, margin: '0 3px', background: 'var(--raised)', borderRadius: 999 }}>
-                  <DirChip dir="in" size="lg" label={`${identity.label} owes you`} />
+                  <DirChip dir="in" size="lg" label={identity.named ? `${identity.label} owes you` : 'They owe you'} />
                 </span>
                 <span style={{ flex: 1, minWidth: 8, height: 1.5, borderRadius: 2, background: 'var(--ink)', display: 'block' }} />
               </div>
-              <AvatarCol initial={identity.initial} tone={identity.tone} label={identity.label} />
+              <AvatarCol initial={identity.initial} tone={identity.tone} label={identity.named ? identity.label : '?'} unnamed={!identity.named} />
             </div>
           </div>
           <AmountRow bal={balance!} />
@@ -381,6 +430,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
               {detailError}
             </p>
           )}
+          {!identity.named && <UnnamedPrompt />}
         </div>
       )
     }
@@ -396,12 +446,22 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
               <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
                 <Avatar initial={selfIdentity.initial} tone="lilac" size={36} />
                 <span style={{ width: 48, height: 1.5, background: 'var(--line-2)', display: 'block' }} />
-                <Avatar initial={identity.initial} tone={identity.tone} size={36} />
+                {identity.named ? (
+                  <Avatar initial={identity.initial} tone={identity.tone} size={36} />
+                ) : (
+                  <span style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--line)', color: 'var(--ink-3)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="8" r="3.4" stroke="currentColor" strokeWidth="1.7" />
+                      <path d="M5.5 19a6.5 6.5 0 0 1 13 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                )}
               </div>
             </div>
             <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--ink-2)', fontWeight: 600 }}>
-              You're connected with {identity.label}
+              {identity.named ? `You're connected with ${identity.label}` : "You’re connected"}
             </div>
+            {!identity.named && <UnnamedPrompt />}
           </div>
         )
       }
@@ -420,7 +480,16 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
                 </svg>
               </span>
               <span style={{ width: 38, height: 1.5, background: 'var(--sage)', display: 'block' }} />
-              <Avatar initial={identity.initial} tone={identity.tone} size={36} />
+              {identity.named ? (
+                <Avatar initial={identity.initial} tone={identity.tone} size={36} />
+              ) : (
+                <span style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--line)', color: 'var(--ink-3)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="8" r="3.4" stroke="currentColor" strokeWidth="1.7" />
+                    <path d="M5.5 19a6.5 6.5 0 0 1 13 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                  </svg>
+                </span>
+              )}
             </div>
           </div>
           <div style={{ textAlign: 'center' }}>
@@ -429,6 +498,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
           <div style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--ink-3)', marginTop: 12 }}>
             Nothing owed either way. The thread's tied.
           </div>
+          {!identity.named && <UnnamedPrompt />}
         </div>
       )
     }
@@ -456,7 +526,22 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
           >
             ‹
           </button>
-          <span className="ttl">{identity.label}</span>
+          {identity.named ? (
+            <span className="ttl" style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              {identity.label}
+              {/* ✎ opens the rename sheet */}
+              <button
+                type="button"
+                onClick={() => setNamingOpen(true)}
+                aria-label="Rename"
+                style={{ all: 'unset', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 12, lineHeight: 1 }}
+              >
+                ✎
+              </button>
+            </span>
+          ) : (
+            <span className="ttl" style={{ color: 'var(--ink-3)' }}>Shared tab</span>
+          )}
         </div>
       )}
 
@@ -517,7 +602,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
                     {/* Creditor note: settle is debtor-only; creditor sees a passive reassurance */}
                     {isCreditor && !settleBtn && (
                       <div style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--ink-3)' }}>
-                        {identity.label} settles from their side — it'll land here on its own.
+                        {identity.named ? `${identity.label} settles from their side` : 'They settle from their side'} — it'll land here on its own.
                       </div>
                     )}
                     <Button
@@ -526,16 +611,17 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
                       onClick={() => {
                         if (!send) return
                         const cpIdentity = getIdentity(resolvedGroup.counterparty)
+                        const cpLabel = cpIdentity.named ? cpIdentity.label : 'them'
                         flow.start({
                           kind: 'add',
                           title: 'Add an expense',
                           confirmLabel: 'Add expense',
-                          who: cpIdentity.label,
+                          who: cpLabel,
                           rows: [],
                           inputInitial: { mode: 'add', amount: '', description: '', payer: 'me' },
                           buildSubmit: ({ amount, description, payer }) => {
                             const payerAddress = payer === 'me' ? smartAccount : resolvedGroup.counterparty
-                            const payerLabel = payer === 'me' ? 'You' : cpIdentity.label
+                            const payerLabel = payer === 'me' ? 'You' : (cpIdentity.named ? cpIdentity.label : 'Them')
                             return {
                               submit: () => submitAddExpense(send, resolvedGroup.address, payerAddress, amount, description),
                               rows: [
@@ -558,6 +644,34 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
           </div>
         )}
 
+        {/* Advanced details — collapsed by default; always rendered in named + unnamed states.
+            Truncated address shown inline; clipboard writes the full checksummed address. */}
+        {resolvedGroup && (
+          <div style={{ marginTop: 14, borderTop: '1px solid var(--hairline)', paddingTop: 10 }}>
+            <button
+              type="button"
+              onClick={() => setAdvancedOpen((o) => !o)}
+              style={{ all: 'unset', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', cursor: 'pointer', boxSizing: 'border-box', fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', fontFamily: 'var(--font-ui)' }}
+            >
+              Advanced details
+              <span style={{ color: 'var(--ink-3)' }}>{advancedOpen ? '▴' : '▾'}</span>
+            </button>
+            {advancedOpen && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingTop: 8, fontSize: 11.5 }}>
+                <span style={{ color: 'var(--ink-3)', flexShrink: 0 }}>Their address</span>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(resolvedGroup.counterparty).catch(() => {})}
+                  title="Copy full address"
+                  style={{ all: 'unset', cursor: 'pointer', color: 'var(--ink)', fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', fontSize: 11, textAlign: 'right' }}
+                >
+                  {`${resolvedGroup.counterparty.slice(0, 6)}…${resolvedGroup.counterparty.slice(-4)}`} ⧉
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* AddFundsPanel — opened by SettleSection's onAddFunds; onBalance updates the
@@ -568,6 +682,17 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
         smartAccount={smartAccount}
         onBalance={(b) => setUsdcBalance(b)}
       />
+
+      {/* NamingSheet — opened by the unnamed prompt or the named ✎ backbar button */}
+      {resolvedGroup && (
+        <NamingSheet
+          open={namingOpen}
+          onOpenChange={setNamingOpen}
+          counterparty={resolvedGroup.counterparty}
+          currentNickname={getNickname(resolvedGroup.counterparty)}
+          onSaved={() => setIdentityVersion((v) => v + 1)}
+        />
+      )}
     </main>
   )
 }

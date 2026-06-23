@@ -51,10 +51,10 @@ export function GroupRow({ group, balance, selected, onClick }: GroupRowProps) {
       {/* Identity + neutral relationship sub-line */}
       <div className="flex-1 min-w-0 flex flex-col" style={{ gap: 1 }}>
         <span
-          className="font-ui font-semibold text-ink truncate"
-          style={{ fontSize: 14 }}
+          className="font-ui font-semibold truncate"
+          style={{ fontSize: 14, color: identity.named ? 'var(--ink)' : 'var(--ink-3)' }}
         >
-          {identity.label}
+          {identity.named ? identity.label : 'Tap to name'}
         </span>
         {balance !== undefined && (
           <span style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 1 }}>
