@@ -23,6 +23,8 @@ export interface SheetProps {
   dismissible?: boolean
   /** Visually hidden — required by Radix for a11y. Describes the panel purpose. */
   title: string
+  /** Modal max-width in px. Ignored for sheet placement. Default: 440. */
+  maxWidth?: number
   children: ReactNode
 }
 
@@ -46,6 +48,7 @@ export function Sheet({
   placement = 'sheet',
   dismissible = true,
   title,
+  maxWidth = 440,
   children,
 }: SheetProps) {
   // Dismissible lock: prevent all ambient-dismiss paths when dismissible=false.
@@ -81,7 +84,7 @@ export function Sheet({
           left: '50%',
           // transform set by modal-in/out @keyframes; base needed for exit start
           transform: 'translate(-50%, -50%)',
-          width: 'min(440px, calc(100% - 48px))',
+          width: `min(${maxWidth}px, calc(100% - 48px))`,
           maxHeight: 'calc(100% - 60px)',
           overflowY: 'auto',
           background: 'var(--raised)',

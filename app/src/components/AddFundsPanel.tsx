@@ -149,6 +149,8 @@ interface AddFundsPanelProps {
   smartAccount: Address
   /** Called with the new balance once funds land, so callers can update their USDC display. */
   onBalance?: (bal: bigint) => void
+  /** Sheet slides up from the bottom; modal is centered. Default: 'sheet'. */
+  placement?: 'sheet' | 'modal'
 }
 
 type Phase = 'guide' | 'waiting' | 'done'
@@ -157,7 +159,7 @@ type Phase = 'guide' | 'waiting' | 'done'
  * Three-phase funding panel: guide (faucet instructions) → waiting (real balance
  * poll, no mock timer) → done (received confirmation). Uses Sheet for the overlay shell.
  */
-export function AddFundsPanel({ open, onOpenChange, smartAccount, onBalance }: AddFundsPanelProps) {
+export function AddFundsPanel({ open, onOpenChange, smartAccount, onBalance, placement = 'sheet' }: AddFundsPanelProps) {
   const [phase, setPhase] = useState<Phase>('guide')
   const [newBal, setNewBal] = useState<bigint | null>(null)
 
@@ -238,7 +240,7 @@ export function AddFundsPanel({ open, onOpenChange, smartAccount, onBalance }: A
     <Sheet
       open={open}
       onOpenChange={onOpenChange}
-      placement="sheet"
+      placement={placement}
       dismissible={phase !== 'waiting'}
       title="Add funds"
     >
@@ -327,7 +329,7 @@ export function AddFundsPanel({ open, onOpenChange, smartAccount, onBalance }: A
           </div>
           {/* Status banner — Spinner replaces the design's .sp ring; same visual */}
           <div className="home-banner" style={{ justifyContent: 'center', marginTop: 18 }}>
-            <Spinner /> Checking the network…
+            <Spinner /> Still watching…
           </div>
           {/* DELIBERATE DEVIATION from contract: the watch survives close via baselineRef/onBalance,
               so we expose the escape — note copy reflects this rather than the contract's lock copy */}

@@ -237,9 +237,9 @@ export function SignIn() {
   // --- render ----------------------------------------------------------------
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface px-[22px]">
-      {/* Centered content column */}
-      <div className="flex-1 flex flex-col justify-center gap-[22px]">
+    <div className="min-h-screen flex flex-col bg-surface">
+      {/* Centered content column — capped at 420px per the auth card contract */}
+      <div className="flex-1 flex flex-col justify-center gap-[22px]" style={{ maxWidth: 420, width: '100%', margin: '0 auto', padding: '0 22px' }}>
 
         {view === 'idle' ? (
           /* State: email / sending */
@@ -400,20 +400,13 @@ export function SignIn() {
                 // Error resend row: "Need a new one?" + "Resend code" button
                 <>
                   <span>Need a new one?</span>
-                  <button
-                    type="button"
+                  <Button
+                    variant="quiet"
                     onClick={() => void handleResend()}
                     disabled={cooldown > 0}
-                    className="font-ui font-medium"
-                    style={{
-                      fontSize: 12.5, background: 'none', border: 'none',
-                      padding: 0, cursor: cooldown > 0 ? 'default' : 'pointer',
-                      color: 'var(--accent-soft-ink)',
-                      opacity: cooldown > 0 ? 0.5 : 1,
-                    }}
                   >
                     {cooldown > 0 ? `Resend in ${fmtCooldown(cooldown)}` : 'Resend code'}
-                  </button>
+                  </Button>
                 </>
               ) : cooldown > 0 ? (
                 // Cooldown active: "Didn't get it? / Resend in m:ss"
@@ -425,18 +418,12 @@ export function SignIn() {
                 // Cooldown expired: "Didn't get it? / Resend code" button
                 <>
                   <span>Didn't get it?</span>
-                  <button
-                    type="button"
+                  <Button
+                    variant="quiet"
                     onClick={() => void handleResend()}
-                    className="font-ui font-medium"
-                    style={{
-                      fontSize: 12.5, background: 'none', border: 'none',
-                      padding: 0, cursor: 'pointer',
-                      color: 'var(--accent-soft-ink)',
-                    }}
                   >
                     Resend code
-                  </button>
+                  </Button>
                 </>
               )}
             </div>

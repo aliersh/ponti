@@ -15,11 +15,13 @@ type SendUserOperation = (req: { to: Address; data: Hex }) => Promise<Hex>
 type Props = {
   send: SendUserOperation | undefined
   smartAccount: Address | undefined
-  onBack: () => void                    // leave the screen without any write
-  onCreated: (group: Address) => void   // called with the new group address after confirm
+  onBack: () => void                                          // leave the screen without any write
+  onCreated: (group: Address, blockNumber: bigint) => void   // called with new group + receipt block after confirm
+  /** True when rendered inside a desktop Sheet modal — replaces the backbar with a close button. */
+  asModal?: boolean
 }
 
-export function AddSomeone({ send, smartAccount, onBack, onCreated }: Props) {
+export function AddSomeone({ send, smartAccount, onBack, onCreated, asModal }: Props) {
   const flow = useFlow()
 
   const [nickname, setNicknameField] = useState('')
@@ -69,8 +71,8 @@ export function AddSomeone({ send, smartAccount, onBack, onCreated }: Props) {
       },
       onComplete: async () => {
         if (!createdHash) return
-        const group = await fetchGroupAddress(createdHash)
-        onCreated(group)
+        const { group, blockNumber } = await fetchGroupAddress(createdHash)
+        onCreated(group, blockNumber)
       },
     })
   }
@@ -78,11 +80,23 @@ export function AddSomeone({ send, smartAccount, onBack, onCreated }: Props) {
   return (
     <div style={{ minHeight: '100%', background: 'var(--surface)', padding: '0 18px 30px' }}>
 
-      {/* Backbar: ‹ affordance + screen title in display font */}
-      <div className="backbar" style={{ padding: '16px 0' }}>
-        <button className="x" onClick={onBack}>‹</button>
-        <span className="ttl">Add someone</span>
-      </div>
+      {/* Modal close button replaces the backbar when rendered inside a Sheet. */}
+      {asModal ? (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '16px 2px 0' }}>
+          <button
+            onClick={onBack}
+            aria-label="Close"
+            style={{ all: 'unset', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 22, lineHeight: 1, padding: '2px 4px' }}
+          >
+            ×
+          </button>
+        </div>
+      ) : (
+        <div className="backbar" style={{ padding: '16px 0' }}>
+          <button className="x" onClick={onBack}>‹</button>
+          <span className="ttl">Add someone</span>
+        </div>
+      )}
 
       <div>
         <p className="subtitle">Paste the person's Ponti ID to start a shared tab.</p>

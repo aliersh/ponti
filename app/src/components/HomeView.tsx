@@ -3,14 +3,15 @@
 //
 // Money rule: net hero → <Num display> in --ink, no sign; DirChip carries direction.
 // WalletStrip amount and group row amounts → tabular --ink (handled in their components).
+//
+// Balances are fetched in App.tsx and threaded down so the desktop rail reuses the
+// same data without a separate fetch.
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
 import { AddFundsPanel } from './AddFundsPanel'
 import type { Address } from 'viem'
 import type { GroupItem } from '../lib/fetchGroups'
-import { fetchHomeBalances } from '../lib/homeBalances'
 import type { HomeBalances } from '../lib/homeBalances'
-import { fetchUsdcBalance } from '../lib/settle'
 import { getIdentity } from '../lib/identity'
 import {
   Num, money, DirChip,
@@ -97,6 +98,11 @@ interface HomeViewProps {
   loadingGroups: boolean
   groupsInitialized: boolean
   groupsError: boolean
+  balances: HomeBalances | null
+  balancesLoading: boolean
+  balancesError: boolean
+  usdc: bigint | null
+  usdcError: boolean
   onSelectGroup: (group: GroupItem) => void
   onRetry: () => void
   onOpenAccount: () => void
@@ -109,49 +115,17 @@ export function HomeView({
   loadingGroups,
   groupsInitialized,
   groupsError,
+  balances,
+  balancesLoading,
+  balancesError,
+  usdc,
+  usdcError,
   onSelectGroup,
   onRetry,
   onOpenAccount,
   onAddSomeone,
 }: HomeViewProps) {
-  const [balances, setBalances] = useState<HomeBalances | null>(null)
-  const [balancesLoading, setBalancesLoading] = useState(false)
-  const [balancesError, setBalancesError] = useState(false)
-
-  const [usdc, setUsdc] = useState<bigint | null>(null)
-  const [usdcError, setUsdcError] = useState(false)
   const [fundsOpen, setFundsOpen] = useState(false)
-
-  // fetchBalances: callable from the mount effect AND retry handler.
-  const fetchBalances = useCallback(async (account: Address, groupList: GroupItem[]) => {
-    setBalancesLoading(true)
-    setBalancesError(false)
-    setUsdcError(false)
-    try {
-      const [homeBalancesResult, usdcResult] = await Promise.all([
-        fetchHomeBalances(groupList, account),
-        fetchUsdcBalance(account),
-      ])
-      setBalances(homeBalancesResult)
-      setUsdc(usdcResult)
-    } catch {
-      setBalancesError(true)
-      setUsdcError(true)
-    } finally {
-      setBalancesLoading(false)
-    }
-  }, [])
-
-  // Re-fetch whenever groups or smartAccount changes.
-  useEffect(() => {
-    if (!smartAccount) return
-    void fetchBalances(smartAccount, groups)
-  }, [groups, smartAccount, fetchBalances])
-
-  function handleRetry() {
-    onRetry()
-    if (smartAccount) void fetchBalances(smartAccount, groups)
-  }
 
   // ── Derived display values ─────────────────────────────────────────────────
   const net = balances?.net ?? 0n
@@ -237,7 +211,7 @@ export function HomeView({
                 title="Couldn't load this right now"
                 body="Nothing's lost — your money is where it was. This is a display hiccup, not a funds issue."
                 cta="Try again"
-                onCta={handleRetry}
+                onCta={onRetry}
                 tone="error"
               />
             ) : isLoading ? (
@@ -320,7 +294,7 @@ export function HomeView({
           open={fundsOpen}
           onOpenChange={setFundsOpen}
           smartAccount={smartAccount}
-          onBalance={(b) => setUsdc(b)}
+          onBalance={() => {}}
         />
       )}
     </div>

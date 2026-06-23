@@ -11,6 +11,8 @@ interface GroupRowProps {
   group: GroupItem
   /** Viewer-relative signed balance from homeBalances.byGroup. undefined = still loading. */
   balance: bigint | undefined
+  /** Desktop split: highlights this row as the currently open group. */
+  selected?: boolean
   onClick: () => void
 }
 
@@ -21,7 +23,7 @@ function subLine(balance: bigint): string {
   return 'all settled'
 }
 
-export function GroupRow({ group, balance, onClick }: GroupRowProps) {
+export function GroupRow({ group, balance, selected, onClick }: GroupRowProps) {
   const identity = getIdentity(group.counterparty)
 
   // Raw reset button: .grow CSS owns padding, margin, position:relative, and the
@@ -31,7 +33,10 @@ export function GroupRow({ group, balance, onClick }: GroupRowProps) {
     <button
       type="button"
       onClick={onClick}
-      className="grow w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      className={[
+        'grow w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+        selected ? 'sel' : '',
+      ].filter(Boolean).join(' ')}
       style={{
         appearance: 'none',
         background: 'none',

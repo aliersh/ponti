@@ -16,6 +16,8 @@ import { AddFundsPanel } from './AddFundsPanel'
 type Props = {
   smartAccount: Address
   onBack: () => void
+  /** True when rendered inside a desktop Sheet modal — replaces the backbar with a close button. */
+  asModal?: boolean
 }
 
 // Truncated display label: first 6 chars + ellipsis + last 4.
@@ -24,7 +26,7 @@ function truncateAddress(address: Address): string {
 }
 
 /** Account screen — identity, wallet, invite ID, theme toggle, advanced details, logout. */
-export function YourPonti({ smartAccount, onBack }: Props) {
+export function YourPonti({ smartAccount, onBack, asModal }: Props) {
   const { logout, user } = usePrivy()
   const { theme, setTheme } = useTheme()
 
@@ -76,11 +78,23 @@ export function YourPonti({ smartAccount, onBack }: Props) {
   return (
     <div style={{ minHeight: '100%', background: 'var(--surface)' }}>
 
-      {/* Backbar — ‹ chip affordance + display-font screen title */}
-      <div className="backbar" style={{ padding: '16px 18px' }}>
-        <button className="x" onClick={onBack} aria-label="Back">‹</button>
-        <span className="ttl">Your Ponti</span>
-      </div>
+      {/* Modal close button replaces the backbar when rendered inside a Sheet. */}
+      {asModal ? (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '16px 20px 0' }}>
+          <button
+            onClick={onBack}
+            aria-label="Close"
+            style={{ all: 'unset', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 22, lineHeight: 1, padding: '2px 4px' }}
+          >
+            ×
+          </button>
+        </div>
+      ) : (
+        <div className="backbar" style={{ padding: '16px 18px' }}>
+          <button className="x" onClick={onBack} aria-label="Back">‹</button>
+          <span className="ttl">Your Ponti</span>
+        </div>
+      )}
 
       <div style={{ padding: '0 18px 36px', display: 'flex', flexDirection: 'column', gap: 0 }}>
 

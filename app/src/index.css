@@ -32,6 +32,15 @@
   --shadow-card:0 1px 2px rgba(34,28,27,.05),0 10px 24px -16px rgba(34,28,27,.18);
   --shadow-overlay:0 -1px 6px rgba(34,28,27,.05),0 26px 60px -24px rgba(34,28,27,.34);
   --scrim:rgba(34,28,27,.32);
+  /* --r-* — compatibility bridge for CSS ported verbatim from design contracts.
+     Repo-authored code uses --radius-*; never write --r-* in new components.
+     1:1 map: --r-sm=--radius-sm  --r-md=--radius-md  --r-lg=--radius-lg
+              --r-xl=--radius-xl  --r-pill=--radius-pill                    */
+  --r-sm:   var(--radius-sm);
+  --r-md:   var(--radius-md);
+  --r-lg:   var(--radius-lg);
+  --r-xl:   var(--radius-xl);
+  --r-pill: var(--radius-pill);
 }
 [data-theme="dark"] {
   --bg:#191613;          /* warm near-black (dusk concrete) */
@@ -366,3 +375,16 @@ body {
   .drawline .runner { animation: none }
   .reveal { animation: none }
 }
+
+/* ── Desktop master-detail split (≥1024px) ────────────────────────────────────
+   .split owns the flex row; .rail is fixed-width left panel; .detail takes the rest.
+   These selectors are additive — nothing here changes mobile layout. */
+.split { display: flex; min-height: 0; flex: 1 }
+.rail { width: 380px; flex: none; border-right: 1px solid var(--hairline); background: var(--surface); display: flex; flex-direction: column }
+.rail-scroll { flex: 1; overflow: auto; padding: 22px 22px 8px }
+.rail-foot { border-top: 1px solid var(--hairline); padding: 16px 22px 18px; background: var(--surface) }
+.detail { flex: 1; background: var(--bg); overflow: auto }
+
+/* Selected rail row — rosa tint surface + left spine tick per design contract */
+.grow.sel { background: var(--accent-soft); border: 1px solid rgba(194,58,92,.16); border-radius: var(--radius-md) }
+.grow.sel::after { content: ""; position: absolute; left: -22px; top: 8px; bottom: 8px; width: 3px; border-radius: 3px; background: var(--accent-strong) }

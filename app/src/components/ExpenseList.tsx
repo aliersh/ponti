@@ -6,9 +6,10 @@
 // sub-components are at module scope to prevent remounting on parent state updates.
 
 import { useState, useMemo } from 'react'
-import { getAddress } from 'viem'
+import { formatUnits, getAddress } from 'viem'
 import type { Address, Hex } from 'viem'
 import { submitDeleteExpense } from '../lib/deleteExpense'
+import { submitEditExpense } from '../lib/editExpense'
 import { buildTimeline } from '../lib/fetchGroup'
 import type { ExpenseEntry, SettlementEntry } from '../lib/fetchGroup'
 import { getIdentity } from '../lib/identity'
@@ -30,7 +31,6 @@ type Props = {
   smartAccount: Address
   counterparty: Address
   onMutated: () => Promise<void>
-  onEdit: (expense: ExpenseEntry) => void
 }
 
 // ── Date helper ────────────────────────────────────────────────────────────────
@@ -208,9 +208,9 @@ export function ExpenseList({
   smartAccount,
   counterparty,
   onMutated,
-  onEdit,
 }: Props) {
   const flow = useFlow()
+  const identity = getIdentity(counterparty)
 
   function onDeleteExpense(expense: ExpenseEntry) {
     if (!send) return
@@ -219,11 +219,74 @@ export function ExpenseList({
       kind: 'delete',
       title: 'Remove this expense?',
       confirmLabel: 'Remove expense',
+      who: identity.label,
       rows: [
-        { label: 'Removing', value: expense.description },
+        { label: 'For', value: expense.description },
         { label: 'Amount', value: `${money(expense.amount)} USDC` },
       ],
       submit: () => submitDeleteExpense(send, groupAddress, expense.id),
+      onComplete: onMutated,
+    })
+  }
+
+  // Edit opens the flow at the input phase with pre-filled values from the expense.
+  // The deleteFlow is built here where the expense id is known — FlowWidget never
+  // reconstructs it from inputInitial (which has no id).
+  function onEdit(expense: ExpenseEntry) {
+    if (!send) return
+
+    const initialPayer: 'me' | 'counterparty' =
+      getAddress(expense.payer) === getAddress(smartAccount) ? 'me' : 'counterparty'
+    const payerLabel = initialPayer === 'me' ? 'You' : identity.label
+
+    const deleteFlow = {
+      kind: 'delete' as const,
+      title: 'Delete expense',
+      confirmLabel: 'Delete expense',
+      who: identity.label,
+      rows: [
+        { label: 'For', value: expense.description },
+        { label: 'Amount', value: `${money(expense.amount)} USDC`, strong: true },
+      ],
+      submit: () => submitDeleteExpense(send, groupAddress, expense.id),
+      onComplete: onMutated,
+    }
+
+    flow.start({
+      kind: 'edit',
+      title: 'Edit expense',
+      confirmLabel: 'Save changes',
+      who: identity.label,
+      // rows hold the confirmed values for the morph-target summary card;
+      // they are populated by buildSubmit at confirm-time via the update below.
+      // Initial rows use the expense's current values as a starting point;
+      // buildSubmit overwrites them with the user's final input.
+      rows: [
+        { label: 'Who paid', value: payerLabel },
+        { label: 'Amount', value: `${money(expense.amount)} USDC`, strong: true },
+        { label: 'For', value: expense.description },
+      ],
+      prevValue: money(expense.amount),
+      inputInitial: {
+        mode: 'edit',
+        amount: formatUnits(expense.amount, 6),
+        description: expense.description,
+        payer: initialPayer,
+        prevValue: money(expense.amount),
+      },
+      buildSubmit: ({ amount, description, payer }) => {
+        const payerAddress = payer === 'me' ? smartAccount : counterparty
+        const payerLbl = payer === 'me' ? 'You' : identity.label
+        return {
+          submit: () => submitEditExpense(send, groupAddress, expense.id, payerAddress, amount, description),
+          rows: [
+            { label: 'Who paid', value: payerLbl },
+            { label: 'Amount', value: `${money(amount)} USDC`, strong: true },
+            { label: 'For', value: description },
+          ],
+        }
+      },
+      deleteFlow,
       onComplete: onMutated,
     })
   }

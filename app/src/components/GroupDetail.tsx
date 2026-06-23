@@ -5,8 +5,9 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { getAddress } from 'viem'
 import type { Address, Hex } from 'viem'
 import { fetchBalance, fetchExpenseHistory, interpretBalance, fetchGroupMembers, fetchSettlements } from '../lib/fetchGroup'
-import type { ExpenseEntry, BalanceDisplay, SettlementEntry } from '../lib/fetchGroup'
+import type { BalanceDisplay, SettlementEntry, ExpenseEntry } from '../lib/fetchGroup'
 import { fetchUsdcBalance } from '../lib/settle'
+import { submitAddExpense } from '../lib/addExpense'
 import type { GroupItem } from '../lib/fetchGroups'
 import { FACTORY_DEPLOY_BLOCK } from '../config'
 import { publicClient } from '../lib/client'
@@ -15,8 +16,8 @@ import { getIdentity } from '../lib/identity'
 import {
   Avatar, Button, money, DirChip, Skeleton, Spinner,
 } from '../ui'
+import { useFlow } from '../flow/FlowContext'
 import { SettleSection } from './SettleSection'
-import { ExpenseFormScreen } from './ExpenseFormScreen'
 import { ExpenseList } from './ExpenseList'
 import { AddFundsPanel } from './AddFundsPanel'
 import { EmptyState } from './EmptyState'
@@ -29,13 +30,9 @@ type Props = {
   smartAccount: Address
   send: SendUserOperation | undefined
   sendBatch: SendBatch | undefined
+  /** Desktop split: suppresses the mobile backbar (rail is always visible instead). */
+  inPane?: boolean
 }
-
-// formState: null = detail body; non-null = full-screen form.
-type FormState =
-  | { mode: 'add' }
-  | { mode: 'edit'; expense: ExpenseEntry }
-  | null
 
 // Broken-line SVG used for the cold-load error estate — mirrors HomeView's error icon.
 const BrokenLineIcon = (
@@ -68,9 +65,10 @@ async function fetchDetail(
   }
 }
 
-export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
+export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
+  const flow = useFlow()
 
   // Lazy initializer: warm-path navigation passes the full GroupItem via
   // location.state; cold-load (direct URL / reload) starts null and bootstraps.
@@ -86,7 +84,6 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
   const [detailError, setDetailError] = useState<string | null>(null)
   const [usdcBalance, setUsdcBalance] = useState<bigint | null>(null)
   const [postWriteStatus, setPostWriteStatus] = useState<string | null>(null)
-  const [formState, setFormState] = useState<FormState>(null)
   const [fundsOpen, setFundsOpen] = useState(false)
 
   async function loadDetail(opts?: { silent?: boolean }) {
@@ -203,15 +200,17 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
   if (groupError) {
     return (
       <main style={{ background: 'var(--surface)', minHeight: '100%' }}>
-        <div className="backbar">
-          <button
-            onClick={() => navigate('/')}
-            aria-label="Back to groups"
-            style={{ all: 'unset', cursor: 'pointer', width: 30, height: 30, borderRadius: 9, border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: 'var(--ink-2)', fontSize: 16, background: 'var(--surface)', flexShrink: 0, boxSizing: 'border-box' }}
-          >
-            ‹
-          </button>
-        </div>
+        {!inPane && (
+          <div className="backbar">
+            <button
+              onClick={() => navigate('/')}
+              aria-label="Back to groups"
+              style={{ all: 'unset', cursor: 'pointer', width: 30, height: 30, borderRadius: 9, border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: 'var(--ink-2)', fontSize: 16, background: 'var(--surface)', flexShrink: 0, boxSizing: 'border-box' }}
+            >
+              ‹
+            </button>
+          </div>
+        )}
         <EmptyState
           icon={BrokenLineIcon}
           title="Couldn't load this tab"
@@ -228,40 +227,22 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
   if (!resolvedGroup) {
     return (
       <main style={{ background: 'var(--surface)', minHeight: '100%' }}>
-        <div className="backbar">
-          <button
-            onClick={() => navigate('/')}
-            aria-label="Back to groups"
-            style={{ all: 'unset', cursor: 'pointer', width: 30, height: 30, borderRadius: 9, border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: 'var(--ink-2)', fontSize: 16, background: 'var(--surface)', flexShrink: 0, boxSizing: 'border-box' }}
-          >
-            ‹
-          </button>
-        </div>
+        {!inPane && (
+          <div className="backbar">
+            <button
+              onClick={() => navigate('/')}
+              aria-label="Back to groups"
+              style={{ all: 'unset', cursor: 'pointer', width: 30, height: 30, borderRadius: 9, border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: 'var(--ink-2)', fontSize: 16, background: 'var(--surface)', flexShrink: 0, boxSizing: 'border-box' }}
+            >
+              ‹
+            </button>
+          </div>
+        )}
       </main>
     )
   }
 
   const reload = () => pollUntilChanged()
-
-  // Form screen replaces the detail body while add or edit is in progress.
-  // onComplete: clear formState first so the detail body mounts and shows the
-  // "Saved — updating the list…" post-write status while the reload runs.
-  if (formState !== null) {
-    return (
-      <main style={{ background: 'var(--surface)', minHeight: '100%' }}>
-        <ExpenseFormScreen
-          mode={formState.mode}
-          initial={formState.mode === 'edit' ? formState.expense : undefined}
-          send={send}
-          groupAddress={resolvedGroup.address}
-          smartAccount={smartAccount}
-          counterparty={resolvedGroup.counterparty}
-          onBack={() => setFormState(null)}
-          onComplete={async () => { setFormState(null); await reload() }}
-        />
-      </main>
-    )
-  }
 
   const display: BalanceDisplay | null =
     balance !== null ? interpretBalance(balance, smartAccount, resolvedGroup.memberA) : null
@@ -460,20 +441,24 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
   const isUpdating  = postWriteStatus === 'Saved — updating the list…'
   const isExhausted = postWriteStatus === 'Saved — reload to see the latest.'
 
+  // inPane: join the .detail flex column (fills pane, scrolls internally).
+  // Mobile: narrow surface card, full viewport height.
   return (
-    <main style={{ background: 'var(--surface)', minHeight: '100%' }}>
+    <main className={inPane ? 'detail' : undefined} style={inPane ? {} : { background: 'var(--surface)', minHeight: '100%' }}>
 
-      {/* Backbar — ‹ chip affordance + counterparty name */}
-      <div className="backbar">
-        <button
-          onClick={() => navigate('/')}
-          aria-label="Back to groups"
-          style={{ all: 'unset', cursor: 'pointer', width: 30, height: 30, borderRadius: 9, border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: 'var(--ink-2)', fontSize: 16, background: 'var(--surface)', flexShrink: 0, boxSizing: 'border-box' }}
-        >
-          ‹
-        </button>
-        <span className="ttl">{identity.label}</span>
-      </div>
+      {/* Backbar — mobile only; rail replaces it on desktop */}
+      {!inPane && (
+        <div className="backbar">
+          <button
+            onClick={() => navigate('/')}
+            aria-label="Back to groups"
+            style={{ all: 'unset', cursor: 'pointer', width: 30, height: 30, borderRadius: 9, border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: 'var(--ink-2)', fontSize: 16, background: 'var(--surface)', flexShrink: 0, boxSizing: 'border-box' }}
+          >
+            ‹
+          </button>
+          <span className="ttl">{identity.label}</span>
+        </div>
+      )}
 
       {/* Top post-write banner: "Saved — updating the list…" — above hero while indexer catches up */}
       {isUpdating && (
@@ -483,7 +468,8 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
         </div>
       )}
 
-      <div style={{ padding: '0 18px 30px' }}>
+      {/* Body: centered column on desktop (max 600px per contract), mobile padding on narrow */}
+      <div style={inPane ? { maxWidth: 600, margin: '0 auto', padding: '26px 30px 40px' } : { padding: '0 18px 30px' }}>
 
         {/* Balance hero — varies by state (loading / error / empty / settled / you-owe / you're-owed) */}
         {renderHero()}
@@ -498,7 +484,6 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
           smartAccount={smartAccount}
           counterparty={resolvedGroup.counterparty}
           onMutated={reload}
-          onEdit={(expense) => setFormState({ mode: 'edit', expense })}
         />
 
         {/* Bottom post-write banner: exhausted retry — quiet "Reload" CTA */}
@@ -538,7 +523,31 @@ export function GroupDetail({ address, smartAccount, send, sendBatch }: Props) {
                     <Button
                       variant={isDebtor ? 'outline' : 'primary'}
                       full
-                      onClick={() => setFormState({ mode: 'add' })}
+                      onClick={() => {
+                        if (!send) return
+                        const cpIdentity = getIdentity(resolvedGroup.counterparty)
+                        flow.start({
+                          kind: 'add',
+                          title: 'Add an expense',
+                          confirmLabel: 'Add expense',
+                          who: cpIdentity.label,
+                          rows: [],
+                          inputInitial: { mode: 'add', amount: '', description: '', payer: 'me' },
+                          buildSubmit: ({ amount, description, payer }) => {
+                            const payerAddress = payer === 'me' ? smartAccount : resolvedGroup.counterparty
+                            const payerLabel = payer === 'me' ? 'You' : cpIdentity.label
+                            return {
+                              submit: () => submitAddExpense(send, resolvedGroup.address, payerAddress, amount, description),
+                              rows: [
+                                { label: 'Who paid', value: payerLabel },
+                                { label: 'Amount', value: `${money(amount)} USDC`, strong: true },
+                                { label: 'For', value: description },
+                              ],
+                            }
+                          },
+                          onComplete: async () => { await reload() },
+                        })
+                      }}
                     >
                       Add {isDebtor ? 'expense' : 'an expense'}
                     </Button>

@@ -34,10 +34,11 @@ export async function submitCreateGroup(
   return send({ to: FACTORY_ADDRESS, data })
 }
 
-// Resolve the deployed group address from the receipt's GroupCreated log. Kept
-// separate from submission so a receipt/parse failure never masks a write that
-// actually landed on-chain.
-export async function fetchGroupAddress(txHash: Hex): Promise<Address> {
+// Resolve the deployed group address and the receipt block from the GroupCreated log.
+// Kept separate from submission so a receipt/parse failure never masks a write that
+// actually landed on-chain. blockNumber is the chain head at the moment the factory
+// deployed — used by callers to gate a subgraph freshness check.
+export async function fetchGroupAddress(txHash: Hex): Promise<{ group: Address; blockNumber: bigint }> {
   const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
   const [event] = parseEventLogs({
     abi: factoryAbi,
@@ -47,5 +48,5 @@ export async function fetchGroupAddress(txHash: Hex): Promise<Address> {
   if (!event) {
     throw new Error('Transaction confirmed but no GroupCreated event was found.')
   }
-  return event.args.group
+  return { group: event.args.group, blockNumber: receipt.blockNumber }
 }

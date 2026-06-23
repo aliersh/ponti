@@ -11,7 +11,8 @@ import { FlowWidget } from './FlowWidget'
 
 // ── Internal state ────────────────────────────────────────────────────────────
 
-type Phase = 'confirm' | 'inflight' | 'done' | 'error'
+// `input` is the leading phase for add/edit flows; all other kinds start at `confirm`.
+type Phase = 'input' | 'confirm' | 'inflight' | 'done' | 'error'
 
 interface FlowState {
   pending: PendingFlow
@@ -25,7 +26,7 @@ interface FlowState {
 // ── Context shape ─────────────────────────────────────────────────────────────
 
 interface FlowContextValue {
-  /** Open the confirm overlay for a pending write. Replaces any current flow. */
+  /** Open the write-flow overlay. add/edit open at `input`; all others open at `confirm`. */
   start: (flow: PendingFlow) => void
 }
 
@@ -33,7 +34,7 @@ const FlowContext = createContext<FlowContextValue | null>(null)
 
 /**
  * Returns the flow controller handle. Must be called inside FlowProvider.
- * Call `flow.start(pendingFlow)` to open the confirm overlay before any write.
+ * Call `flow.start(pendingFlow)` to open the overlay before any write.
  */
 export function useFlow(): FlowContextValue {
   const ctx = useContext(FlowContext)
@@ -52,7 +53,12 @@ export function FlowProvider({ children }: { children: ReactNode }) {
 
   // Kick off the write sequence after the user confirms. Owned entirely by the
   // controller so call sites never touch receipt-waiting or error handling.
+  // Belt-and-suspenders guard: submit must be present before runWrite fires.
+  // By the time confirm is reached, advanceToConfirm has already stored submit
+  // on pending — this guard defends against any future miswiring of the phases.
   const runWrite = useCallback(async (pending: PendingFlow) => {
+    if (!pending.submit) return
+
     setState((s) => s ? { ...s, phase: 'inflight' } : null)
 
     let hash: Hex
@@ -113,8 +119,34 @@ export function FlowProvider({ children }: { children: ReactNode }) {
     }
   }, [state])
 
+  // Advance from input to confirm: builds submit + consent rows from the validated
+  // input values and stores both on pending. No network call — pure construction.
+  // Guard: no-op unless currently in the input phase with a buildSubmit present.
+  const advanceToConfirm = useCallback((vals: { amount: bigint; description: string; payer: 'me' | 'counterparty' }) => {
+    setState((s) => {
+      if (!s || s.phase !== 'input' || !s.pending.buildSubmit) return s
+      const { submit, rows } = s.pending.buildSubmit(vals)
+      return { ...s, pending: { ...s.pending, submit, rows }, phase: 'confirm' }
+    })
+  }, [])
+
+  // Back from confirm to input. Structurally guarded: only transitions when
+  // phase === 'confirm', making it a no-op for inflight/done/error — a
+  // post-consent write can never be rewound to the input form by construction.
+  const backToInput = useCallback(() => {
+    setState((s) => s && s.phase === 'confirm' ? { ...s, phase: 'input' } : s)
+  }, [])
+
+  // Delete from edit-input: replaces the current flow with the pre-built delete flow.
+  // The deleteFlow is built at call sites where the expense id is known.
+  const startDelete = useCallback((deleteFlow: PendingFlow) => {
+    setState({ pending: deleteFlow, phase: 'confirm', txHash: null, submitFailed: false })
+  }, [])
+
+  // add/edit open at `input` (inputInitial present); all other kinds open at `confirm`.
   const start = useCallback((flow: PendingFlow) => {
-    setState({ pending: flow, phase: 'confirm', txHash: null, submitFailed: false })
+    const openAt: Phase = flow.inputInitial ? 'input' : 'confirm'
+    setState({ pending: flow, phase: openAt, txHash: null, submitFailed: false })
   }, [])
 
   const value: FlowContextValue = { start }
@@ -128,7 +160,10 @@ export function FlowProvider({ children }: { children: ReactNode }) {
           phase={state.phase}
           txHash={state.txHash}
           submitFailed={state.submitFailed}
+          onAdvance={advanceToConfirm}
           onConfirm={() => runWrite(state.pending)}
+          onBack={backToInput}
+          onDelete={startDelete}
           onRetry={retry}
           onClose={close}
         />
