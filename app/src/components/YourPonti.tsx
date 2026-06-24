@@ -10,6 +10,7 @@ import { fetchUsdcBalance } from '../lib/settle'
 import { useTheme } from '../theme/ThemeProvider'
 import { CHAIN } from '../config'
 import { Avatar, Button, Input, Copy, External, Sun, Moon, Pencil, Logout, SectionLabel } from '../ui'
+import { useDesktop } from '../lib/useDesktop'
 import { WalletCard } from './WalletCard'
 import { AddFundsPanel } from './AddFundsPanel'
 
@@ -35,6 +36,8 @@ export function YourPonti({ smartAccount, onBack, asModal }: Props) {
   const [name, setName] = useState(getNickname(smartAccount) ?? '')
   // Inline name-edit toggle: pencil enters edit mode; blur/Enter saves; Esc cancels.
   const [editing, setEditing] = useState(false)
+
+  const isDesktop = useDesktop()
 
   // USDC balance and AddFundsPanel visibility.
   const [usdc, setUsdc] = useState<bigint | null>(null)
@@ -272,6 +275,7 @@ export function YourPonti({ smartAccount, onBack, asModal }: Props) {
         onOpenChange={setFundsOpen}
         smartAccount={smartAccount}
         onBalance={(b) => setUsdc(b)}
+        placement={isDesktop ? 'modal' : 'sheet'}
       />
 
     </div>

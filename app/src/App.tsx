@@ -64,6 +64,7 @@ function DesktopLayoutWrapper({
   usdcError,
   onOpenAccount,
   onAddSomeone,
+  onUsdcBalance,
 }: {
   smartAccount: Address | undefined
   send: SendUserOperation | undefined
@@ -76,6 +77,7 @@ function DesktopLayoutWrapper({
   usdcError: boolean
   onOpenAccount: () => void
   onAddSomeone: () => void
+  onUsdcBalance: (b: bigint) => void
 }) {
   const { address } = useParams<{ address?: string }>()
   return (
@@ -92,6 +94,7 @@ function DesktopLayoutWrapper({
       usdcError={usdcError}
       onOpenAccount={onOpenAccount}
       onAddSomeone={onAddSomeone}
+      onUsdcBalance={onUsdcBalance}
     />
   )
 }
@@ -219,6 +222,7 @@ export function App() {
     usdcError,
     onOpenAccount: () => navigate('/you'),
     onAddSomeone: () => navigate('/add'),
+    onUsdcBalance: (b: bigint) => setUsdc(b),
   }
 
   // Desktop (≥1024px): persistent split shell across / and /group/:address.
@@ -308,6 +312,7 @@ export function App() {
                 onRetry={handleRetry}
                 onOpenAccount={() => navigate('/you')}
                 onAddSomeone={() => navigate('/add')}
+                onUsdcBalance={(b) => setUsdc(b)}
               />
             }
           />

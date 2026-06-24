@@ -59,14 +59,14 @@ function rotPick<T>(arr: readonly T[]): T {
 }
 
 // Accepts raw input (including locale commas) and returns a valid decimal string
-// with at most one dot and at most 6 fractional digits (USDC precision).
+// with at most one dot and at most 2 fractional digits.
 function sanitizeAmount(raw: string): string {
   const normalized = raw.replace(',', '.')
   const digitsAndDots = normalized.replace(/[^\d.]/g, '')
   const firstDot = digitsAndDots.indexOf('.')
   if (firstDot === -1) return digitsAndDots
   const integer = digitsAndDots.slice(0, firstDot)
-  const fraction = digitsAndDots.slice(firstDot + 1).replace(/\./g, '').slice(0, 6)
+  const fraction = digitsAndDots.slice(firstDot + 1).replace(/\./g, '').slice(0, 2)
   return `${integer}.${fraction}`
 }
 

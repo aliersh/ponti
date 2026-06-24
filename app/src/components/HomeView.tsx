@@ -107,6 +107,7 @@ interface HomeViewProps {
   onRetry: () => void
   onOpenAccount: () => void
   onAddSomeone: () => void
+  onUsdcBalance: (b: bigint) => void
 }
 
 export function HomeView({
@@ -124,6 +125,7 @@ export function HomeView({
   onRetry,
   onOpenAccount,
   onAddSomeone,
+  onUsdcBalance,
 }: HomeViewProps) {
   const [fundsOpen, setFundsOpen] = useState(false)
 
@@ -294,7 +296,7 @@ export function HomeView({
           open={fundsOpen}
           onOpenChange={setFundsOpen}
           smartAccount={smartAccount}
-          onBalance={() => {}}
+          onBalance={onUsdcBalance}
         />
       )}
     </div>

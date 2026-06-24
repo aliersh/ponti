@@ -421,5 +421,8 @@ body {
 .detail { flex: 1; background: var(--bg); overflow: auto }
 
 /* Selected rail row — rosa tint surface + left spine tick per design contract */
-.grow.sel { background: var(--accent-soft); border: 1px solid rgba(194,58,92,.16); border-radius: var(--radius-md) }
-.grow.sel::after { content: ""; position: absolute; left: -22px; top: 8px; bottom: 8px; width: 3px; border-radius: 3px; background: var(--accent-strong) }
+/* Inner padding gives the card air so content isn't flush to the border (.grow base is 0 horizontal). */
+.grow.sel { background: var(--accent-soft); border: 1px solid rgba(194,58,92,.16); border-radius: var(--radius-md); padding: 15px 14px }
+/* node hidden on selected rows — tick serves as the sole selection marker */
+.grow.sel::before { display: none }
+.grow.sel::after { content: ""; position: absolute; left: -4px; top: 8px; bottom: 8px; width: 3px; border-radius: 3px; background: var(--accent-strong) }

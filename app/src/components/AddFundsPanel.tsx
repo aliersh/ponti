@@ -331,6 +331,20 @@ export function AddFundsPanel({ open, onOpenChange, smartAccount, onBalance, pla
           <div className="home-banner" style={{ justifyContent: 'center', marginTop: 18 }}>
             <Spinner /> Still watching…
           </div>
+          {/* Compact copy-address row — secondary affordance while waiting */}
+          <div style={{ marginTop: 12 }}>
+            <span
+              className="font-ui"
+              style={{
+                display: 'block', marginBottom: 7,
+                fontSize: 11.5, fontWeight: 600, color: 'var(--ink-3)',
+                letterSpacing: '0.12em', textTransform: 'uppercase',
+              }}
+            >
+              Your address
+            </span>
+            <AddressBlock address={smartAccount} />
+          </div>
           {/* DELIBERATE DEVIATION from contract: the watch survives close via baselineRef/onBalance,
               so we expose the escape — note copy reflects this rather than the contract's lock copy */}
           <div className="note" style={{ marginTop: 12 }}>

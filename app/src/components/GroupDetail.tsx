@@ -13,6 +13,7 @@ import { FACTORY_DEPLOY_BLOCK } from '../config'
 import { publicClient } from '../lib/client'
 import { waitForSubgraphBlock } from '../lib/subgraph'
 import { getIdentity, getNickname } from '../lib/identity'
+import { useIdentityVersion } from '../lib/useIdentityVersion'
 import {
   Avatar, Button, money, DirChip, Skeleton, Spinner,
 } from '../ui'
@@ -103,8 +104,8 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
   const [postWriteStatus, setPostWriteStatus] = useState<string | null>(null)
   const [fundsOpen, setFundsOpen] = useState(false)
   const [namingOpen, setNamingOpen] = useState(false)
-  // Bumped after setNickname so getIdentity re-reads localStorage on the next render.
-  const [identityVersion, setIdentityVersion] = useState(0)
+  // Bumped by the 'ponti:identity' event (dispatched by setNickname) so getIdentity re-reads localStorage.
+  const identityVersion = useIdentityVersion()
   const [advancedOpen, setAdvancedOpen] = useState(false)
 
   async function loadDetail(opts?: { silent?: boolean }) {
@@ -346,12 +347,14 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
   }
 
   // Amount row shared by you-owe and you're-owed: 30px display font per contract.
+  // Flex-centers the bare number; USDC suffix is out-of-flow so it adds no width to the centered box.
   function AmountRow({ bal }: { bal: bigint }) {
     return (
-      <div style={{ textAlign: 'center' }}>
-        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 30, letterSpacing: '-.02em', color: 'var(--ink)', fontFeatureSettings: '"tnum" 1,"lnum" 1' }}>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <span style={{ position: 'relative', display: 'inline-block', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 30, letterSpacing: '-.02em', color: 'var(--ink)', fontFeatureSettings: '"tnum" 1,"lnum" 1' }}>
           {money(bal)}
-          <span style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 600, marginLeft: 5, fontFamily: 'var(--font-ui)' }}>USDC</span>
+          {/* Absolute so it anchors to the number span's right edge without shifting the number's center */}
+          <span style={{ position: 'absolute', left: '100%', top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: 'var(--ink-3)', fontWeight: 600, marginLeft: 5, fontFamily: 'var(--font-ui)' }}>USDC</span>
         </span>
       </div>
     )
@@ -441,8 +444,8 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
                 <span style={{ flex: 1, height: 1.5, borderRadius: 2, background: 'linear-gradient(90deg,var(--ink),var(--accent-strong))', display: 'block' }} />
                 {/* Right-pointing arrowhead (border triangle) */}
                 <span style={{ position: 'absolute', right: -1, top: '50%', transform: 'translateY(-50%)', width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderLeft: '6px solid var(--accent-strong)' }} />
-                {/* Chip centered on the line; surface halo punches it out of the line */}
-                <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', boxShadow: '0 1px 0 var(--surface),0 0 0 4px var(--surface)' }}>
+                {/* Chip centered on the line; halo color matches pane bg so no rectangle bleeds through */}
+                <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', boxShadow: `0 1px 0 ${inPane ? 'var(--bg)' : 'var(--surface)'},0 0 0 4px ${inPane ? 'var(--bg)' : 'var(--surface)'}` }}>
                   <DirChip dir="out" size="lg" label={identity.named ? `You owe ${identity.label}` : 'You owe them'} />
                 </span>
               </div>
@@ -468,16 +471,15 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
           <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0 14px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
               <AvatarCol initial={selfIdentity.initial} tone="lilac" label="You" />
-              {/* 196px line container: left arrowhead + two segments flanking the chip */}
-              <div style={{ width: 196, height: 36, display: 'flex', alignItems: 'center', gap: 0 }}>
-                {/* Left-pointing arrowhead */}
-                <span style={{ flexShrink: 0, width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderRight: '6px solid var(--accent-strong)' }} />
-                <span style={{ flex: 1, minWidth: 8, height: 1.5, borderRadius: 2, background: 'linear-gradient(90deg,var(--accent-strong),var(--ink))', display: 'block' }} />
-                {/* Chip sits between the two segments; raised bg per contract */}
-                <span style={{ flexShrink: 0, margin: '0 3px', background: 'var(--raised)', borderRadius: 999 }}>
+              {/* 196px line container: left arrowhead + single gradient line, chip absolutely centered */}
+              <div style={{ position: 'relative', width: 196, height: 36, display: 'flex', alignItems: 'center' }}>
+                {/* Left-pointing arrowhead; money flows counterparty→You, so arrowhead points at You (left) */}
+                <span style={{ position: 'absolute', left: -1, top: '50%', transform: 'translateY(-50%)', flexShrink: 0, width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderRight: '6px solid var(--accent-strong)' }} />
+                <span style={{ flex: 1, height: 1.5, borderRadius: 2, background: 'linear-gradient(90deg,var(--accent-strong),var(--ink))', display: 'block' }} />
+                {/* Chip absolutely centered on the line; halo color matches pane bg */}
+                <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', background: 'var(--raised)', borderRadius: 999, boxShadow: `0 1px 0 ${inPane ? 'var(--bg)' : 'var(--surface)'},0 0 0 4px ${inPane ? 'var(--bg)' : 'var(--surface)'}` }}>
                   <DirChip dir="in" size="lg" label={identity.named ? `${identity.label} owes you` : 'They owe you'} />
                 </span>
-                <span style={{ flex: 1, minWidth: 8, height: 1.5, borderRadius: 2, background: 'var(--ink)', display: 'block' }} />
               </div>
               <AvatarCol initial={identity.initial} tone={identity.tone} label={identity.named ? identity.label : '?'} unnamed={!identity.named} />
             </div>
@@ -741,6 +743,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
         onOpenChange={setFundsOpen}
         smartAccount={smartAccount}
         onBalance={(b) => setUsdcBalance(b)}
+        placement={inPane ? 'modal' : 'sheet'}
       />
 
       {/* NamingSheet — opened by the unnamed prompt or the named ✎ backbar button */}
@@ -750,7 +753,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
           onOpenChange={setNamingOpen}
           counterparty={resolvedGroup.counterparty}
           currentNickname={getNickname(resolvedGroup.counterparty)}
-          onSaved={() => setIdentityVersion((v) => v + 1)}
+          placement={inPane ? 'modal' : 'sheet'}
         />
       )}
     </main>

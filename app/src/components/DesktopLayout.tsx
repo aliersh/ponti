@@ -16,6 +16,7 @@ import { GroupDetail } from './GroupDetail'
 import { AddFundsPanel } from './AddFundsPanel'
 import { EmptyState } from './EmptyState'
 import { getIdentity } from '../lib/identity'
+import { useIdentityVersion } from '../lib/useIdentityVersion'
 import { useState } from 'react'
 
 type SendUserOperation = (req: { to: Address; data: Hex }) => Promise<Hex>
@@ -206,6 +207,7 @@ interface DesktopLayoutProps {
   usdcError: boolean
   onOpenAccount: () => void
   onAddSomeone: () => void
+  onUsdcBalance: (b: bigint) => void
 }
 
 export function DesktopLayout({
@@ -221,8 +223,12 @@ export function DesktopLayout({
   usdcError,
   onOpenAccount,
   onAddSomeone,
+  onUsdcBalance,
 }: DesktopLayoutProps) {
   const [fundsOpen, setFundsOpen] = useState(false)
+  // Re-renders the rail (GroupRow labels, AppHeader initial) when a counterparty is named.
+  const v = useIdentityVersion()
+  void v
 
   // Validate the address string from the URL before passing to GroupDetail.
   const validAddress: Address | undefined =
@@ -298,7 +304,7 @@ export function DesktopLayout({
           open={fundsOpen}
           onOpenChange={setFundsOpen}
           smartAccount={smartAccount}
-          onBalance={() => {}}
+          onBalance={onUsdcBalance}
           placement="modal"
         />
       )}

@@ -4,6 +4,9 @@ export type Identity = { label: string; initial: string; tone: 'accent' | 'neutr
 
 const STORAGE_KEY = 'ponti.nicknames.v1'
 
+// Event name shared with useIdentityVersion — exported so both sides use the same string.
+export const IDENTITY_EVENT = 'ponti:identity'
+
 function loadStore(): Record<string, string> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -38,6 +41,8 @@ export function setNickname(address: Address, name: string): void {
     store[key] = trimmed
   }
   saveStore(store)
+  // same-tab storage events don't fire in the writer's tab, so we dispatch a custom event.
+  window.dispatchEvent(new Event(IDENTITY_EVENT))
 }
 
 /** First 6 chars + U+2026 + last 4 chars: e.g. `0x7C6c…b210`. */
