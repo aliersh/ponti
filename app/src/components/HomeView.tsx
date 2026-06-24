@@ -15,7 +15,7 @@ import type { HomeBalances } from '../lib/homeBalances'
 import { getIdentity } from '../lib/identity'
 import {
   Num, money, DirChip,
-  Skeleton, SectionLabel, Button, Spinner,
+  Skeleton, SectionLabel, Button, Spinner, FreshnessBanner,
 } from '../ui'
 import { WalletStrip } from './WalletStrip'
 import { GroupRow } from './GroupRow'
@@ -103,6 +103,7 @@ interface HomeViewProps {
   balancesError: boolean
   usdc: bigint | null
   usdcError: boolean
+  subgraphDegraded: boolean
   onSelectGroup: (group: GroupItem) => void
   onRetry: () => void
   onOpenAccount: () => void
@@ -121,6 +122,7 @@ export function HomeView({
   balancesError,
   usdc,
   usdcError,
+  subgraphDegraded,
   onSelectGroup,
   onRetry,
   onOpenAccount,
@@ -265,6 +267,8 @@ export function HomeView({
               </div>
             )}
           </div>
+          {/* Degraded-indexer notice — only in normal/empty states, adjacent to the list it describes */}
+          {!hasError && !isLoading && subgraphDegraded && <FreshnessBanner />}
         </div>
 
         {/* Account zone — hairline-separated utility, never reads as a third balance */}

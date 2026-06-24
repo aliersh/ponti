@@ -1,5 +1,9 @@
 import { SUBGRAPH_URL } from '../config'
-import { withRetry } from './client'
+import { publicClient, withRetry } from './client'
+
+// Base Sepolia ~2s blocks; healthy indexers trail by single-digit blocks.
+// 25 blocks (~50s) is a generous margin that only trips on a genuine stall.
+const HEAD_LAG_THRESHOLD = 25
 
 export async function querySubgraph<T>(
   query: string,
@@ -16,6 +20,46 @@ export async function querySubgraph<T>(
     if (json.errors) throw new Error(json.errors[0].message)
     return json.data as T
   })
+}
+
+/**
+ * Probes the subgraph for two complementary degradation signals:
+ * - hasIndexingErrors: mapping failure (schema/handler crash).
+ * - head-lag: frozen-block stall that the error flag misses (indexer alive but not advancing).
+ * Never throws — returns {degraded:false, reason:null} on any fetch or parse failure
+ * so the UI never false-alarms when health is simply undetermined.
+ */
+export async function checkSubgraphHealth(): Promise<{
+  degraded: boolean
+  reason: 'errors' | 'stalled' | null
+}> {
+  const HEALTH_QUERY = `{ _meta { block { number } hasIndexingErrors } }`
+  try {
+    // Single direct fetch (no withRetry) — a degraded indexer would make retries slow,
+    // and the catch already handles failure gracefully.
+    const [res, head] = await Promise.all([
+      fetch(SUBGRAPH_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: HEALTH_QUERY }),
+      }),
+      publicClient.getBlockNumber(),
+    ])
+
+    if (!res.ok) return { degraded: false, reason: null }
+    const json = await res.json()
+    const meta = json?.data?._meta
+    if (!meta || meta.block?.number == null) return { degraded: false, reason: null }
+
+    const { hasIndexingErrors } = meta
+    const headLag = head - BigInt(meta.block.number)
+
+    if (hasIndexingErrors) return { degraded: true, reason: 'errors' }
+    if (headLag > BigInt(HEAD_LAG_THRESHOLD)) return { degraded: true, reason: 'stalled' }
+    return { degraded: false, reason: null }
+  } catch {
+    return { degraded: false, reason: null }
+  }
 }
 
 // Polls _meta until the indexed block reaches minBlock, or 8 attempts are exhausted.

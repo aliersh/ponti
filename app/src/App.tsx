@@ -17,7 +17,7 @@ import type { GroupItem } from './lib/fetchGroups'
 import { fetchHomeBalances } from './lib/homeBalances'
 import type { HomeBalances } from './lib/homeBalances'
 import { fetchUsdcBalance } from './lib/settle'
-import { waitForSubgraphBlock } from './lib/subgraph'
+import { waitForSubgraphBlock, checkSubgraphHealth } from './lib/subgraph'
 import { FlowProvider } from './flow/FlowContext'
 import { useDesktop } from './lib/useDesktop'
 
@@ -39,16 +39,18 @@ function GroupDetailWrapper({
   smartAccount,
   send,
   sendBatch,
+  subgraphDegraded,
 }: {
   smartAccount: Address | undefined
   send: SendUserOperation | undefined
   sendBatch: SendBatch | undefined
+  subgraphDegraded: boolean
 }) {
   const { address } = useParams<{ address: string }>()
   if (!address || !isAddress(address)) return <Navigate to="/" replace />
   if (!smartAccount) return <main style={page}><p>Loading…</p></main>
   // key forces remount on address change, preserving the mount-only useEffect invariant
-  return <GroupDetail key={address} address={address} smartAccount={smartAccount} send={send} sendBatch={sendBatch} />
+  return <GroupDetail key={address} address={address} smartAccount={smartAccount} send={send} sendBatch={sendBatch} subgraphDegraded={subgraphDegraded} />
 }
 
 // Desktop-only: reads :address param and renders DesktopLayout with selectedAddress.
@@ -62,6 +64,7 @@ function DesktopLayoutWrapper({
   balancesError,
   usdc,
   usdcError,
+  subgraphDegraded,
   onOpenAccount,
   onAddSomeone,
   onUsdcBalance,
@@ -75,6 +78,7 @@ function DesktopLayoutWrapper({
   balancesError: boolean
   usdc: bigint | null
   usdcError: boolean
+  subgraphDegraded: boolean
   onOpenAccount: () => void
   onAddSomeone: () => void
   onUsdcBalance: (b: bigint) => void
@@ -92,6 +96,7 @@ function DesktopLayoutWrapper({
       balancesError={balancesError}
       usdc={usdc}
       usdcError={usdcError}
+      subgraphDegraded={subgraphDegraded}
       onOpenAccount={onOpenAccount}
       onAddSomeone={onAddSomeone}
       onUsdcBalance={onUsdcBalance}
@@ -121,6 +126,7 @@ export function App() {
   const [balancesError, setBalancesError] = useState(false)
   const [usdc, setUsdc] = useState<bigint | null>(null)
   const [usdcError, setUsdcError] = useState(false)
+  const [subgraphDegraded, setSubgraphDegraded] = useState(false)
 
   const send: SendUserOperation | undefined = client
     ? async (req) => (await client.sendTransaction(req)) as Hex
@@ -155,6 +161,8 @@ export function App() {
       ])
       setBalances(homeBalancesResult)
       setUsdc(usdcResult)
+      // Health check runs in parallel with the balance fetch and never blocks it.
+      void checkSubgraphHealth().then((r) => setSubgraphDegraded(r.degraded))
     } catch {
       setBalancesError(true)
       setUsdcError(true)
@@ -220,6 +228,7 @@ export function App() {
     balancesError,
     usdc,
     usdcError,
+    subgraphDegraded,
     onOpenAccount: () => navigate('/you'),
     onAddSomeone: () => navigate('/add'),
     onUsdcBalance: (b: bigint) => setUsdc(b),
@@ -306,6 +315,7 @@ export function App() {
                 balancesError={balancesError}
                 usdc={usdc}
                 usdcError={usdcError}
+                subgraphDegraded={subgraphDegraded}
                 onSelectGroup={(group) =>
                   navigate('/group/' + group.address, { state: { group } })
                 }
@@ -318,7 +328,7 @@ export function App() {
           />
           <Route
             path="/group/:address"
-            element={<GroupDetailWrapper smartAccount={smartAccount} send={send} sendBatch={sendBatch} />}
+            element={<GroupDetailWrapper smartAccount={smartAccount} send={send} sendBatch={sendBatch} subgraphDegraded={subgraphDegraded} />}
           />
           <Route
             path="/you"

@@ -15,7 +15,7 @@ import { waitForSubgraphBlock } from '../lib/subgraph'
 import { getIdentity, getNickname } from '../lib/identity'
 import { useIdentityVersion } from '../lib/useIdentityVersion'
 import {
-  Avatar, Button, money, DirChip, Skeleton, Spinner,
+  Avatar, Button, money, DirChip, Skeleton, Spinner, FreshnessBanner,
 } from '../ui'
 import { useFlow } from '../flow/FlowContext'
 import { SettleSection } from './SettleSection'
@@ -34,6 +34,7 @@ type Props = {
   sendBatch: SendBatch | undefined
   /** Desktop split: suppresses the mobile backbar (rail is always visible instead). */
   inPane?: boolean
+  subgraphDegraded?: boolean
 }
 
 // Broken-line SVG used for the cold-load error estate — mirrors HomeView's error icon.
@@ -80,7 +81,7 @@ async function fetchDetail(
   }
 }
 
-export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: Props) {
+export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, subgraphDegraded }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
   const flow = useFlow()
@@ -302,6 +303,21 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
             </button>
           </div>
         )}
+        {/* Skeleton hero during bootstrap — mirrors renderHero()'s loading branch; prevents blank-pane flash on desktop cold-load. */}
+        <div className="balhero">
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0, padding: '26px 0 6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, width: 56 }}>
+              <Skeleton w={36} h={36} r={18} />
+              <Skeleton w={26} h={9} r={4} />
+            </div>
+            <Skeleton w={96} h={6} r={3} />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, width: 56 }}>
+              <Skeleton w={36} h={36} r={18} />
+              <Skeleton w={26} h={9} r={4} />
+            </div>
+          </div>
+          <Skeleton w={130} h={14} r={5} />
+        </div>
       </main>
     )
   }
@@ -638,6 +654,9 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
             {isExhausted && <Button variant="quiet" onClick={reload}>Reload</Button>}
           </div>
         )}
+
+        {/* F9 steady-state degraded notice. F8 (isRefreshing) takes precedence — never both at once. */}
+        {!isRefreshing && subgraphDegraded && <FreshnessBanner />}
 
         {/* Action zone — settle gate (debtor-only) + Add expense.
             One primary at most: settle takes primary when debtor; creditor gets a note instead;

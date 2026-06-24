@@ -8,7 +8,7 @@ import { isAddress } from 'viem'
 import type { Address, Hex } from 'viem'
 import type { GroupItem } from '../lib/fetchGroups'
 import type { HomeBalances } from '../lib/homeBalances'
-import { Num, money, DirChip, Skeleton, Button, SectionLabel } from '../ui'
+import { Num, money, DirChip, Skeleton, Button, SectionLabel, FreshnessBanner } from '../ui'
 import { Pair } from '../ui/line'
 import { WalletStrip } from './WalletStrip'
 import { GroupRow } from './GroupRow'
@@ -88,6 +88,7 @@ function DesktopRail({
   balancesError,
   usdc,
   usdcError,
+  subgraphDegraded,
   selectedAddress,
   onAddFunds,
   onAddSomeone,
@@ -98,6 +99,7 @@ function DesktopRail({
   balancesError: boolean
   usdc: bigint | null
   usdcError: boolean
+  subgraphDegraded: boolean
   selectedAddress: Address | undefined
   onAddFunds: () => void
   onAddSomeone: () => void
@@ -160,6 +162,8 @@ function DesktopRail({
               />
             ))}
           </div>
+          {/* Degraded-indexer notice — adjacent to the list it describes */}
+          {subgraphDegraded && !balancesLoading && !balancesError && <FreshnessBanner />}
         </div>
       </div>
 
@@ -205,6 +209,7 @@ interface DesktopLayoutProps {
   balancesError: boolean
   usdc: bigint | null
   usdcError: boolean
+  subgraphDegraded: boolean
   onOpenAccount: () => void
   onAddSomeone: () => void
   onUsdcBalance: (b: bigint) => void
@@ -221,6 +226,7 @@ export function DesktopLayout({
   balancesError,
   usdc,
   usdcError,
+  subgraphDegraded,
   onOpenAccount,
   onAddSomeone,
   onUsdcBalance,
@@ -254,6 +260,7 @@ export function DesktopLayout({
             balancesError={balancesError}
             usdc={usdc}
             usdcError={usdcError}
+            subgraphDegraded={subgraphDegraded}
             selectedAddress={validAddress}
             onAddFunds={() => setFundsOpen(true)}
             onAddSomeone={onAddSomeone}
@@ -280,6 +287,7 @@ export function DesktopLayout({
               send={send}
               sendBatch={sendBatch}
               inPane
+              subgraphDegraded={subgraphDegraded}
             />
           ) : (
             // smartAccount not yet resolved — skeleton while bootstrapping
