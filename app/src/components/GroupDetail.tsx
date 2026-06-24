@@ -1,6 +1,6 @@
 // GroupDetail.tsx — Group detail screen: backbar, balance hero, timeline, settle gate.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { getAddress } from 'viem'
 import type { Address, Hex } from 'viem'
@@ -44,6 +44,19 @@ const BrokenLineIcon = (
   </svg>
 )
 
+// sessionStorage helpers — keyed by group address, one slot per group.
+function readWriteBlock(groupAddress: Address): bigint | null {
+  const raw = sessionStorage.getItem(`ponti:lastBlock:${groupAddress}`)
+  if (!raw) return null
+  try { return BigInt(raw) } catch { return null }
+}
+function saveWriteBlock(groupAddress: Address, block: bigint) {
+  sessionStorage.setItem(`ponti:lastBlock:${groupAddress}`, block.toString())
+}
+function clearWriteBlock(groupAddress: Address) {
+  sessionStorage.removeItem(`ponti:lastBlock:${groupAddress}`)
+}
+
 // Fetches all four reads concurrently, committing whichever succeed.
 // Uses allSettled so one failing read (e.g. subgraph overload) never blanks
 // the others. anyFailed=true means callers should retry or show an error.
@@ -70,6 +83,9 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
   const navigate = useNavigate()
   const location = useLocation()
   const flow = useFlow()
+
+  // aliveRef: set false on unmount so detached async callbacks skip setState.
+  const aliveRef = useRef(true)
 
   // Lazy initializer: warm-path navigation passes the full GroupItem via
   // location.state; cold-load (direct URL / reload) starts null and bootstraps.
@@ -102,6 +118,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
       setLoadingDetail(true)
     }
     const { bal, expenses, usdc, settlements, anyFailed } = await fetchDetail(resolvedGroup.address, smartAccount)
+    if (!aliveRef.current) return
     if (bal !== null) setBalance(bal)
     if (expenses !== null) setExpenses(expenses)
     if (settlements !== null) setSettlements(settlements)
@@ -110,19 +127,27 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
     if (!opts?.silent) setLoadingDetail(false)
   }
 
-  // Attempts one full refresh cycle. Returns true on complete success (all reads
-  // fulfilled), false on any failure. Never throws, never touches detailError.
-  async function attemptRefresh(): Promise<boolean> {
+  // Attempts one full refresh cycle. minBlock: if provided, waits for subgraph
+  // to reach at least that block (gated-mount path); omitted uses current chain
+  // head (post-write path). Returns true on complete success. Never throws.
+  // Persists the confirmed block to sessionStorage only on the post-write path
+  // (minBlock === undefined) so the marker is written exclusively by writes.
+  async function attemptRefresh(minBlock?: bigint): Promise<boolean> {
     if (!resolvedGroup) return false
     try {
-      const target = await publicClient.getBlockNumber()
-      await waitForSubgraphBlock(target)
+      const target = minBlock ?? await publicClient.getBlockNumber()
+      const reached = await waitForSubgraphBlock(target)
       const { bal, expenses, usdc, settlements, anyFailed } = await fetchDetail(resolvedGroup.address, smartAccount)
+      if (!aliveRef.current) return false
       if (bal !== null) setBalance(bal)
       if (expenses !== null) setExpenses(expenses)
       if (settlements !== null) setSettlements(settlements)
       if (usdc !== null) setUsdcBalance(usdc)
-      if (!anyFailed) {
+      if (reached && !anyFailed) {
+        // Only persist on the post-write path — mount path reads/clears only.
+        if (minBlock === undefined) {
+          saveWriteBlock(resolvedGroup.address, target)
+        }
         setDetailError(null)
         return true
       }
@@ -139,11 +164,14 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
   async function backgroundRetry() {
     for (const delay of [3000, 6000, 12000]) {
       await new Promise<void>((r) => setTimeout(r, delay))
+      if (!aliveRef.current) return
       if (await attemptRefresh()) {
+        if (!aliveRef.current) return
         setPostWriteStatus(null)
         return
       }
     }
+    if (!aliveRef.current) return
     setPostWriteStatus('Saved — reload to see the latest.')
   }
 
@@ -161,6 +189,15 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
     }
     void backgroundRetry()
   }
+
+  // Alive flag lifecycle: set true on (re)mount, false on unmount, so async callbacks
+  // skip setState after unmount. The reset on mount is required because a ref survives
+  // StrictMode's mount→unmount→remount cycle — without it the flag stays false and every
+  // post-remount load/refresh short-circuits before committing (stuck-skeletons bug).
+  useEffect(() => {
+    aliveRef.current = true
+    return () => { aliveRef.current = false }
+  }, [])
 
   // Cold-load bootstrap: fetches memberA/memberB from the group contract when
   // no GroupItem was passed via navigation state (direct URL or page reload).
@@ -196,12 +233,33 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
   // Fires once resolvedGroup is available. On the warm path resolvedGroup is
   // set by the useState initializer, so this runs on the first render. On the
   // cold path it runs after the bootstrap effect sets resolvedGroup.
+  // If a persisted write block exists for this group, runs the gated path
+  // (waits for subgraph before committing state) instead of a bare load.
   useEffect(() => {
     if (!resolvedGroup) return
-    loadDetail()
+    const persistedBlock = readWriteBlock(resolvedGroup.address)
+    if (persistedBlock !== null) {
+      // Gated mount: show skeletons until subgraph catches up to the last write block.
+      setLoadingDetail(true)
+      ;(async () => {
+        const ok = await attemptRefresh(persistedBlock)
+        if (!aliveRef.current) return
+        if (ok) {
+          // Subgraph confirmed — clear marker so subsequent visits are ungated.
+          clearWriteBlock(resolvedGroup.address)
+        } else {
+          // Not reached within budget — hold the lock; retry like the post-write path.
+          setPostWriteStatus('Saved — updating the list…')
+          void backgroundRetry()
+        }
+        setLoadingDetail(false)
+      })()
+    } else {
+      loadDetail()
+    }
   }, [resolvedGroup])
 
-  // ── Cold-load error: group address unresolvable ───────────────────────────
+  // ── Cold-load error: group address unresolvable ───────────────────────────────────────────────
   if (groupError) {
     return (
       <main style={{ background: 'var(--surface)', minHeight: '100%' }}>
@@ -262,10 +320,10 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
   const isDebtor   = display?.direction === 'i_owe_counterparty'
   const isCreditor = display?.direction === 'counterparty_owes_me'
 
-  // ── Cold-load error: balance never arrived after loads completed ──────────
+  // ── Cold-load error: balance never arrived after loads completed ──────────────────
   const isHardError = balance === null && !loadingDetail && detailError !== null
 
-  // ── Hero render helpers ───────────────────────────────────────────────────
+  // ── Hero render helpers ───────────────────────────────────────────────────────────────────────
 
   // Avatar column used in you-owe / you're-owed heroes.
   // unnamed=true: neutral person glyph on --line circle instead of the lettered avatar.
@@ -332,7 +390,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
     )
   }
 
-  // ── Hero variants ─────────────────────────────────────────────────────────
+  // ── Hero variants ─────────────────────────────────────────────────────────────────────────────
 
   function renderHero() {
     // Loading: two avatar-column skeletons flanking a line skeleton, amount below.
@@ -459,7 +517,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
               </div>
             </div>
             <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--ink-2)', fontWeight: 600 }}>
-              {identity.named ? `You're connected with ${identity.label}` : "You’re connected"}
+              {identity.named ? `You're connected with ${identity.label}` : "You're connected"}
             </div>
             {!identity.named && <UnnamedPrompt />}
           </div>
@@ -506,10 +564,11 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
     return null
   }
 
-  // isUpdating: the "Saved — updating the list…" top banner (transient, blocks renders behind it).
-  // isExhausted: the "Saved — reload to see the latest." bottom banner (persistent prompt).
-  const isUpdating  = postWriteStatus === 'Saved — updating the list…'
-  const isExhausted = postWriteStatus === 'Saved — reload to see the latest.'
+  // isUpdating: first-attempt in-flight (spinner); isExhausted: retries exhausted (Reload CTA).
+  // isRefreshing: true in both sub-states — list is known-stale, actions are locked.
+  const isUpdating   = postWriteStatus === 'Saved — updating the list…'
+  const isExhausted  = postWriteStatus === 'Saved — reload to see the latest.'
+  const isRefreshing = postWriteStatus !== null
 
   // inPane: join the .detail flex column (fills pane, scrolls internally).
   // Mobile: narrow surface card, full viewport height.
@@ -545,14 +604,6 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
         </div>
       )}
 
-      {/* Top post-write banner: "Saved — updating the list…" — above hero while indexer catches up */}
-      {isUpdating && (
-        <div className="home-banner" style={{ margin: '0 18px' }}>
-          <Spinner size={13} />
-          Saved — updating the list…
-        </div>
-      )}
-
       {/* Body: centered column on desktop (max 600px per contract), mobile padding on narrow */}
       <div style={inPane ? { maxWidth: 600, margin: '0 auto', padding: '26px 30px 40px' } : { padding: '0 18px 30px' }}>
 
@@ -569,13 +620,20 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
           smartAccount={smartAccount}
           counterparty={resolvedGroup.counterparty}
           onMutated={reload}
+          isRefreshing={isRefreshing}
         />
 
-        {/* Bottom post-write banner: exhausted retry — quiet "Reload" CTA */}
-        {isExhausted && (
-          <div className="home-banner" style={{ marginTop: 18, justifyContent: 'space-between' }}>
-            <span>Saved — reload to see the latest.</span>
-            <Button variant="quiet" onClick={reload}>Reload</Button>
+        {/* Action-zone status banner: present whenever the list is known-stale.
+            Spinner on the updating sub-state; Reload CTA on exhausted only. */}
+        {isRefreshing && (
+          <div className="home-banner" style={{ marginTop: 14, justifyContent: 'space-between' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {isUpdating && <Spinner size={13} />}
+              {isUpdating
+                ? 'Saved — catching up. Hold on before editing.'
+                : "Saved — the list's a step behind. Reload to confirm."}
+            </span>
+            {isExhausted && <Button variant="quiet" onClick={reload}>Reload</Button>}
           </div>
         )}
 
@@ -594,6 +652,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
               counterparty={resolvedGroup.counterparty}
               onSettled={reload}
               onAddFunds={() => setFundsOpen(true)}
+              isRefreshing={isRefreshing}
               renderLayout={(settleBtn, callout) => (
                 <>
                   {callout}
@@ -608,6 +667,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane }: 
                     <Button
                       variant={isDebtor ? 'outline' : 'primary'}
                       full
+                      disabled={isRefreshing}
                       onClick={() => {
                         if (!send) return
                         const cpIdentity = getIdentity(resolvedGroup.counterparty)

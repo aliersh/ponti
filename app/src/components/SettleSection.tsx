@@ -27,6 +27,8 @@ type Props = {
   counterparty: Address
   onSettled: () => Promise<void>
   onAddFunds?: () => void
+  /** Locks the settle button while the post-write subgraph refresh is pending. */
+  isRefreshing: boolean
   renderLayout: (button: ReactNode, callout: ReactNode | null) => ReactNode
 }
 
@@ -39,6 +41,7 @@ export function SettleSection({
   counterparty,
   onSettled,
   onAddFunds,
+  isRefreshing,
   renderLayout,
 }: Props) {
   const flow = useFlow()
@@ -75,12 +78,12 @@ export function SettleSection({
   // Short on USDC: disabled settle button + warm callout.
   const isShort = localUsdcBalance !== null && localUsdcBalance < debt
 
-  // Settle button — primary when funded, disabled when short or no sendBatch.
+  // Settle button — primary when funded; locked while short, wallet not ready, or list is stale.
   const settleButton = (
     <Button
       variant="primary"
       full
-      disabled={isShort || !sendBatch}
+      disabled={isShort || !sendBatch || isRefreshing}
       onClick={onSettle}
     >
       Settle up

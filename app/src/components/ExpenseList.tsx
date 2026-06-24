@@ -31,6 +31,8 @@ type Props = {
   smartAccount: Address
   counterparty: Address
   onMutated: () => Promise<void>
+  /** Locks edit and delete while the post-write subgraph refresh is pending. */
+  isRefreshing: boolean
 }
 
 // ── Date helper ────────────────────────────────────────────────────────────────
@@ -92,6 +94,7 @@ function ExpenseRowWrap({
   smartAccount,
   counterparty,
   muted,
+  isRefreshing,
   onEdit,
   onDeleteExpense,
 }: {
@@ -99,6 +102,7 @@ function ExpenseRowWrap({
   smartAccount: Address
   counterparty: Address
   muted?: boolean
+  isRefreshing: boolean
   onEdit: (e: ExpenseEntry) => void
   onDeleteExpense: (e: ExpenseEntry) => void
 }) {
@@ -109,11 +113,12 @@ function ExpenseRowWrap({
       className="exp"
       style={{ opacity: muted ? 0.85 : 1 }}
     >
-      {/* Row tap target — toggles the action strip */}
+      {/* Row tap target — toggles the action strip; blocked while list is known-stale */}
       <div
         onClick={() => setOpen((o) => !o)}
         style={{
-          cursor: 'pointer',
+          cursor: isRefreshing ? 'default' : 'pointer',
+          pointerEvents: isRefreshing ? 'none' : undefined,
           background: open ? 'var(--surface)' : 'transparent',
           borderRadius: open ? 'var(--radius-sm)' : 0,
           transition: 'background .15s',
@@ -124,20 +129,22 @@ function ExpenseRowWrap({
         <ExpenseRow e={e} smartAccount={smartAccount} counterparty={counterparty} />
       </div>
 
-      {/* Action strip — Edit + Delete, inside .exp's border boundary */}
+      {/* Action strip — Edit + Delete; disabled backstop matches the tap-target block */}
       {open && (
         <div className="reveal" style={{ display: 'flex', gap: 8, padding: '6px 0 4px' }}>
           <Button
             variant="soft"
+            disabled={isRefreshing}
             onClick={() => onEdit(e)}
-            style={{ padding: '8px 12px', fontSize: 13 }}
+            style={{ padding: '8px 12px', fontSize: 13, opacity: isRefreshing ? 0.45 : 1, cursor: isRefreshing ? 'default' : undefined }}
           >
             <Pencil color="var(--accent)" size={14} /> Edit
           </Button>
           <Button
             variant="ghost"
+            disabled={isRefreshing}
             onClick={() => onDeleteExpense(e)}
-            style={{ padding: '8px 12px', fontSize: 13 }}
+            style={{ padding: '8px 12px', fontSize: 13, opacity: isRefreshing ? 0.45 : 1, cursor: isRefreshing ? 'default' : undefined }}
           >
             <Trash color="var(--ink-3)" size={14} /> Delete
           </Button>
@@ -208,6 +215,7 @@ export function ExpenseList({
   smartAccount,
   counterparty,
   onMutated,
+  isRefreshing,
 }: Props) {
   const flow = useFlow()
   const identity = getIdentity(counterparty)
@@ -344,6 +352,7 @@ export function ExpenseList({
           e={e}
           smartAccount={smartAccount}
           counterparty={counterparty}
+          isRefreshing={isRefreshing}
           onEdit={onEdit}
           onDeleteExpense={onDeleteExpense}
         />
@@ -372,6 +381,7 @@ export function ExpenseList({
                     smartAccount={smartAccount}
                     counterparty={counterparty}
                     muted
+                    isRefreshing={isRefreshing}
                     onEdit={onEdit}
                     onDeleteExpense={onDeleteExpense}
                   />
