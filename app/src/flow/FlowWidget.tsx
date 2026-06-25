@@ -198,7 +198,7 @@ function AddEditCard({
   const deltaLabel = (delta >= 0 ? '+' : '') + delta.toFixed(2)
 
   return (
-    <div style={{ padding: '4px 22px 28px' }}>
+    <div style={{ padding: '16px 22px 28px' }}>
       {/* Header: title + close */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 19, letterSpacing: '-.01em', whiteSpace: 'nowrap' }}>
@@ -568,7 +568,7 @@ export function FlowWidget({
 
       {/* ── Non-input phases (including confirm for non-add/edit flows) ── */}
       {phase !== 'input' && !(pending.inputInitial && phase === 'confirm') && (
-        <div style={{ padding: '20px 22px 28px' }}>
+        <div style={{ padding: '16px 22px 28px' }}>
 
           {/* ── Confirm phase — per-kind layouts (delete / create / settle) ── */}
           {phase === 'confirm' && (() => {

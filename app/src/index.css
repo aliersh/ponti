@@ -255,13 +255,20 @@ body {
 /* Math: padding-left 22px, node at left:-18px — circle center lands on spine at left:3px. */
 .glist { position: relative; padding-left: 22px; padding-top: 6px }
 .glist::before { content: ""; position: absolute; left: 3px; top: 6px; bottom: 24px; width: 2px; border-radius: 2px; background: var(--line) }
-.grow { display: flex; align-items: center; gap: 11px; padding: 13px 0; border-top: 1px solid var(--hairline); position: relative }
+.grow { display: flex; align-items: center; gap: 11px; padding: 13px 0; border-top: 1px solid var(--hairline); position: relative; transition: padding 150ms ease }
 .grow:first-child { border-top: none }
 /* hollow circle centered on the spine — same node grammar as the activity timeline */
 .grow::before { content: ""; position: absolute; left: -18px; top: 50%; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: var(--bg); border: 1.5px solid var(--line-2) }
 
-/* ── Home banner — loading state strip below the skeleton .glist ────────────── */
+/* ── Home banner — F8 post-write catching-up strip (shared by GroupDetail) ───── */
 .home-banner { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--hairline); border-radius: var(--radius-md); padding: 9px 12px; font-size: 12px; color: var(--ink-2); margin-top: 12px }
+
+/* ── F9 freshness banner — calm pulse dot + degraded-state copy ──────────────
+   .fbar is the flex container; .fdot breathes via freshpulse to signal "live
+   but a step behind" without implying a resolution (a spinner would). */
+@keyframes freshpulse { 0%, 100% { opacity: 1; transform: scale(1) } 50% { opacity: .32; transform: scale(.82) } }
+.fbar { display: flex; align-items: center; gap: 9px; background: var(--bg); border: 1px solid var(--hairline); border-radius: 12px; padding: 9px 11px; font-size: 11.5px; color: var(--ink-2); line-height: 1.4; margin-top: 12px }
+.fdot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); flex: none; animation: freshpulse 2.4s ease-in-out infinite }
 
 /* ── Add-funds done strip — balance + delta chip row ────────────────────────── */
 .fstrip { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 9px; background: var(--bg); border: 1px solid var(--hairline); border-radius: var(--radius-md); padding: 11px 13px }
@@ -404,11 +411,19 @@ body {
 @keyframes reveal-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 .reveal { animation: reveal-in .18s ease-out both; }
 
+/* ── Pane-enter — desktop detail pane eases up on each group selection ───── */
+@keyframes paneenter { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
+.panein { animation: paneenter .55s ease-out }
+/* Mobile screen-swap enter: same curve as paneenter, applied via keyed remount in App.tsx. */
+.screenin { animation: paneenter .55s ease-out }
+
 /* ── Reduced-motion guard ─────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .drawline .runner { animation: none }
   .node-pop, .node-pulse, .node-fade { animation: none }
   .reveal { animation: none }
+  .panein, .screenin { animation: none }
+  .fdot { animation: none }
 }
 
 /* ── Desktop master-detail split (≥1024px) ────────────────────────────────────
@@ -420,9 +435,10 @@ body {
 .rail-foot { border-top: 1px solid var(--hairline); padding: 16px 22px 18px; background: var(--surface) }
 .detail { flex: 1; background: var(--bg); overflow: auto }
 
-/* Selected rail row — rosa tint surface + left spine tick per design contract */
+/* Selected rail row — rosa tint card; node becomes the accent selection marker on the spine */
 /* Inner padding gives the card air so content isn't flush to the border (.grow base is 0 horizontal). */
-.grow.sel { background: var(--accent-soft); border: 1px solid rgba(194,58,92,.16); border-radius: var(--radius-md); padding: 15px 14px }
-/* node hidden on selected rows — tick serves as the sole selection marker */
-.grow.sel::before { display: none }
-.grow.sel::after { content: ""; position: absolute; left: -4px; top: 8px; bottom: 8px; width: 3px; border-radius: 3px; background: var(--accent-strong) }
+.grow.sel { background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent-strong) 16%, transparent); border-radius: var(--radius-md); padding: 15px 14px }
+/* node filled accent — the spine node IS the selection indicator; no separate bar needed */
+.grow.sel::before { background: var(--accent); border-color: var(--accent-strong) }
+/* suppress the hairline of the row below the selected card — card's own border-bottom is the single seam */
+.grow.sel + .grow { border-top: 0 }

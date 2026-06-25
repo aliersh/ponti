@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom'
 import { usePrivy } from '@privy-io/react-auth'
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets'
 import { isAddress } from 'viem'
@@ -109,6 +109,7 @@ export function App() {
   const { client } = useSmartWallets()
   const smartAccount = useSmartAccountAddress()
   const navigate = useNavigate()
+  const location = useLocation()
   const prevAuthenticated = useRef<boolean | null>(null)
   const isDesktop = useDesktop()
 
@@ -300,6 +301,8 @@ export function App() {
           />
         </Routes>
       ) : (
+        // key on pathname remounts the subtree on each navigation, replaying .screenin.
+        <div key={location.pathname} className="screenin">
         <Routes>
           <Route
             path="/"
@@ -353,6 +356,7 @@ export function App() {
             }
           />
         </Routes>
+        </div>
       )}
     </FlowProvider>
   )

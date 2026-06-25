@@ -102,7 +102,7 @@ function FaucetStep({ n, children }: { n: number; children: React.ReactNode }) {
 
 function PanelHeader({ onClose, showClose }: { onClose: () => void; showClose: boolean }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '8px 20px 0', paddingBottom: 8 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 20px 0', paddingBottom: 8 }}>
       <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9 }}>
         <span
           className="font-display"

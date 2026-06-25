@@ -1,10 +1,20 @@
-// FreshnessBanner — steady-state notice when the subgraph indexer is behind.
-// Distinct from F8's post-write catching-up banner: no spinner, no CTA — just a calm line.
-export function FreshnessBanner() {
-  // Copy is a repo-default pending the Claude Design degraded-state pass.
+// FreshnessBanner — F9 steady-state notice when the subgraph indexer is behind.
+// Distinct from F8's post-write banner: no CTA, no spinner — a pulsing dot and degraded-state copy.
+interface Props {
+  /** 'settled' swaps to the last-synced-view copy for zero-balance / empty timeline views. */
+  variant?: 'active' | 'settled'
+}
+
+const COPY = {
+  active:  "The network's catching up — numbers may be a moment behind.",
+  settled: "Showing the last synced view — the network's catching up.",
+}
+
+export function FreshnessBanner({ variant = 'active' }: Props) {
   return (
-    <div className="home-banner">
-      Catching up — this may be a moment behind.
+    <div className="fbar">
+      <span className="fdot" />
+      {COPY[variant]}
     </div>
   )
 }

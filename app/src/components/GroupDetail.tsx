@@ -107,8 +107,6 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
   const [namingOpen, setNamingOpen] = useState(false)
   // Bumped by the 'ponti:identity' event (dispatched by setNickname) so getIdentity re-reads localStorage.
   const identityVersion = useIdentityVersion()
-  const [advancedOpen, setAdvancedOpen] = useState(false)
-
   async function loadDetail(opts?: { silent?: boolean }) {
     if (!resolvedGroup) return
     if (!opts?.silent) {
@@ -296,7 +294,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
           <div className="backbar">
             <button
               onClick={() => navigate('/')}
-              aria-label="Back to groups"
+              aria-label="Back"
               style={{ all: 'unset', cursor: 'pointer', width: 30, height: 30, borderRadius: 9, border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: 'var(--ink-2)', fontSize: 16, background: 'var(--surface)', flexShrink: 0, boxSizing: 'border-box' }}
             >
               ‹
@@ -591,14 +589,14 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
   // inPane: join the .detail flex column (fills pane, scrolls internally).
   // Mobile: narrow surface card, full viewport height.
   return (
-    <main className={inPane ? 'detail' : undefined} style={inPane ? {} : { background: 'var(--surface)', minHeight: '100%' }}>
+    <main className={inPane ? 'detail panein' : undefined} style={inPane ? {} : { background: 'var(--surface)', minHeight: '100%' }}>
 
       {/* Backbar — mobile only; rail replaces it on desktop */}
       {!inPane && (
         <div className="backbar">
           <button
             onClick={() => navigate('/')}
-            aria-label="Back to groups"
+            aria-label="Back"
             style={{ all: 'unset', cursor: 'pointer', width: 30, height: 30, borderRadius: 9, border: '1px solid var(--line)', display: 'grid', placeItems: 'center', color: 'var(--ink-2)', fontSize: 16, background: 'var(--surface)', flexShrink: 0, boxSizing: 'border-box' }}
           >
             ‹
@@ -622,138 +620,261 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
         </div>
       )}
 
-      {/* Body: centered column on desktop (max 600px per contract), mobile padding on narrow */}
-      <div style={inPane ? { maxWidth: 600, margin: '0 auto', padding: '26px 30px 40px' } : { padding: '0 18px 30px' }}>
+      {/* Desktop pane header — name + rename affordance (named) or muted "Shared tab" (unnamed).
+          Unnamed state omits ✎ Rename; naming happens via the hero "Who's this?" prompt. */}
+      {inPane && resolvedGroup && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '15px 22px', borderBottom: '1px solid var(--hairline)', background: 'var(--surface)' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+            {identity.named ? (
+              <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--accent-soft)', color: 'var(--accent-soft-ink)', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                {identity.initial}
+              </span>
+            ) : (
+              <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--line)', color: 'var(--ink-3)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="8" r="3.4" stroke="currentColor" strokeWidth="1.7" />
+                  <path d="M5.5 19a6.5 6.5 0 0 1 13 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                </svg>
+              </span>
+            )}
+            {identity.named ? (
+              <>
+                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 19, letterSpacing: '-.01em' }}>{identity.label}</span>
+                {/* ✎ icon-only; aria-label/title carry the accessible name */}
+                <button
+                  type="button"
+                  onClick={() => setNamingOpen(true)}
+                  aria-label="Rename"
+                  title="Rename"
+                  style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 11.5, lineHeight: 1 }}
+                >
+                  ✎
+                </button>
+              </>
+            ) : (
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 19, letterSpacing: '-.01em', color: 'var(--ink-3)' }}>Shared tab</span>
+            )}
+          </span>
+          {/* "Shared tab" label on the right — only when named, to avoid showing it twice in the unnamed state */}
+          {identity.named && <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600 }}>Shared tab</span>}
+        </div>
+      )}
 
-        {/* Balance hero — varies by state (loading / error / empty / settled / you-owe / you're-owed) */}
-        {renderHero()}
+      {/* Body: 4-tier hierarchy on desktop (balance card / activity / action); flat column on mobile. */}
+      {inPane ? (
+        <div style={{ padding: '22px 30px 26px' }}>
+          <div style={{ maxWidth: 440, margin: '0 auto' }}>
 
-        {/* Activity timeline */}
-        <ExpenseList
-          expenses={expenses}
-          settlements={settlements}
-          loadingDetail={loadingDetail}
-          send={send}
-          groupAddress={resolvedGroup.address}
-          smartAccount={smartAccount}
-          counterparty={resolvedGroup.counterparty}
-          onMutated={reload}
-          isRefreshing={isRefreshing}
-        />
+            {/* Tier 2 — balance as its own raised card */}
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--hairline)', borderRadius: 16, padding: '18px 16px 16px', boxShadow: 'var(--shadow-card)' }}>
+              {renderHero()}
+            </div>
 
-        {/* Action-zone status banner: present whenever the list is known-stale.
-            Spinner on the updating sub-state; Reload CTA on exhausted only. */}
-        {isRefreshing && (
-          <div className="home-banner" style={{ marginTop: 14, justifyContent: 'space-between' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {isUpdating && <Spinner size={13} />}
-              {isUpdating
-                ? 'Saved — catching up. Hold on before editing.'
-                : "Saved — the list's a step behind. Reload to confirm."}
-            </span>
-            {isExhausted && <Button variant="quiet" onClick={reload}>Reload</Button>}
-          </div>
-        )}
-
-        {/* F9 steady-state degraded notice. F8 (isRefreshing) takes precedence — never both at once. */}
-        {!isRefreshing && subgraphDegraded && <FreshnessBanner />}
-
-        {/* Action zone — settle gate (debtor-only) + Add expense.
-            One primary at most: settle takes primary when debtor; creditor gets a note instead;
-            settled/empty shows Add expense as primary. */}
-        {balance !== null && display && !isHardError && (
-          <div className="settle">
-            <SettleSection
-              balance={balance}
-              usdcBalance={usdcBalance}
-              display={display}
-              sendBatch={sendBatch}
+            {/* Tier 3 — Activity label + timeline */}
+            <div style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--ink-3)', marginTop: 22 }}>Activity</div>
+            <ExpenseList
+              expenses={expenses}
+              settlements={settlements}
+              loadingDetail={loadingDetail}
+              send={send}
               groupAddress={resolvedGroup.address}
               smartAccount={smartAccount}
               counterparty={resolvedGroup.counterparty}
-              onSettled={reload}
-              onAddFunds={() => setFundsOpen(true)}
+              onMutated={reload}
               isRefreshing={isRefreshing}
-              renderLayout={(settleBtn, callout) => (
-                <>
-                  {callout}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                    {settleBtn}
-                    {/* Creditor note: settle is debtor-only; creditor sees a passive reassurance */}
-                    {isCreditor && !settleBtn && (
-                      <div style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--ink-3)' }}>
-                        {identity.named ? `${identity.label} settles from their side` : 'They settle from their side'} — it'll land here on its own.
-                      </div>
-                    )}
-                    <Button
-                      variant={isDebtor ? 'outline' : 'primary'}
-                      full
-                      disabled={isRefreshing}
-                      onClick={() => {
-                        if (!send) return
-                        const cpIdentity = getIdentity(resolvedGroup.counterparty)
-                        const cpLabel = cpIdentity.named ? cpIdentity.label : 'them'
-                        flow.start({
-                          kind: 'add',
-                          title: 'Add an expense',
-                          confirmLabel: 'Add expense',
-                          who: cpLabel,
-                          rows: [],
-                          inputInitial: { mode: 'add', amount: '', description: '', payer: 'me' },
-                          buildSubmit: ({ amount, description, payer }) => {
-                            const payerAddress = payer === 'me' ? smartAccount : resolvedGroup.counterparty
-                            const payerLabel = payer === 'me' ? 'You' : (cpIdentity.named ? cpIdentity.label : 'Them')
-                            return {
-                              submit: () => submitAddExpense(send, resolvedGroup.address, payerAddress, amount, description),
-                              rows: [
-                                { label: 'Who paid', value: payerLabel },
-                                { label: 'Amount', value: `${money(amount)} USDC`, strong: true },
-                                { label: 'For', value: description },
-                              ],
-                            }
-                          },
-                          onComplete: async () => { await reload() },
-                        })
-                      }}
-                    >
-                      Add {isDebtor ? 'expense' : 'an expense'}
-                    </Button>
-                  </div>
-                </>
-              )}
             />
-          </div>
-        )}
 
-        {/* Advanced details — collapsed by default; always rendered in named + unnamed states.
-            Truncated address shown inline; clipboard writes the full checksummed address. */}
-        {resolvedGroup && (
-          <div style={{ marginTop: 14, borderTop: '1px solid var(--hairline)', paddingTop: 10 }}>
-            <button
-              type="button"
-              onClick={() => setAdvancedOpen((o) => !o)}
-              style={{ all: 'unset', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', cursor: 'pointer', boxSizing: 'border-box', fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', fontFamily: 'var(--font-ui)' }}
-            >
-              Advanced details
-              <span style={{ color: 'var(--ink-3)' }}>{advancedOpen ? '▴' : '▾'}</span>
-            </button>
-            {advancedOpen && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingTop: 8, fontSize: 11.5 }}>
-                <span style={{ color: 'var(--ink-3)', flexShrink: 0 }}>Their address</span>
-                <button
-                  type="button"
-                  onClick={() => navigator.clipboard.writeText(resolvedGroup.counterparty).catch(() => {})}
-                  title="Copy full address"
-                  style={{ all: 'unset', cursor: 'pointer', color: 'var(--ink)', fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', fontSize: 11, textAlign: 'right' }}
-                >
-                  {`${resolvedGroup.counterparty.slice(0, 6)}…${resolvedGroup.counterparty.slice(-4)}`} ⧉
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+            {/* Tier 4 — action zone set off by a hairline */}
+            <div style={{ marginTop: 18, borderTop: '1px solid var(--hairline)', paddingTop: 16 }}>
+              {/* F8 post-write banner: known-stale list; spinner while updating, Reload when exhausted. */}
+              {isRefreshing && (
+                <div className="home-banner" style={{ marginBottom: 12, justifyContent: 'space-between' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {isUpdating && <Spinner size={13} />}
+                    {isUpdating
+                      ? 'Saved — catching up. Hold on before editing.'
+                      : "Saved — the list's a step behind. Reload to confirm."}
+                  </span>
+                  {isExhausted && <Button variant="quiet" onClick={reload}>Reload</Button>}
+                </div>
+              )}
 
-      </div>
+              {/* F9 steady-state degraded notice; F8 (isRefreshing) takes precedence. */}
+              {!isRefreshing && subgraphDegraded && <FreshnessBanner variant={display?.direction === 'settled' ? 'settled' : 'active'} />}
+
+              {/* Settle gate (debtor-only) + Add expense. */}
+              {balance !== null && display && !isHardError && (
+                <div className="settle">
+                  <SettleSection
+                    balance={balance}
+                    usdcBalance={usdcBalance}
+                    display={display}
+                    sendBatch={sendBatch}
+                    groupAddress={resolvedGroup.address}
+                    smartAccount={smartAccount}
+                    counterparty={resolvedGroup.counterparty}
+                    onSettled={reload}
+                    onAddFunds={() => setFundsOpen(true)}
+                    isRefreshing={isRefreshing}
+                    renderLayout={(settleBtn, callout) => (
+                      <>
+                        {callout}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                          {settleBtn}
+                          {/* Creditor note: settle is debtor-only; creditor sees a passive reassurance */}
+                          {isCreditor && !settleBtn && (
+                            <div style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--ink-3)' }}>
+                              {identity.named ? `${identity.label} settles from their side` : 'They settle from their side'} — it'll land here on its own.
+                            </div>
+                          )}
+                          <Button
+                            variant={isDebtor ? 'outline' : 'primary'}
+                            full
+                            disabled={isRefreshing}
+                            onClick={() => {
+                              if (!send) return
+                              const cpIdentity = getIdentity(resolvedGroup.counterparty)
+                              const cpLabel = cpIdentity.named ? cpIdentity.label : 'them'
+                              flow.start({
+                                kind: 'add',
+                                title: 'Add an expense',
+                                confirmLabel: 'Add expense',
+                                who: cpLabel,
+                                rows: [],
+                                inputInitial: { mode: 'add', amount: '', description: '', payer: 'me' },
+                                buildSubmit: ({ amount, description, payer }) => {
+                                  const payerAddress = payer === 'me' ? smartAccount : resolvedGroup.counterparty
+                                  const payerLabel = payer === 'me' ? 'You' : (cpIdentity.named ? cpIdentity.label : 'Them')
+                                  return {
+                                    submit: () => submitAddExpense(send, resolvedGroup.address, payerAddress, amount, description),
+                                    rows: [
+                                      { label: 'Who paid', value: payerLabel },
+                                      { label: 'Amount', value: `${money(amount)} USDC`, strong: true },
+                                      { label: 'For', value: description },
+                                    ],
+                                  }
+                                },
+                                onComplete: async () => { await reload() },
+                              })
+                            }}
+                          >
+                            Add {isDebtor ? 'expense' : 'an expense'}
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  />
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: '0 18px 30px' }}>
+
+          {/* Balance hero — varies by state (loading / error / empty / settled / you-owe / you're-owed) */}
+          {renderHero()}
+
+          {/* Activity timeline */}
+          <ExpenseList
+            expenses={expenses}
+            settlements={settlements}
+            loadingDetail={loadingDetail}
+            send={send}
+            groupAddress={resolvedGroup.address}
+            smartAccount={smartAccount}
+            counterparty={resolvedGroup.counterparty}
+            onMutated={reload}
+            isRefreshing={isRefreshing}
+          />
+
+          {/* Action-zone status banner: present whenever the list is known-stale.
+              Spinner on the updating sub-state; Reload CTA on exhausted only. */}
+          {isRefreshing && (
+            <div className="home-banner" style={{ marginTop: 14, justifyContent: 'space-between' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {isUpdating && <Spinner size={13} />}
+                {isUpdating
+                  ? 'Saved — catching up. Hold on before editing.'
+                  : "Saved — the list's a step behind. Reload to confirm."}
+              </span>
+              {isExhausted && <Button variant="quiet" onClick={reload}>Reload</Button>}
+            </div>
+          )}
+
+          {/* F9 steady-state degraded notice. F8 (isRefreshing) takes precedence — never both at once. */}
+          {!isRefreshing && subgraphDegraded && <FreshnessBanner variant={display?.direction === 'settled' ? 'settled' : 'active'} />}
+
+          {/* Action zone — settle gate (debtor-only) + Add expense.
+              One primary at most: settle takes primary when debtor; creditor gets a note instead;
+              settled/empty shows Add expense as primary. */}
+          {balance !== null && display && !isHardError && (
+            <div className="settle">
+              <SettleSection
+                balance={balance}
+                usdcBalance={usdcBalance}
+                display={display}
+                sendBatch={sendBatch}
+                groupAddress={resolvedGroup.address}
+                smartAccount={smartAccount}
+                counterparty={resolvedGroup.counterparty}
+                onSettled={reload}
+                onAddFunds={() => setFundsOpen(true)}
+                isRefreshing={isRefreshing}
+                renderLayout={(settleBtn, callout) => (
+                  <>
+                    {callout}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                      {settleBtn}
+                      {/* Creditor note: settle is debtor-only; creditor sees a passive reassurance */}
+                      {isCreditor && !settleBtn && (
+                        <div style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--ink-3)' }}>
+                          {identity.named ? `${identity.label} settles from their side` : 'They settle from their side'} — it'll land here on its own.
+                        </div>
+                      )}
+                      <Button
+                        variant={isDebtor ? 'outline' : 'primary'}
+                        full
+                        disabled={isRefreshing}
+                        onClick={() => {
+                          if (!send) return
+                          const cpIdentity = getIdentity(resolvedGroup.counterparty)
+                          const cpLabel = cpIdentity.named ? cpIdentity.label : 'them'
+                          flow.start({
+                            kind: 'add',
+                            title: 'Add an expense',
+                            confirmLabel: 'Add expense',
+                            who: cpLabel,
+                            rows: [],
+                            inputInitial: { mode: 'add', amount: '', description: '', payer: 'me' },
+                            buildSubmit: ({ amount, description, payer }) => {
+                              const payerAddress = payer === 'me' ? smartAccount : resolvedGroup.counterparty
+                              const payerLabel = payer === 'me' ? 'You' : (cpIdentity.named ? cpIdentity.label : 'Them')
+                              return {
+                                submit: () => submitAddExpense(send, resolvedGroup.address, payerAddress, amount, description),
+                                rows: [
+                                  { label: 'Who paid', value: payerLabel },
+                                  { label: 'Amount', value: `${money(amount)} USDC`, strong: true },
+                                  { label: 'For', value: description },
+                                ],
+                              }
+                            },
+                            onComplete: async () => { await reload() },
+                          })
+                        }}
+                      >
+                        Add {isDebtor ? 'expense' : 'an expense'}
+                      </Button>
+                    </div>
+                  </>
+                )}
+              />
+            </div>
+          )}
+
+        </div>
+      )}
 
       {/* AddFundsPanel — opened by SettleSection's onAddFunds; onBalance updates the
           low-USDC gate so the callout clears reactively once funded. */}

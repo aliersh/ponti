@@ -1,5 +1,5 @@
 // NamingSheet.tsx — Bottom sheet for naming (or renaming) a counterparty.
-// Reuses the Sheet primitive; name lives only in localStorage, never leaves the device.
+// Identity (name + verifiable address) lives here: the address row gives proof of who the tab is with.
 
 import { useState, useEffect } from 'react'
 import type { Address } from 'viem'
@@ -36,7 +36,7 @@ export function NamingSheet({ open, onOpenChange, counterparty, currentNickname,
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange} title="Name this person" placement={placement}>
-      <div style={{ padding: '4px 18px 28px' }}>
+      <div style={{ padding: '16px 18px 28px' }}>
 
         {/* Visual heading + close */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
@@ -114,6 +114,19 @@ export function NamingSheet({ open, onOpenChange, counterparty, currentNickname,
         <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--ink-3)', marginTop: 11 }}>
           You can change it any time.
         </p>
+
+        {/* Their Ponti address — verifiable proof this tab is who you think it is; truncated, click to copy. */}
+        <div style={{ marginTop: 14, borderTop: '1px solid var(--hairline)', paddingTop: 11, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>Their Ponti address</span>
+          <button
+            type="button"
+            onClick={() => navigator.clipboard.writeText(counterparty).catch(() => {})}
+            title="Copy full address"
+            style={{ all: 'unset', cursor: 'pointer', fontSize: 11, color: 'var(--ink)', fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace' }}
+          >
+            {`${counterparty.slice(0, 6)}…${counterparty.slice(-4)}`} ⧉
+          </button>
+        </div>
 
       </div>
     </Sheet>
