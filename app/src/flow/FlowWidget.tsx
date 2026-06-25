@@ -60,7 +60,7 @@ function rotPick<T>(arr: readonly T[]): T {
 
 // Accepts raw input (including locale commas) and returns a valid decimal string
 // with at most one dot and at most 2 fractional digits.
-function sanitizeAmount(raw: string): string {
+export function sanitizeAmount(raw: string): string {
   const normalized = raw.replace(',', '.')
   const digitsAndDots = normalized.replace(/[^\d.]/g, '')
   const firstDot = digitsAndDots.indexOf('.')
