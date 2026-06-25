@@ -75,10 +75,8 @@ export function SettleSection({
     return <>{renderLayout(null, null)}</>
   }
 
-  // Short on USDC: disabled settle button + warm callout.
   const isShort = localUsdcBalance !== null && localUsdcBalance < debt
 
-  // Settle button — primary when funded; locked while short, wallet not ready, or list is stale.
   const settleButton = (
     <Button
       variant="primary"
@@ -90,7 +88,7 @@ export function SettleSection({
     </Button>
   )
 
-  // Low-USDC callout — accent-soft background, never red (§5.7).
+  // Low-USDC callout — accent-soft background, never shown in a destructive/red tone.
   const callout = isShort ? (
     <div className="callout callout--funds">
       <span className="ic">

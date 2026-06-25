@@ -37,7 +37,6 @@ type Props = {
 
 // ── Date helper ────────────────────────────────────────────────────────────────
 
-// Converts a unix-seconds timestamp to a compact locale string: "Jun 12".
 function fmtDate(unixSec: number): string {
   return new Date(unixSec * 1000).toLocaleDateString('en-US', {
     month: 'short',
@@ -48,7 +47,6 @@ function fmtDate(unixSec: number): string {
 // ── ExpenseRow ─────────────────────────────────────────────────────────────────
 
 // Inner row content — description, edited pill, amount, and meta line.
-// Amount always in --ink (money rule §5.3), no sign, tabular figures.
 // .exp and position:relative live on the outer ExpenseRowWrap so the action strip
 // sits inside the same border-bottom boundary.
 function ExpenseRow({
@@ -266,10 +264,6 @@ export function ExpenseList({
       title: 'Edit expense',
       confirmLabel: 'Save changes',
       who: cpLabel,
-      // rows hold the confirmed values for the morph-target summary card;
-      // they are populated by buildSubmit at confirm-time via the update below.
-      // Initial rows use the expense's current values as a starting point;
-      // buildSubmit overwrites them with the user's final input.
       rows: [
         { label: 'Who paid', value: payerLabel },
         { label: 'Amount', value: `${money(expense.amount)} USDC`, strong: true },
@@ -300,10 +294,6 @@ export function ExpenseList({
     })
   }
 
-  // ── Timeline build ──────────────────────────────────────────────────────────
-  // buildTimeline excludes deleted expenses and partitions the rest into an open
-  // window (since last settle) and closed segments. Result is oldest-first;
-  // display reverses both the open list and the segments array.
   const { open, segments } = useMemo(
     () => buildTimeline(expenses, settlements),
     [expenses, settlements],

@@ -14,7 +14,7 @@ export type FlowKind = 'create' | 'add' | 'edit' | 'delete' | 'settle'
 export interface FlowAvatar {
   label: string
   initial: string
-  tone: 'accent' | 'neutral' | 'lilac' | 's'
+  tone: 'accent' | 'neutral' | 'lilac'
 }
 
 /** A single row in the consent grid shown on the confirm screen. */

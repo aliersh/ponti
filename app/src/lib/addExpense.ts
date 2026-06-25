@@ -1,8 +1,6 @@
 import { encodeFunctionData, type Address, type Hex } from 'viem'
 import { groupAbi } from '../config'
 
-// Same decoupled shape as createGroup.ts: type only the call we make, omit
-// `chain` (the SmartWallets client is already bound to one chain).
 type SendUserOperation = (request: { to: Address; data: Hex }) => Promise<Hex>
 
 export async function submitAddExpense(

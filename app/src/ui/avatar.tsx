@@ -1,12 +1,12 @@
 // avatar.tsx — Initial avatar primitive
 //
 // Circular avatar: letter initial or neutral-person fallback when initial is empty.
-// Four Cal tones map to background/text pairs; lib/identity emits 'accent' | 'neutral'
-// (the two primary tones). 's' and 'lilac' are available for screen-level use.
+// Three Cal tones map to background/text pairs; lib/identity emits 'accent' | 'neutral'
+// (the two primary tones). 'lilac' is available for screen-level use (self avatar).
 
 interface AvatarProps {
   initial: string
-  tone?: 'accent' | 'neutral' | 's' | 'lilac'
+  tone?: 'accent' | 'neutral' | 'lilac'
   size?: number
 }
 
@@ -14,7 +14,6 @@ interface AvatarProps {
 const toneMap: Record<NonNullable<AvatarProps['tone']>, { bg: string; color: string }> = {
   accent: { bg: 'var(--accent-soft)',  color: 'var(--accent-soft-ink)' }, /* .ava--c */
   neutral:{ bg: 'var(--line)',         color: 'var(--ink-2)'           }, /* .ava--n */
-  s:      { bg: 'var(--sage-soft)',    color: 'var(--sage)'            }, /* .ava--s */
   lilac:  { bg: 'var(--lilac-soft)',   color: 'var(--lilac-ink)'       }, /* .ava--lilac */
 }
 

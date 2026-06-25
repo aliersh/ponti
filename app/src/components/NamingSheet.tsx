@@ -13,12 +13,10 @@ type Props = {
   counterparty: Address
   /** Current nickname — prefills the field when renaming; undefined when first naming. */
   currentNickname: string | undefined
-  /** Called after setNickname writes to localStorage. */
-  onSaved?: () => void
   placement?: 'sheet' | 'modal'
 }
 
-export function NamingSheet({ open, onOpenChange, counterparty, currentNickname, onSaved, placement = 'sheet' }: Props) {
+export function NamingSheet({ open, onOpenChange, counterparty, currentNickname, placement = 'sheet' }: Props) {
   const [value, setValue] = useState(currentNickname ?? '')
 
   // Sync field when the sheet opens — handles the rename case where currentNickname
@@ -30,7 +28,6 @@ export function NamingSheet({ open, onOpenChange, counterparty, currentNickname,
   function handleSave() {
     if (!value.trim()) return
     setNickname(counterparty, value)
-    onSaved?.()
     onOpenChange(false)
   }
 

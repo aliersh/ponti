@@ -4,11 +4,9 @@
 export { money, Num } from './num'
 export { Wordmark, Mark } from './brand'
 export {
-  Plus, Check, Shield, Globe, Left, Right, Dots,
-  Copy, Share, Scan, External, Camera, Lock,
+  Plus, Check, Left, Right,
+  Copy, Share, External,
   Sun, Moon, Pencil, Trash, Logout,
-  ArrowIn, ArrowOut,
-  Icons,
 } from './icons'
 export { Avatar } from './avatar'
 export { Button } from './button'

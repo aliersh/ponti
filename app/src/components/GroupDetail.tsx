@@ -1,6 +1,7 @@
 // GroupDetail.tsx — Group detail screen: backbar, balance hero, timeline, settle gate.
 
 import { useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { getAddress } from 'viem'
 import type { Address, Hex } from 'viem'
@@ -105,7 +106,6 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
   const [postWriteStatus, setPostWriteStatus] = useState<string | null>(null)
   const [fundsOpen, setFundsOpen] = useState(false)
   const [namingOpen, setNamingOpen] = useState(false)
-  // Bumped by the 'ponti:identity' event (dispatched by setNickname) so getIdentity re-reads localStorage.
   const identityVersion = useIdentityVersion()
   async function loadDetail(opts?: { silent?: boolean }) {
     if (!resolvedGroup) return
@@ -325,13 +325,11 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
   const display: BalanceDisplay | null =
     balance !== null ? interpretBalance(balance, smartAccount, resolvedGroup.memberA) : null
 
-  // identityVersion bump (via setIdentityVersion) forces a re-read of localStorage
-  // after setNickname writes — getIdentity is pure and reads localStorage at call time.
+  // identityVersion bump forces a re-read of localStorage after setNickname writes — getIdentity is pure and reads localStorage at call time.
   void identityVersion
   const identity = getIdentity(resolvedGroup.counterparty)
   const selfIdentity = getIdentity(smartAccount)
 
-  // isDebtor and isCreditor drive action zone emphasis.
   const isDebtor   = display?.direction === 'i_owe_counterparty'
   const isCreditor = display?.direction === 'counterparty_owes_me'
 
@@ -342,7 +340,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
 
   // Avatar column used in you-owe / you're-owed heroes.
   // unnamed=true: neutral person glyph on --line circle instead of the lettered avatar.
-  function AvatarCol({ initial, tone, label, unnamed }: { initial: string; tone: 'lilac' | 'accent' | 'neutral' | 's'; label: string; unnamed?: boolean }) {
+  function AvatarCol({ initial, tone, label, unnamed }: { initial: string; tone: 'lilac' | 'accent' | 'neutral'; label: string; unnamed?: boolean }) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, width: 56 }}>
         {unnamed ? (
@@ -360,8 +358,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
     )
   }
 
-  // Amount row shared by you-owe and you're-owed: 30px display font per contract.
-  // Flex-centers the bare number; USDC suffix is out-of-flow so it adds no width to the centered box.
+  // Amount row: flex-centers the bare number; USDC suffix is out-of-flow so it adds no width to the centered box.
   function AmountRow({ bal }: { bal: bigint }) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -374,8 +371,6 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
     )
   }
 
-  // Accent-soft prompt shown in every non-loading, non-error hero when counterparty is unnamed.
-  // Opens the NamingSheet. Verbatim copy from the Group-Detail microcopy table.
   function UnnamedPrompt() {
     return (
       <button
@@ -586,6 +581,57 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
   const isExhausted  = postWriteStatus === 'Saved — reload to see the latest.'
   const isRefreshing = postWriteStatus !== null
 
+  // Action-zone layout shared by the desktop and mobile branches: the optional callout,
+  // the settle button (debtor-only; null otherwise), the creditor's passive note, and
+  // the Add-expense button that opens the add flow. One definition keeps both layouts in lockstep.
+  const renderSettleLayout = (settleBtn: ReactNode, callout: ReactNode | null): ReactNode => (
+    <>
+      {callout}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+        {settleBtn}
+        {/* Creditor note: settle is debtor-only; creditor sees a passive reassurance */}
+        {isCreditor && !settleBtn && (
+          <div style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--ink-3)' }}>
+            {identity.named ? `${identity.label} settles from their side` : 'They settle from their side'} — it'll land here on its own.
+          </div>
+        )}
+        <Button
+          variant={isDebtor ? 'outline' : 'primary'}
+          full
+          disabled={isRefreshing}
+          onClick={() => {
+            if (!send) return
+            const cpIdentity = getIdentity(resolvedGroup.counterparty)
+            const cpLabel = cpIdentity.named ? cpIdentity.label : 'them'
+            flow.start({
+              kind: 'add',
+              title: 'Add an expense',
+              confirmLabel: 'Add expense',
+              who: cpLabel,
+              rows: [],
+              inputInitial: { mode: 'add', amount: '', description: '', payer: 'me' },
+              buildSubmit: ({ amount, description, payer }) => {
+                const payerAddress = payer === 'me' ? smartAccount : resolvedGroup.counterparty
+                const payerLabel = payer === 'me' ? 'You' : (cpIdentity.named ? cpIdentity.label : 'Them')
+                return {
+                  submit: () => submitAddExpense(send, resolvedGroup.address, payerAddress, amount, description),
+                  rows: [
+                    { label: 'Who paid', value: payerLabel },
+                    { label: 'Amount', value: `${money(amount)} USDC`, strong: true },
+                    { label: 'For', value: description },
+                  ],
+                }
+              },
+              onComplete: async () => { await reload() },
+            })
+          }}
+        >
+          Add {isDebtor ? 'expense' : 'an expense'}
+        </Button>
+      </div>
+    </>
+  )
+
   // inPane: join the .detail flex column (fills pane, scrolls internally).
   // Mobile: narrow surface card, full viewport height.
   return (
@@ -686,7 +732,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
 
             {/* Tier 4 — action zone set off by a hairline */}
             <div style={{ marginTop: 18, borderTop: '1px solid var(--hairline)', paddingTop: 16 }}>
-              {/* F8 post-write banner: known-stale list; spinner while updating, Reload when exhausted. */}
+              {/* Post-write banner: known-stale list; spinner while updating, Reload when exhausted. */}
               {isRefreshing && (
                 <div className="home-banner" style={{ marginBottom: 12, justifyContent: 'space-between' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -699,7 +745,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
                 </div>
               )}
 
-              {/* F9 steady-state degraded notice; F8 (isRefreshing) takes precedence. */}
+              {/* Steady-state degraded notice; post-write banner (isRefreshing) takes precedence. */}
               {!isRefreshing && subgraphDegraded && <FreshnessBanner variant={display?.direction === 'settled' ? 'settled' : 'active'} />}
 
               {/* Settle gate (debtor-only) + Add expense. */}
@@ -716,53 +762,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
                     onSettled={reload}
                     onAddFunds={() => setFundsOpen(true)}
                     isRefreshing={isRefreshing}
-                    renderLayout={(settleBtn, callout) => (
-                      <>
-                        {callout}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                          {settleBtn}
-                          {/* Creditor note: settle is debtor-only; creditor sees a passive reassurance */}
-                          {isCreditor && !settleBtn && (
-                            <div style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--ink-3)' }}>
-                              {identity.named ? `${identity.label} settles from their side` : 'They settle from their side'} — it'll land here on its own.
-                            </div>
-                          )}
-                          <Button
-                            variant={isDebtor ? 'outline' : 'primary'}
-                            full
-                            disabled={isRefreshing}
-                            onClick={() => {
-                              if (!send) return
-                              const cpIdentity = getIdentity(resolvedGroup.counterparty)
-                              const cpLabel = cpIdentity.named ? cpIdentity.label : 'them'
-                              flow.start({
-                                kind: 'add',
-                                title: 'Add an expense',
-                                confirmLabel: 'Add expense',
-                                who: cpLabel,
-                                rows: [],
-                                inputInitial: { mode: 'add', amount: '', description: '', payer: 'me' },
-                                buildSubmit: ({ amount, description, payer }) => {
-                                  const payerAddress = payer === 'me' ? smartAccount : resolvedGroup.counterparty
-                                  const payerLabel = payer === 'me' ? 'You' : (cpIdentity.named ? cpIdentity.label : 'Them')
-                                  return {
-                                    submit: () => submitAddExpense(send, resolvedGroup.address, payerAddress, amount, description),
-                                    rows: [
-                                      { label: 'Who paid', value: payerLabel },
-                                      { label: 'Amount', value: `${money(amount)} USDC`, strong: true },
-                                      { label: 'For', value: description },
-                                    ],
-                                  }
-                                },
-                                onComplete: async () => { await reload() },
-                              })
-                            }}
-                          >
-                            Add {isDebtor ? 'expense' : 'an expense'}
-                          </Button>
-                        </div>
-                      </>
-                    )}
+                    renderLayout={renderSettleLayout}
                   />
                 </div>
               )}
@@ -803,7 +803,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
             </div>
           )}
 
-          {/* F9 steady-state degraded notice. F8 (isRefreshing) takes precedence — never both at once. */}
+          {/* Steady-state degraded notice. Post-write banner (isRefreshing) takes precedence — never both at once. */}
           {!isRefreshing && subgraphDegraded && <FreshnessBanner variant={display?.direction === 'settled' ? 'settled' : 'active'} />}
 
           {/* Action zone — settle gate (debtor-only) + Add expense.
@@ -822,53 +822,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
                 onSettled={reload}
                 onAddFunds={() => setFundsOpen(true)}
                 isRefreshing={isRefreshing}
-                renderLayout={(settleBtn, callout) => (
-                  <>
-                    {callout}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                      {settleBtn}
-                      {/* Creditor note: settle is debtor-only; creditor sees a passive reassurance */}
-                      {isCreditor && !settleBtn && (
-                        <div style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--ink-3)' }}>
-                          {identity.named ? `${identity.label} settles from their side` : 'They settle from their side'} — it'll land here on its own.
-                        </div>
-                      )}
-                      <Button
-                        variant={isDebtor ? 'outline' : 'primary'}
-                        full
-                        disabled={isRefreshing}
-                        onClick={() => {
-                          if (!send) return
-                          const cpIdentity = getIdentity(resolvedGroup.counterparty)
-                          const cpLabel = cpIdentity.named ? cpIdentity.label : 'them'
-                          flow.start({
-                            kind: 'add',
-                            title: 'Add an expense',
-                            confirmLabel: 'Add expense',
-                            who: cpLabel,
-                            rows: [],
-                            inputInitial: { mode: 'add', amount: '', description: '', payer: 'me' },
-                            buildSubmit: ({ amount, description, payer }) => {
-                              const payerAddress = payer === 'me' ? smartAccount : resolvedGroup.counterparty
-                              const payerLabel = payer === 'me' ? 'You' : (cpIdentity.named ? cpIdentity.label : 'Them')
-                              return {
-                                submit: () => submitAddExpense(send, resolvedGroup.address, payerAddress, amount, description),
-                                rows: [
-                                  { label: 'Who paid', value: payerLabel },
-                                  { label: 'Amount', value: `${money(amount)} USDC`, strong: true },
-                                  { label: 'For', value: description },
-                                ],
-                              }
-                            },
-                            onComplete: async () => { await reload() },
-                          })
-                        }}
-                      >
-                        Add {isDebtor ? 'expense' : 'an expense'}
-                      </Button>
-                    </div>
-                  </>
-                )}
+                renderLayout={renderSettleLayout}
               />
             </div>
           )}

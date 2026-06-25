@@ -260,10 +260,10 @@ body {
 /* hollow circle centered on the spine — same node grammar as the activity timeline */
 .grow::before { content: ""; position: absolute; left: -18px; top: 50%; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: var(--bg); border: 1.5px solid var(--line-2) }
 
-/* ── Home banner — F8 post-write catching-up strip (shared by GroupDetail) ───── */
+/* ── Home banner — post-write catching-up strip (shared by GroupDetail) ───── */
 .home-banner { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--hairline); border-radius: var(--radius-md); padding: 9px 12px; font-size: 12px; color: var(--ink-2); margin-top: 12px }
 
-/* ── F9 freshness banner — calm pulse dot + degraded-state copy ──────────────
+/* ── Freshness banner — calm pulse dot + degraded-state copy ──────────────
    .fbar is the flex container; .fdot breathes via freshpulse to signal "live
    but a step behind" without implying a resolution (a spinner would). */
 @keyframes freshpulse { 0%, 100% { opacity: 1; transform: scale(1) } 50% { opacity: .32; transform: scale(.82) } }

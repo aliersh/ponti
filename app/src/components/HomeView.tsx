@@ -131,14 +131,11 @@ export function HomeView({
 }: HomeViewProps) {
   const [fundsOpen, setFundsOpen] = useState(false)
 
-  // ── Derived display values ─────────────────────────────────────────────────
   const net = balances?.net ?? 0n
 
-  // ── List-area state precedence: error → loading → empty → normal ──────────
   const hasError = groupsError || balancesError
   const isLoading = !groupsInitialized || loadingGroups || balancesLoading
 
-  // ── Net headline chips ─────────────────────────────────────────────────────
   const netDir = net > 0n ? 'in' : net < 0n ? 'out' : 'settled'
   // Net hero chip is size="lg" — title case for the owed state per the contract net row.
   const netLabel = net > 0n ? "You're owed" : net < 0n ? 'you owe' : 'settled up'

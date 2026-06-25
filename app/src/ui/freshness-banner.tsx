@@ -1,5 +1,5 @@
-// FreshnessBanner — F9 steady-state notice when the subgraph indexer is behind.
-// Distinct from F8's post-write banner: no CTA, no spinner — a pulsing dot and degraded-state copy.
+// FreshnessBanner — steady-state notice when the subgraph indexer is behind.
+// Distinct from the post-write banner: no CTA, no spinner — a pulsing dot and degraded-state copy.
 interface Props {
   /** 'settled' swaps to the last-synced-view copy for zero-balance / empty timeline views. */
   variant?: 'active' | 'settled'

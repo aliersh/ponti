@@ -7,12 +7,8 @@ import {
 import { FACTORY_ADDRESS, factoryAbi } from '../config'
 import { publicClient } from './client'
 
-// Privy's useSmartWallets() client turns this request into a sponsored
-// UserOperation. We type only the call we make, so this module stays decoupled
-// from Privy's client type. We deliberately omit `chain`: the SmartWallets
-// client is already bound to a single chain (defaultChain/supportedChains in
-// providers.tsx), so passing it again is redundant. It is also the one field
-// whose viem `Chain` type won't unify across Privy's pinned viem copy and ours.
+// Privy's SmartWallets client is already bound to a single chain, so `chain` is redundant.
+// Also: Privy pins its own viem copy; the `Chain` type from both cannot unify — omitting it avoids the type mismatch.
 type SendUserOperation = (request: {
   to: Address
   data: Hex
