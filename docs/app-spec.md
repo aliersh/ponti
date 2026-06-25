@@ -1,6 +1,6 @@
 # Ponti — Application Spec
 
-**Status:** In development. Covers onboarding, group creation, expense entry (add, edit, delete), reads, and settlement. This document grows as more of the app is built.
+**Status:** Complete on Base Sepolia testnet (frozen proof-of-concept). Covers onboarding, group creation, expense entry (add, edit, delete), reads, and settlement.
 **Companions:** [`design.md`](design.md) (the *why*), [`contract-spec.md`](contract-spec.md) (the contract interface).
 
 ---
@@ -16,7 +16,7 @@ What the app does:
 - **List groups** and **view a group's balance + expense history** — reads.
 - **Settle** the balance, gasless: approve the exact debt, then call `settle()`.
 
-Not yet built (added here as they land):
+Out of scope (not pursued):
 
 - Group naming, friendlier counterparty discovery (ENS / contacts / QR), visual polish, and automated frontend tests.
 
@@ -37,7 +37,7 @@ The user logs in with email or social (Privy), which provisions a Kernel smart a
 
 ### 2. Groups list (home)
 
-Read-only. Query the factory's `GroupCreated(group, memberA, memberB)` logs where `memberA` or `memberB` equals the user's smart-account address, and render the list (group + counterparty). The empty state offers the create-group action.
+Read-only. Query the subgraph for groups where `memberA` or `memberB` equals the user's smart-account address, and render the list (group + counterparty). The empty state offers the create-group action.
 
 ### 3. Create group
 
@@ -48,7 +48,7 @@ Read-only. Query the factory's `GroupCreated(group, memberA, memberB)` logs wher
 
 ### 4. Group detail
 
-Read-only. Show the current `balance` (direct call) and the expense history (reconstructed from `ExpenseAdded` / `ExpenseEdited` / `ExpenseDeleted` events for that group). The signed `int256` balance is interpreted for display: positive → the counterparty owes the user; negative → the user owes; zero → settled. Show direction + absolute amount in USDC.
+Read-only. Show the current `balance` (direct `readContract` call) and the expense history (served by the subgraph, already folded: edits and deletes reflected). The signed `int256` balance is interpreted for display: positive → the counterparty owes the user; negative → the user owes; zero → settled. Show direction + absolute amount in USDC.
 
 ### 5. Add expense
 
@@ -67,7 +67,7 @@ Read-only. Show the current `balance` (direct call) and the expense history (rec
 
 ## Reads and state
 
-No backend. Lists come from event logs (viem `getLogs`); current balance from a direct call. After a write confirms, refetch the affected reads. The app holds the authenticated session and the selected group in client state only.
+No backend. Lists come from the subgraph (GraphQL); current balance from a direct `readContract` call. After a write confirms, the affected reads are refetched. The app holds the authenticated session and the selected group in client state only.
 
 ## Config and secrets
 
@@ -79,4 +79,4 @@ No backend. Lists come from event logs (viem `getLogs`); current balance from a 
 ## Verification
 
 - **Manual end-to-end checklist** on Base Sepolia: fresh email login → smart account provisioned → `createGroup` (confirm on Basescan that the transaction is sponsored and the user paid no gas) → `addExpense` (gasless) → balance reflects it → logging in as the counterparty shows the same group. The first sponsored write is also what confirms the paymaster works for a Kernel account on this chain.
-- Automated frontend tests are not yet in scope.
+- Automated frontend tests are out of scope for this POC.
