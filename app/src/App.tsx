@@ -211,14 +211,10 @@ export function App() {
     return <SignIn />
   }
 
-  // Handlers shared by both mobile and desktop paths.
   const handleRetry = () => {
     if (smartAccount) void loadGroups(smartAccount)
-    if (smartAccount) void fetchBalances(smartAccount, groups)
   }
 
-  // Shared props for DesktopLayoutWrapper — passed to all desktop routes including
-  // the background split rendered under /you and /add modals.
   const desktopSharedProps = {
     smartAccount,
     send,

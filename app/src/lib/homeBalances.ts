@@ -13,6 +13,8 @@ export type HomeBalances = {
  *   signed > 0  → counterparty owes me
  *   signed < 0  → I owe counterparty
  *   signed = 0  → settled
+ *
+ * One failing group is skipped (absent from byGroup); net sums only fulfilled groups.
  */
 export async function fetchHomeBalances(
   groups: GroupItem[],
@@ -20,14 +22,16 @@ export async function fetchHomeBalances(
 ): Promise<HomeBalances> {
   if (groups.length === 0) return { byGroup: {} as Record<Address, bigint>, net: 0n }
 
-  const raws = await Promise.all(groups.map((g) => fetchBalance(g.address)))
+  const results = await Promise.allSettled(groups.map((g) => fetchBalance(g.address)))
 
   const byGroup = {} as Record<Address, bigint>
   let net = 0n
 
   for (let i = 0; i < groups.length; i++) {
+    const result = results[i]
+    if (result.status !== 'fulfilled') continue
     const g = groups[i]
-    const raw = raws[i]
+    const raw = result.value
     const isMemberA = getAddress(g.memberA) === getAddress(smartAccount)
     const signed = isMemberA ? raw : -raw
     byGroup[g.address] = signed
