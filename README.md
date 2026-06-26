@@ -2,6 +2,7 @@
 
 > Settle up, on-chain.
 
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://ponti-olive.vercel.app/)
 [![CI](https://img.shields.io/github/actions/workflow/status/aliersh/ponti/test.yml?branch=main&label=CI)](https://github.com/aliersh/ponti/actions/workflows/test.yml)
 [![Solidity](https://img.shields.io/badge/solidity-0.8.34-363636)](contracts/foundry.toml)
 [![Built with Foundry](https://img.shields.io/badge/built%20with-Foundry-black)](https://getfoundry.sh)
@@ -12,6 +13,8 @@
 Ponti is a non-custodial primitive for shared expenses between two people. They deploy a group contract together, record expenses against it, and settle the running balance in USDC directly between their wallets, on-chain, with no third party holding funds in between.
 
 It's a full-stack monorepo: Solidity contracts (the source of truth), a React app that makes the contract usable without crypto knowledge (email login, an embedded smart account, gas sponsored via ERC-4337), and a subgraph that serves the reads.
+
+[![Ponti — group detail](docs/screenshot.png)](https://ponti-olive.vercel.app/)
 
 ## Status
 
@@ -36,7 +39,7 @@ graph TD
   Pimlico -->|sponsors + bundles| EntryPoint
   EntryPoint --> KernelAccount[Kernel smart account]
   KernelAccount -->|executeBatch| Contracts["PontiFactory / PontiGroup<br/>Base Sepolia"]
-  App -->|GraphQL: groups, expenses, settlements| Subgraph[The Graph subgraph]
+  App -->|GraphQL: groups, expenses, settlements| Subgraph[Subgraph]
   App -->|readContract: balance, USDC| RPC["public RPC<br/>Base Sepolia"]
   Contracts -->|events| Subgraph
 ```
@@ -45,7 +48,7 @@ The contract is the source of truth; everything off-chain is plumbing on top of 
 
 - **Writes** are sponsored UserOperations (ERC-4337): email login creates an embedded Kernel smart account, the first write deploys it, and Pimlico sponsors gas, so the user never holds ETH or a seed phrase.
 - **Settlement** batches a USDC `approve` for the exact debt and the `settle()` call into one `executeBatch`. Funds move debtor to creditor via `safeTransferFrom`, and the contract never holds a balance.
-- **Reads** split between a The Graph subgraph (lists and history; dynamic data-source templates handle the per-group contracts deployed at runtime) and direct `readContract` calls (balances). After a write, the app waits for the subgraph to index the new block before refreshing, and degrades honestly if the indexer lags.
+- **Reads** split between a subgraph (lists and history; dynamic data-source templates handle the per-group contracts deployed at runtime) and direct `readContract` calls (balances). After a write, the app waits for the subgraph to index the new block before refreshing, and degrades honestly if the indexer lags.
 - **Contracts** are tested with Foundry (unit, fuzz, invariant, and fork tests) and verified on Basescan.
 
 For the full picture (component map, data flows, and the decision log) see [`docs/architecture.md`](docs/architecture.md).
@@ -74,7 +77,7 @@ Ponti is a proof of concept; its scope was deliberately bounded.
 | --- | --- |
 | `contracts/` | Solidity contracts, Foundry test suite, deployment scripts |
 | `app/` | Vite + React SPA, the M2 onboarding layer |
-| `subgraph/` | The Graph subgraph (AssemblyScript mappings, schema, deploy config) |
+| `subgraph/` | Subgraph (AssemblyScript mappings, schema, deploy config) |
 | `docs/` | Design rationale, architecture, and per-component specs |
 
 ## Getting started
@@ -121,7 +124,7 @@ Built with `graph-cli` (`pnpm build` from `subgraph/`) and deployed to [Goldsky]
 - [`docs/design.md`](docs/design.md): the design and the reasoning behind it
 - [`docs/contract-spec.md`](docs/contract-spec.md): the contract's function-by-function specification
 - [`docs/app-spec.md`](docs/app-spec.md): the web app specification (flows and integration)
-- [`docs/subgraph-spec.md`](docs/subgraph-spec.md): the indexer (The Graph subgraph) specification
+- [`docs/subgraph-spec.md`](docs/subgraph-spec.md): the indexer (subgraph) specification
 
 ## Security
 
