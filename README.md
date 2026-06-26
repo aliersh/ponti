@@ -17,7 +17,7 @@ It's a full-stack monorepo: Solidity contracts (the source of truth), a React ap
 
 **Proof of concept: complete and frozen.** Ponti was built to demonstrate non-custodial, on-chain expense settlement end to end. M1 (the contract) and M2 (the gasless onboarding app) are both complete on Base Sepolia testnet. The project is not under active development; the later milestones below were scoped during design and deliberately not pursued.
 
-M1 is deployed and verified on Base Sepolia, `PontiFactory` at [`0x1746…Cb210`](https://sepolia.basescan.org/address/0x17463e06C303e30044609a9a412d7DB4746Cb210). M2 works end to end: create a group, add/edit/delete expenses, and settle, all gasless. **[Live demo](DEMO_URL)**, running on Base Sepolia testnet.
+M1 is deployed and verified on Base Sepolia, `PontiFactory` at [`0x1746…Cb210`](https://sepolia.basescan.org/address/0x17463e06C303e30044609a9a412d7DB4746Cb210). M2 works end to end: create a group, add/edit/delete expenses, and settle, all gasless. **[Live demo](https://ponti-olive.vercel.app/)**, running on Base Sepolia testnet.
 
 ## How it works
 
