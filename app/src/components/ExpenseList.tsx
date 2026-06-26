@@ -14,7 +14,7 @@ import { buildTimeline } from '../lib/fetchGroup'
 import type { ExpenseEntry, SettlementEntry } from '../lib/fetchGroup'
 import { getIdentity } from '../lib/identity'
 import {
-  Button, money, Pill,
+  money, Pill,
   Pencil, Trash, Skeleton,
 } from '../ui'
 import { useFlow } from '../flow/FlowContext'
@@ -93,6 +93,7 @@ function ExpenseRowWrap({
   counterparty,
   muted,
   isRefreshing,
+  send,
   onEdit,
   onDeleteExpense,
 }: {
@@ -101,51 +102,46 @@ function ExpenseRowWrap({
   counterparty: Address
   muted?: boolean
   isRefreshing: boolean
+  send: SendUserOperation | undefined
   onEdit: (e: ExpenseEntry) => void
   onDeleteExpense: (e: ExpenseEntry) => void
 }) {
   const [open, setOpen] = useState(false)
+  const disabled = isRefreshing || !send
 
   return (
     <div
-      className="exp"
+      className={`exp${open ? ' exp--open' : ''}`}
       style={{ opacity: muted ? 0.85 : 1 }}
     >
-      {/* Row tap target — toggles the action strip; blocked while list is known-stale */}
+      {/* Row tap target — toggles the action tray; blocked while list is known-stale */}
       <div
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => !disabled && setOpen((o) => !o)}
         style={{
-          cursor: isRefreshing ? 'default' : 'pointer',
-          pointerEvents: isRefreshing ? 'none' : undefined,
-          background: open ? 'var(--surface)' : 'transparent',
-          borderRadius: open ? 'var(--radius-sm)' : 0,
-          transition: 'background .15s',
-          padding: '0 8px',
-          margin: '0 -8px',
+          cursor: disabled ? 'default' : 'pointer',
+          pointerEvents: disabled ? 'none' : undefined,
         }}
       >
         <ExpenseRow e={e} smartAccount={smartAccount} counterparty={counterparty} />
       </div>
 
-      {/* Action strip — Edit + Delete; disabled backstop matches the tap-target block */}
+      {/* Action tray — Edit + Delete; revealed non-directionally via .reveal */}
       {open && (
-        <div className="reveal" style={{ display: 'flex', gap: 8, padding: '6px 0 4px' }}>
-          <Button
-            variant="soft"
-            disabled={isRefreshing}
+        <div className="reveal exp-tray">
+          <button
+            className="exp-action"
+            disabled={disabled}
             onClick={() => onEdit(e)}
-            style={{ padding: '8px 12px', fontSize: 13, opacity: isRefreshing ? 0.45 : 1, cursor: isRefreshing ? 'default' : undefined }}
           >
-            <Pencil color="var(--accent)" size={14} /> Edit
-          </Button>
-          <Button
-            variant="ghost"
-            disabled={isRefreshing}
+            <Pencil size={14} /> Edit
+          </button>
+          <button
+            className="exp-action"
+            disabled={disabled}
             onClick={() => onDeleteExpense(e)}
-            style={{ padding: '8px 12px', fontSize: 13, opacity: isRefreshing ? 0.45 : 1, cursor: isRefreshing ? 'default' : undefined }}
           >
-            <Trash color="var(--ink-3)" size={14} /> Delete
-          </Button>
+            <Trash size={14} /> Delete
+          </button>
         </div>
       )}
     </div>
@@ -343,6 +339,7 @@ export function ExpenseList({
           smartAccount={smartAccount}
           counterparty={counterparty}
           isRefreshing={isRefreshing}
+          send={send}
           onEdit={onEdit}
           onDeleteExpense={onDeleteExpense}
         />
@@ -372,6 +369,7 @@ export function ExpenseList({
                     counterparty={counterparty}
                     muted
                     isRefreshing={isRefreshing}
+                    send={send}
                     onEdit={onEdit}
                     onDeleteExpense={onDeleteExpense}
                   />

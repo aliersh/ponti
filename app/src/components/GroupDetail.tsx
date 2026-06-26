@@ -453,8 +453,8 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
                 <span style={{ flex: 1, height: 1.5, borderRadius: 2, background: 'linear-gradient(90deg,var(--ink),var(--accent-strong))', display: 'block' }} />
                 {/* Right-pointing arrowhead (border triangle) */}
                 <span style={{ position: 'absolute', right: -1, top: '50%', transform: 'translateY(-50%)', width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderLeft: '6px solid var(--accent-strong)' }} />
-                {/* Chip centered on the line; halo color matches pane bg so no rectangle bleeds through */}
-                <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', boxShadow: `0 1px 0 ${inPane ? 'var(--bg)' : 'var(--surface)'},0 0 0 4px ${inPane ? 'var(--bg)' : 'var(--surface)'}` }}>
+                {/* Chip centered on the line; halo matches the card surface so no rectangle bleeds through */}
+                <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', boxShadow: '0 1px 0 var(--surface),0 0 0 4px var(--surface)' }}>
                   <DirChip dir="out" size="lg" label={identity.named ? `You owe ${identity.label}` : 'You owe them'} />
                 </span>
               </div>
@@ -485,8 +485,8 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
                 {/* Left-pointing arrowhead; money flows counterparty→You, so arrowhead points at You (left) */}
                 <span style={{ position: 'absolute', left: -1, top: '50%', transform: 'translateY(-50%)', flexShrink: 0, width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderRight: '6px solid var(--accent-strong)' }} />
                 <span style={{ flex: 1, height: 1.5, borderRadius: 2, background: 'linear-gradient(90deg,var(--accent-strong),var(--ink))', display: 'block' }} />
-                {/* Chip absolutely centered on the line; halo color matches pane bg */}
-                <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', background: 'var(--raised)', borderRadius: 999, boxShadow: `0 1px 0 ${inPane ? 'var(--bg)' : 'var(--surface)'},0 0 0 4px ${inPane ? 'var(--bg)' : 'var(--surface)'}` }}>
+                {/* Chip absolutely centered on the line; halo matches the card surface */}
+                <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', boxShadow: '0 1px 0 var(--surface),0 0 0 4px var(--surface)' }}>
                   <DirChip dir="in" size="lg" label={identity.named ? `${identity.label} owes you` : 'They owe you'} />
                 </span>
               </div>
@@ -598,7 +598,7 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
         <Button
           variant={isDebtor ? 'outline' : 'primary'}
           full
-          disabled={isRefreshing}
+          disabled={isRefreshing || !send}
           onClick={() => {
             if (!send) return
             const cpIdentity = getIdentity(resolvedGroup.counterparty)

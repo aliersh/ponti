@@ -295,9 +295,46 @@ body {
 .tl { position: relative; margin-top: 12px; padding-left: 22px }
 .tl::before { content: ""; position: absolute; left: 3px; top: 6px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--line) }
 
-/* Expense row: open hollow node centered on the spine */
+/* Expense row: hollow node pinned to the header portion of the row */
 .exp { position: relative; padding: 15px 0; border-bottom: 1px solid var(--hairline) }
-.exp::before { content: ""; position: absolute; left: -18px; top: 50%; transform: translate(-50%,-50%); width: 10px; height: 10px; border-radius: 50%; background: var(--surface); border: 1.5px solid var(--line-2) }
+/* Node at top:26px so it stays in the header when the tray is open */
+.exp::before { content: ""; position: absolute; left: -18px; top: 26px; transform: translate(-50%,-50%); width: 10px; height: 10px; border-radius: 50%; background: var(--surface); border: 1.5px solid var(--line-2) }
+/* Desktop pane: hollow node fill matches the plaster so it reads correctly */
+.detail .exp::before { background: var(--bg) }
+
+/* Closed-row hover: ring → --ink-3 */
+.exp:not(.exp--open):hover::before { border-color: var(--ink-3) }
+
+/* Open state — active node: filled accent with accent-strong ring */
+.exp--open::before { width: 11px; height: 11px; background: var(--accent); border: 1.5px solid var(--accent-strong); box-shadow: 0 0 0 3px var(--surface) }
+/* Desktop pane: halo matches the plaster */
+.detail .exp--open::before { box-shadow: 0 0 0 3px var(--bg) }
+
+/* Lit spine segment — overlays the vertical axis for the full row height when open */
+.exp--open::after { content: ""; position: absolute; left: -19px; top: 0; bottom: 0; width: 2px; border-radius: 2px; background: var(--accent-strong) }
+
+/* Action tray — transparent, set off from the row body by a hairline */
+.exp-tray { display: flex; gap: 8px; border-top: 1px solid var(--hairline); padding: 9px 0 11px }
+
+/* Ghost action buttons — Edit and Delete */
+.exp-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: none;
+  color: var(--ink-2);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 12.5px;
+  padding: 7px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.exp-action:hover { color: var(--ink); background: rgba(34,28,27,.04) }
+.exp-action:active { transform: translateY(1px); background: rgba(34,28,27,.08) }
+.exp-action:focus-visible { outline: 2.5px solid var(--accent-strong); outline-offset: 2px }
+.exp-action:disabled { opacity: .45; cursor: not-allowed; pointer-events: none }
 .exp .top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px }
 .exp .for { font-size: 15px; font-weight: 600 }
 .exp .amt { font-size: 15px; font-weight: 600; font-feature-settings: "tnum" 1 }

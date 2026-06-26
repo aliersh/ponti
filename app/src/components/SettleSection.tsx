@@ -77,12 +77,14 @@ export function SettleSection({
 
   const isShort = localUsdcBalance !== null && localUsdcBalance < debt
 
+  const walletNotReady = !sendBatch
   const settleButton = (
     <Button
       variant="primary"
       full
-      disabled={isShort || !sendBatch || isRefreshing}
+      disabled={isShort || walletNotReady || isRefreshing}
       onClick={onSettle}
+      style={{ opacity: (walletNotReady || isRefreshing) ? 0.45 : 1, cursor: (walletNotReady || isRefreshing) ? 'default' : undefined }}
     >
       Settle up
     </Button>
