@@ -40,17 +40,19 @@ function GroupDetailWrapper({
   send,
   sendBatch,
   subgraphDegraded,
+  onBalancesStale,
 }: {
   smartAccount: Address | undefined
   send: SendUserOperation | undefined
   sendBatch: SendBatch | undefined
   subgraphDegraded: boolean
+  onBalancesStale: () => void
 }) {
   const { address } = useParams<{ address: string }>()
   if (!address || !isAddress(address)) return <Navigate to="/" replace />
   if (!smartAccount) return <main style={page}><p>Loading…</p></main>
   // key forces remount on address change, preserving the mount-only useEffect invariant
-  return <GroupDetail key={address} address={address} smartAccount={smartAccount} send={send} sendBatch={sendBatch} subgraphDegraded={subgraphDegraded} />
+  return <GroupDetail key={address} address={address} smartAccount={smartAccount} send={send} sendBatch={sendBatch} subgraphDegraded={subgraphDegraded} onBalancesStale={onBalancesStale} />
 }
 
 // Desktop-only: reads :address param and renders DesktopLayout with selectedAddress.
@@ -68,6 +70,7 @@ function DesktopLayoutWrapper({
   onOpenAccount,
   onAddSomeone,
   onUsdcBalance,
+  onBalancesStale,
 }: {
   smartAccount: Address | undefined
   send: SendUserOperation | undefined
@@ -82,6 +85,7 @@ function DesktopLayoutWrapper({
   onOpenAccount: () => void
   onAddSomeone: () => void
   onUsdcBalance: (b: bigint) => void
+  onBalancesStale: () => void
 }) {
   const { address } = useParams<{ address?: string }>()
   return (
@@ -100,6 +104,7 @@ function DesktopLayoutWrapper({
       onOpenAccount={onOpenAccount}
       onAddSomeone={onAddSomeone}
       onUsdcBalance={onUsdcBalance}
+      onBalancesStale={onBalancesStale}
     />
   )
 }
@@ -215,6 +220,11 @@ export function App() {
     if (smartAccount) void loadGroups(smartAccount)
   }
 
+  // Triggered by GroupDetail after any confirmed write so the rail and NET stay in sync.
+  const handleBalancesStale = useCallback(() => {
+    if (smartAccount) void fetchBalances(smartAccount, groups)
+  }, [smartAccount, groups, fetchBalances])
+
   const desktopSharedProps = {
     smartAccount,
     send,
@@ -229,6 +239,7 @@ export function App() {
     onOpenAccount: () => navigate('/you'),
     onAddSomeone: () => navigate('/add'),
     onUsdcBalance: (b: bigint) => setUsdc(b),
+    onBalancesStale: handleBalancesStale,
   }
 
   // Desktop (≥1024px): persistent split shell across / and /group/:address.
@@ -327,7 +338,7 @@ export function App() {
           />
           <Route
             path="/group/:address"
-            element={<GroupDetailWrapper smartAccount={smartAccount} send={send} sendBatch={sendBatch} subgraphDegraded={subgraphDegraded} />}
+            element={<GroupDetailWrapper smartAccount={smartAccount} send={send} sendBatch={sendBatch} subgraphDegraded={subgraphDegraded} onBalancesStale={handleBalancesStale} />}
           />
           <Route
             path="/you"

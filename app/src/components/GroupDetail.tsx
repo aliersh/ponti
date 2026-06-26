@@ -36,6 +36,8 @@ type Props = {
   /** Desktop split: suppresses the mobile backbar (rail is always visible instead). */
   inPane?: boolean
   subgraphDegraded?: boolean
+  /** Called when a write completes so the caller can refetch home balances. */
+  onBalancesStale?: () => void
 }
 
 // Broken-line SVG used for the cold-load error estate — mirrors HomeView's error icon.
@@ -82,7 +84,7 @@ async function fetchDetail(
   }
 }
 
-export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, subgraphDegraded }: Props) {
+export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, subgraphDegraded, onBalancesStale }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
   const flow = useFlow()
@@ -182,6 +184,9 @@ export function GroupDetail({ address, smartAccount, send, sendBatch, inPane, su
   // happy path); any retries run in the background.
   async function pollUntilChanged() {
     if (!resolvedGroup) return
+    // Notify the parent so it can refetch home balances in parallel — balance is
+    // readContract (chain-direct), so no subgraph lag to wait for on that side.
+    onBalancesStale?.()
     setPostWriteStatus('Saved — updating the list…')
     if (await attemptRefresh()) {
       setPostWriteStatus(null)

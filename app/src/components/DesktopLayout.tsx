@@ -213,6 +213,7 @@ interface DesktopLayoutProps {
   onOpenAccount: () => void
   onAddSomeone: () => void
   onUsdcBalance: (b: bigint) => void
+  onBalancesStale: () => void
 }
 
 export function DesktopLayout({
@@ -230,6 +231,7 @@ export function DesktopLayout({
   onOpenAccount,
   onAddSomeone,
   onUsdcBalance,
+  onBalancesStale,
 }: DesktopLayoutProps) {
   const [fundsOpen, setFundsOpen] = useState(false)
   // Re-renders the rail (GroupRow labels, AppHeader initial) when a counterparty is named.
@@ -288,6 +290,7 @@ export function DesktopLayout({
               sendBatch={sendBatch}
               inPane
               subgraphDegraded={subgraphDegraded}
+              onBalancesStale={onBalancesStale}
             />
           ) : (
             // smartAccount not yet resolved — skeleton while bootstrapping
