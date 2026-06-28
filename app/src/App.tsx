@@ -210,6 +210,11 @@ export function App() {
     prevAuthenticated.current = authenticated
   }, [authenticated, navigate])
 
+  // Triggered by GroupDetail after any confirmed write so the rail and NET stay in sync.
+  const handleBalancesStale = useCallback(() => {
+    if (smartAccount) void fetchBalances(smartAccount, groups)
+  }, [smartAccount, groups, fetchBalances])
+
   if (!ready) return <main style={page}><p>Loading…</p></main>
 
   if (!authenticated) {
@@ -219,11 +224,6 @@ export function App() {
   const handleRetry = () => {
     if (smartAccount) void loadGroups(smartAccount)
   }
-
-  // Triggered by GroupDetail after any confirmed write so the rail and NET stay in sync.
-  const handleBalancesStale = useCallback(() => {
-    if (smartAccount) void fetchBalances(smartAccount, groups)
-  }, [smartAccount, groups, fetchBalances])
 
   const desktopSharedProps = {
     smartAccount,
