@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom'
-import { usePrivy } from '@privy-io/react-auth'
+import { usePrivy, useCreateWallet, useWallets, getEmbeddedConnectedWallet } from '@privy-io/react-auth'
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets'
 import { isAddress } from 'viem'
 import type { Address, Hex } from 'viem'
 import type { CSSProperties } from 'react'
+import { EmptyState } from './components/EmptyState'
+import { Spinner } from './ui'
 import { HomeView } from './components/HomeView'
 import { GroupDetail } from './components/GroupDetail'
 import { SignIn } from './components/SignIn'
@@ -118,6 +120,14 @@ export function App() {
   const prevAuthenticated = useRef<boolean | null>(null)
   const isDesktop = useDesktop()
 
+  // Wallet provisioning — needed for email sign-ins that arrive without an embedded wallet.
+  const { createWallet } = useCreateWallet()
+  const { wallets } = useWallets()
+  const [provisioningError, setProvisioningError] = useState(false)
+  // provisionAttempt is bumped by "Try again"; handledAttempt guards StrictMode double-invocation.
+  const [provisionAttempt, setProvisionAttempt] = useState(0)
+  const handledAttempt = useRef(-1)
+
   // groups state lives here so it persists across home/detail navigation and
   // loads exactly once when smartAccount first becomes available.
   const [groups, setGroups] = useState<GroupItem[]>([])
@@ -215,10 +225,75 @@ export function App() {
     if (smartAccount) void fetchBalances(smartAccount, groups)
   }, [smartAccount, groups, fetchBalances])
 
+  // Effect 1 — Trigger: create an embedded wallet when authenticated without one.
+  // handledAttempt guards against StrictMode's double-invocation per attempt.
+  useEffect(() => {
+    if (!ready || !authenticated || smartAccount) return
+    if (getEmbeddedConnectedWallet(wallets)) return  // embedded exists; wait for smart wallet
+    if (handledAttempt.current === provisionAttempt) return
+    handledAttempt.current = provisionAttempt
+    setProvisioningError(false)
+    createWallet().catch((err: unknown) => {
+      const msg = (err instanceof Error ? err.message : String(err)).toLowerCase()
+      if (msg.includes('already') || msg.includes('exists')) return
+      setProvisioningError(true)
+    })
+  }, [ready, authenticated, smartAccount, wallets, createWallet, provisionAttempt])
+
+  // Effect 2 — Watchdog: surfaces an error if the smart wallet never arrives.
+  // Deps exclude wallets/createWallet so wallet-list churn can't cancel the timer.
+  // Bumping provisionAttempt re-arms it for retries.
+  useEffect(() => {
+    if (!ready || !authenticated || smartAccount) return
+    const timer = setTimeout(() => {
+      setProvisioningError(true)
+    }, 25000)
+    return () => clearTimeout(timer)
+  }, [ready, authenticated, smartAccount, provisionAttempt])
+
+  // Effect 3 — Clear provisioning error once the smart wallet is delivered.
+  useEffect(() => {
+    if (smartAccount) setProvisioningError(false)
+  }, [smartAccount])
+
   if (!ready) return <main style={page}><p>Loading…</p></main>
 
   if (!authenticated) {
     return <SignIn />
+  }
+
+  if (authenticated && !smartAccount) {
+    if (provisioningError) {
+      return (
+        <main style={page}>
+          <EmptyState
+            icon={
+              <svg width="22" height="10" viewBox="0 0 22 10" fill="none">
+                <line x1="3" y1="5" x2="10" y2="5" stroke="var(--ink-3)" strokeWidth="1.8" />
+                <line x1="13" y1="5" x2="19" y2="5" stroke="var(--ink-3)" strokeWidth="1.8" strokeDasharray="2 2" />
+                <circle cx="3" cy="5" r="2.4" fill="var(--ink-3)" />
+              </svg>
+            }
+            title="Couldn't set up your account"
+            body="Something went wrong creating your wallet. Nothing's lost — try again."
+            cta="Try again"
+            onCta={() => {
+              setProvisioningError(false)
+              setProvisionAttempt((a) => a + 1)
+            }}
+            tone="error"
+          />
+        </main>
+      )
+    }
+    return (
+      <main style={page}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '48px 24px' }}>
+          <Spinner size={20} />
+          <span style={{ fontSize: 14, color: 'var(--ink-3)' }}>Setting up your account…</span>
+        </div>
+      </main>
+    )
   }
 
   const handleRetry = () => {
