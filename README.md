@@ -22,6 +22,15 @@ It's a full-stack monorepo: Solidity contracts (the source of truth), a React ap
 
 M1 is deployed and verified on Base Sepolia, `PontiFactory` at [`0x1746…Cb210`](https://sepolia.basescan.org/address/0x17463e06C303e30044609a9a412d7DB4746Cb210). M2 works end to end: create a group, add/edit/delete expenses, and settle, all gasless. **[Live demo](https://ponti-olive.vercel.app/)**, running on Base Sepolia testnet.
 
+## Try it
+
+The [live demo](https://ponti-olive.vercel.app/) runs on Base Sepolia testnet. Sign in with an email — Ponti provisions an embedded smart account for you and sponsors gas, so you never need a wallet, a seed phrase, or ETH.
+
+There are two ways to exercise it, depending on how far you want to go:
+
+- **Quick look (one account).** Add someone by pasting any Ethereum address as their "Ponti ID" — it doesn't have to belong to a real Ponti user. You can create the group, add/edit/delete expenses, and watch the net balance move. This exercises everything except settlement.
+- **Full loop (two accounts).** Sign in with two different emails (two browsers, or a private window), add each other, and post an expense. Then settle: grab testnet USDC from a faucet (the in-app **Add funds** button links to one) and settle from the side that owes. Settlement is debtor-only by design and moves USDC directly between the two wallets.
+
 ## How it works
 
 1. Two people deploy a Ponti group together: one smart contract, one address, just for them.
