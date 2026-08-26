@@ -12,10 +12,10 @@ contract PontiGroupForkTest is Test {
     /// USDC on Base Sepolia (Circle native). Source: .env.
     address internal constant USDC = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
 
-    /// Pinned block for determinism. Chosen ~949 blocks behind HEAD at
-    /// authoring time (well past the L2 reorg window). Re-pin if the USDC
-    /// implementation is ever upgraded.
-    uint256 internal constant FORK_BLOCK = 42_149_000;
+    /// Blocks behind head to fork at (~33 min on Base Sepolia): far past the
+    /// L2 reorg window without a fixed pin, which the public RPC eventually
+    /// prunes (~34 days of retention).
+    uint256 internal constant SAFETY_LAG = 1000;
 
     PontiGroup internal group;
     address internal memberA;
@@ -28,7 +28,8 @@ contract PontiGroupForkTest is Test {
             vm.skip(true);
             return;
         }
-        vm.createSelectFork(url, FORK_BLOCK);
+        vm.createSelectFork(url);
+        vm.rollFork(block.number - SAFETY_LAG);
 
         memberA = makeAddr("memberA");
         memberB = makeAddr("memberB");
