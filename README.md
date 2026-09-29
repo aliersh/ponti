@@ -154,8 +154,9 @@ See [`docs/design.md`](docs/design.md) for the reasoning behind the milestone or
 
 ## Development process
 
-- Owned by hand: contract specifications, product scope, architecture and
-  security decisions, and the review of every change before merge.
+- Owned by hand: contract specifications, product scope, security decisions,
+  and the review of every change before merge. Architecture was shared with
+  the agents.
 - Implementation is done with AI coding agents under that review, with separate
   roles (planning, engineering lead, execution).
 - Status: frozen proof of concept on Base Sepolia.
