@@ -152,6 +152,13 @@ A proof of concept, not a maintained product. M1 and M2 were completed; the late
 
 See [`docs/design.md`](docs/design.md) for the reasoning behind the milestone ordering.
 
+## How this was built
+
+Ariel wrote the contract specifications and made the product decisions. The rest was built by an organization of AI agents that he designed and operated: an advisor, an eng lead and execution agents, each with its own role, skills and memory. That covers the Solidity contracts (unit, fuzz, invariant and fork test suites), the gasless ERC-4337 app (Privy, Pimlico, Kernel) and the subgraph.
+He approved every technical and security decision. After the build he audited the code as if someone else had written it, and used it to study account abstraction.
+The project is frozen and lives on testnet (Base Sepolia) only.
+Commits from 2026-09-29 onward carry a `Co-Authored-By` trailer when an agent typed the code, and none when it was written by hand.
+
 ## About
 
 Built by [Ariel Diaz](https://github.com/aliersh).
